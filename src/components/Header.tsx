@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { Search, ShoppingCart, User, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -15,7 +16,9 @@ const Header = () => {
         <div className="flex items-center justify-between py-4">
           {/* Logo */}
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-blue-600">UrbanMart</h1>
+            <Link to="/">
+              <h1 className="text-2xl font-bold text-blue-600">UrbanMart</h1>
+            </Link>
           </div>
 
           {/* Search bar - hidden on mobile */}
@@ -63,22 +66,24 @@ const Header = () => {
         <nav className="border-t border-gray-200">
           <div className="flex items-center justify-between py-3">
             <div className="hidden md:flex items-center space-x-8">
-              <a href="/" className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors">
+              <Link to="/" className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 transition-colors">
                 <Home className="h-4 w-4" />
                 <span>Home</span>
-              </a>
-              <a href="/shop" className="text-gray-700 hover:text-blue-600 transition-colors">Shop</a>
-              <a href="/categories" className="text-gray-700 hover:text-blue-600 transition-colors">Categories</a>
-              <a href="/deals" className="text-gray-700 hover:text-blue-600 transition-colors">Deals</a>
-              <a href="/track" className="text-gray-700 hover:text-blue-600 transition-colors">Track Order</a>
-              <a href="/contact" className="text-gray-700 hover:text-blue-600 transition-colors">Contact</a>
+              </Link>
+              <Link to="/shop" className="text-gray-700 hover:text-blue-600 transition-colors">Shop</Link>
+              <Link to="/categories" className="text-gray-700 hover:text-blue-600 transition-colors">Categories</Link>
+              <Link to="/deals" className="text-gray-700 hover:text-blue-600 transition-colors">Deals</Link>
+              <Link to="/track" className="text-gray-700 hover:text-blue-600 transition-colors">Track Order</Link>
+              <Link to="/contact" className="text-gray-700 hover:text-blue-600 transition-colors">Contact</Link>
             </div>
 
             <div className="hidden md:flex items-center space-x-4">
               <span className="text-sm text-gray-600">📞 1-800-URBAN-MART</span>
-              <Button variant="outline" size="sm">
-                Sign In
-              </Button>
+              <Link to="/signin">
+                <Button variant="outline" size="sm">
+                  Sign In
+                </Button>
+              </Link>
             </div>
           </div>
         </nav>
@@ -98,17 +103,19 @@ const Header = () => {
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4">
             <div className="flex flex-col space-y-3">
-              <a href="/" className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 py-2">
+              <Link to="/" className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 py-2">
                 <Home className="h-4 w-4" />
                 <span>Home</span>
-              </a>
-              <a href="/shop" className="text-gray-700 hover:text-blue-600 py-2">Shop</a>
-              <a href="/categories" className="text-gray-700 hover:text-blue-600 py-2">Categories</a>
-              <a href="/deals" className="text-gray-700 hover:text-blue-600 py-2">Deals</a>
-              <a href="/track" className="text-gray-700 hover:text-blue-600 py-2">Track Order</a>
-              <a href="/contact" className="text-gray-700 hover:text-blue-600 py-2">Contact</a>
+              </Link>
+              <Link to="/shop" className="text-gray-700 hover:text-blue-600 py-2">Shop</Link>
+              <Link to="/categories" className="text-gray-700 hover:text-blue-600 py-2">Categories</Link>
+              <Link to="/deals" className="text-gray-700 hover:text-blue-600 py-2">Deals</Link>
+              <Link to="/track" className="text-gray-700 hover:text-blue-600 py-2">Track Order</Link>
+              <Link to="/contact" className="text-gray-700 hover:text-blue-600 py-2">Contact</Link>
               <div className="pt-3 border-t border-gray-200">
-                <Button className="w-full">Sign In</Button>
+                <Link to="/signin">
+                  <Button className="w-full">Sign In</Button>
+                </Link>
               </div>
             </div>
           </div>
