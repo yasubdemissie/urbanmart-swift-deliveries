@@ -69,12 +69,12 @@ const Categories = () => {
       
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <div className="mb-8 text-center">
+        {/* <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Shop by Category</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Explore our diverse range of products organized by category. Find exactly what you're looking for.
           </p>
-        </div>
+        </div> */}
 
         {/* Featured Categories */}
         <div className="mb-12">

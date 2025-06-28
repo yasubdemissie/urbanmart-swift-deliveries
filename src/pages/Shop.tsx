@@ -1,95 +1,94 @@
-
-import { useState } from 'react';
-import { Search, Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import ProductCard from '@/components/ProductCard';
+import { useState, useEffect } from "react";
+import { Search, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import ProductCard from "@/components/ProductCard";
+import { useProducts, useCategories } from "@/hooks/useProducts";
+import { useAddToCart } from "@/hooks/useCart";
+import { toast } from "sonner";
 
 const Shop = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('featured');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("featured");
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Sample products data
-  const products = [
-    {
-      id: 1,
-      name: "Wireless Bluetooth Headphones",
-      price: 79.99,
-      originalPrice: 99.99,
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=300&fit=crop",
-      category: "Electronics",
-      rating: 4.5,
-      reviews: 128
-    },
-    {
-      id: 2,
-      name: "Premium Cotton T-Shirt",
-      price: 29.99,
-      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=300&fit=crop",
-      category: "Clothing",
-      rating: 4.8,
-      reviews: 89
-    },
-    {
-      id: 3,
-      name: "Smart Watch Series 5",
-      price: 249.99,
-      originalPrice: 299.99,
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=300&fit=crop",
-      category: "Electronics",
-      rating: 4.6,
-      reviews: 205
-    },
-    {
-      id: 4,
-      name: "Ceramic Coffee Mug Set",
-      price: 24.99,
-      image: "https://images.unsplash.com/photo-1514228742587-6b1558fcf93a?w=400&h=300&fit=crop",
-      category: "Home & Garden",
-      rating: 4.3,
-      reviews: 67
-    },
-    {
-      id: 5,
-      name: "Leather Laptop Bag",
-      price: 89.99,
-      originalPrice: 120.00,
-      image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=300&fit=crop",
-      category: "Accessories",
-      rating: 4.7,
-      reviews: 143
-    },
-    {
-      id: 6,
-      name: "Organic Green Tea",
-      price: 19.99,
-      image: "https://images.unsplash.com/photo-1594631661960-4c86b8d12e4a?w=400&h=300&fit=crop",
-      category: "Food & Beverages",
-      rating: 4.4,
-      reviews: 92
-    }
-  ];
-
-  const categories = ['all', 'Electronics', 'Clothing', 'Home & Garden', 'Accessories', 'Food & Beverages'];
-
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+  // Fetch products and categories
+  const {
+    data: productsData,
+    isLoading: productsLoading,
+    error: productsError,
+  } = useProducts({
+    page: currentPage,
+    limit: 12,
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    search: searchQuery || undefined,
+    sortBy:
+      sortBy === "featured"
+        ? "createdAt"
+        : sortBy === "price-low"
+        ? "price"
+        : sortBy === "price-high"
+        ? "price"
+        : "rating",
+    sortOrder: sortBy === "price-high" ? "desc" : "asc",
   });
+
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useCategories();
+  const addToCartMutation = useAddToCart();
+
+  const products = productsData?.products || [];
+  const categories = categoriesData || [];
+  const pagination = productsData?.pagination;
+
+  // Handle add to cart
+  const handleAddToCart = async (productId: string) => {
+    try {
+      await addToCartMutation.mutateAsync({ productId, quantity: 1 });
+      toast.success("Product added to cart!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to add to cart");
+    }
+  };
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, sortBy]);
+
+  if (productsError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Error loading products
+            </h2>
+            <p className="text-gray-600">Please try again later.</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Shop All Products</h1>
-          <p className="text-gray-600">Discover our complete collection of quality products</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Shop All Products
+          </h1>
+          <p className="text-gray-600">
+            Discover our complete collection of quality products
+          </p>
         </div>
 
         {/* Filters and Search */}
@@ -108,15 +107,20 @@ const Shop = () => {
 
             {/* Category Filter */}
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">Category:</span>
+              <span className="text-sm font-medium text-gray-700">
+                Category:
+              </span>
               <select
+                title="Category"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={categoriesLoading}
               >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category}
+                <option value="all">All Categories</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.slug}>
+                    {category.name}
                   </option>
                 ))}
               </select>
@@ -124,8 +128,11 @@ const Shop = () => {
 
             {/* Sort */}
             <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">Sort by:</span>
+              <span className="text-sm font-medium text-gray-700">
+                Sort by:
+              </span>
               <select
+                title="Sort by"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -142,22 +149,80 @@ const Shop = () => {
         {/* Results Info */}
         <div className="mb-6">
           <p className="text-gray-600">
-            Showing {filteredProducts.length} of {products.length} products
+            {productsLoading
+              ? "Loading products..."
+              : `Showing ${products.length} of ${
+                  pagination?.total || 0
+                } products`}
           </p>
         </div>
 
+        {/* Loading State */}
+        {productsLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg shadow-sm p-4 animate-pulse"
+              >
+                <div className="bg-gray-200 h-48 rounded-lg mb-4"></div>
+                <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                <div className="bg-gray-200 h-4 rounded w-3/4 mb-2"></div>
+                <div className="bg-gray-200 h-6 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Product Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {!productsLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={() => handleAddToCart(product.id)}
+              />
+            ))}
+          </div>
+        )}
 
         {/* No Results */}
-        {filteredProducts.length === 0 && (
+        {!productsLoading && products.length === 0 && (
           <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No products found
+            </h3>
+            <p className="text-gray-600">
+              Try adjusting your search or filter criteria
+            </p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <div className="mt-8 flex justify-center">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </Button>
+
+              <span className="px-4 py-2 text-sm text-gray-600">
+                Page {currentPage} of {pagination.totalPages}
+              </span>
+
+              <Button
+                variant="outline"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === pagination.totalPages}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         )}
       </div>
