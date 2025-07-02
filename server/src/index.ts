@@ -35,7 +35,11 @@ app.use(
     origin:
       process.env.NODE_ENV === "production"
         ? ["https://your-frontend-domain.com"]
-        : ["http://localhost:3000", "http://localhost:5173"],
+        : [
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:8081",
+          ],
     credentials: true,
   })
 );
@@ -72,31 +76,35 @@ app.use("*", (req, res) => {
 // Global error handler
 app.use(
   (
-    err: any,
+    err: unknown,
     req: express.Request,
     res: express.Response,
     next: express.NextFunction
   ) => {
     console.error("Error:", err);
 
-    if (err.name === "ValidationError") {
-      return res.status(400).json({
-        error: "Validation Error",
-        details: err.message,
-      });
+    if (typeof err === "object" && err !== null && "name" in err) {
+      if ((err as { name: string }).name === "ValidationError") {
+        return res.status(400).json({
+          error: "Validation Error",
+          details: (err as { message?: string }).message,
+        });
+      }
+      if ((err as { name: string }).name === "UnauthorizedError") {
+        return res.status(401).json({
+          error: "Unauthorized",
+        });
+      }
     }
 
-    if (err.name === "UnauthorizedError") {
-      return res.status(401).json({
-        error: "Unauthorized",
-      });
-    }
-
-    res.status(500).json({
+    return res.status(500).json({
       error: "Internal Server Error",
       message:
-        process.env.NODE_ENV === "development"
-          ? err.message
+        process.env.NODE_ENV === "development" &&
+        typeof err === "object" &&
+        err !== null &&
+        "message" in err
+          ? (err as { message?: string }).message
           : "Something went wrong",
     });
   }

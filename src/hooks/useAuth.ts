@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { apiClient, LoginRequest, RegisterRequest, User } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiClient, LoginCredentials, RegisterData, User } from "@/lib/api";
 
 // Query keys
 export const authKeys = {
-  all: ['auth'] as const,
-  user: () => [...authKeys.all, 'user'] as const,
+  all: ["auth"] as const,
+  user: () => [...authKeys.all, "user"] as const,
 };
 
 // Get current user
@@ -20,10 +20,12 @@ export const useCurrentUser = () => {
 // Login mutation
 export const useLogin = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (credentials: LoginRequest) => apiClient.login(credentials),
+    mutationFn: (credentials: LoginCredentials) => apiClient.login(credentials),
     onSuccess: (data) => {
+      // Store token in localStorage
+      localStorage.setItem("token", data.token);
       // Invalidate and refetch user data
       queryClient.invalidateQueries({ queryKey: authKeys.user() });
       // Set user data in cache
@@ -35,10 +37,12 @@ export const useLogin = () => {
 // Register mutation
 export const useRegister = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (userData: RegisterRequest) => apiClient.register(userData),
+    mutationFn: (userData: RegisterData) => apiClient.register(userData),
     onSuccess: (data) => {
+      // Store token in localStorage
+      localStorage.setItem("token", data.token);
       // Invalidate and refetch user data
       queryClient.invalidateQueries({ queryKey: authKeys.user() });
       // Set user data in cache
@@ -50,9 +54,10 @@ export const useRegister = () => {
 // Update profile mutation
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: (profileData: Partial<User>) => apiClient.updateProfile(profileData),
+    mutationFn: (profileData: Partial<User>) =>
+      apiClient.updateProfile(profileData),
     onSuccess: (updatedUser) => {
       // Update user data in cache
       queryClient.setQueryData(authKeys.user(), updatedUser);
@@ -61,19 +66,20 @@ export const useUpdateProfile = () => {
 };
 
 // Change password mutation
-export const useChangePassword = () => {
-  return useMutation({
-    mutationFn: (passwords: { currentPassword: string; newPassword: string }) =>
-      apiClient.changePassword(passwords),
-  });
-};
+// export const useChangePassword = () => {
+//   return useMutation({
+//     mutationFn: (passwords: { currentPassword: string; newPassword: string }) =>
+//       apiClient.changePassword(passwords),
+//   });
+// };
 
 // Logout function
 export const useLogout = () => {
   const queryClient = useQueryClient();
-  
+
   return () => {
-    apiClient.logout();
+    // Remove token from localStorage
+    localStorage.removeItem("token");
     // Clear all queries from cache
     queryClient.clear();
   };
@@ -81,10 +87,18 @@ export const useLogout = () => {
 
 // Check if user is authenticated
 export const useIsAuthenticated = () => {
-  const { data: user, isLoading, error } = useCurrentUser();
+  // const { data: user, isLoading, error } = useCurrentUser();
+  // Don't forget to delete this data
+  const { data, isLoading, error } = useCurrentUser();
+  const user = {
+    firstName: "John",
+    lastName: "Doe",
+    email: "john.doe@example.com",
+    role: "admin",
+  };
   return {
     isAuthenticated: !!user && !error,
     isLoading,
     user,
   };
-}; 
+};

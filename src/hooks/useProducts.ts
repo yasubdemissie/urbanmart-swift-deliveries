@@ -5,7 +5,7 @@ import { apiClient, Product, Category } from "@/lib/api";
 export const productKeys = {
   all: ["products"] as const,
   lists: () => [...productKeys.all, "list"] as const,
-  list: (filters: any) => [...productKeys.lists(), filters] as const,
+  list: (filters: ProductFilters) => [...productKeys.lists(), filters] as const,
   details: () => [...productKeys.all, "detail"] as const,
   detail: (id: string) => [...productKeys.details(), id] as const,
   featured: () => [...productKeys.all, "featured"] as const,
@@ -18,6 +18,19 @@ export const categoryKeys = {
   list: () => [...categoryKeys.lists()] as const,
   details: () => [...categoryKeys.all, "detail"] as const,
   detail: (id: string) => [...categoryKeys.details(), id] as const,
+};
+
+type ProductFilters = {
+  page?: number;
+  limit?: number;
+  category?: string;
+  search?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  featured?: boolean;
+  onSale?: boolean;
 };
 
 // Get all products with filters
@@ -35,8 +48,15 @@ export const useProducts = (filters?: {
 }) => {
   return useQuery({
     queryKey: productKeys.list(filters),
-    queryFn: () => apiClient.getProducts(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryFn: () => apiClient.getProducts(filters).then((res) => {
+      console.log("Products from apiClient.getProducts:", res);
+      if (res.success) {
+        return res.data;
+      }
+      return [];
+      return res;
+    }),
+    staleTime: 0 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -44,8 +64,18 @@ export const useProducts = (filters?: {
 export const useCategories = () => {
   return useQuery({
     queryKey: categoryKeys.list(),
-    queryFn: () => apiClient.getCategories(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    queryFn: () =>
+      apiClient.getCategories().then((res) => {
+        console.log("Categories from apiClient.getCategories:", res);
+        if (res.success) {
+          return res.data.categories;
+        }
+        return [];
+      }).catch((error) => {
+        console.error("Error fetching categories:", error);
+        return [];
+      }),
+    staleTime: 0, // 10 minutes
   });
 };
 
@@ -82,7 +112,8 @@ export const useCreateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (productData: any) => apiClient.createProduct(productData),
+    mutationFn: (productData: Product) =>
+      apiClient.createProduct(productData),
     onSuccess: () => {
       // Invalidate product lists
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
@@ -95,7 +126,7 @@ export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Product }) =>
       apiClient.updateProduct(id, data),
     onSuccess: (updatedProduct) => {
       // Update product in cache

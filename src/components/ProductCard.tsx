@@ -32,14 +32,12 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
     ? Math.round(
         (1 - Number(product.price) / Number(product.originalPrice)) * 100
       )
-    : product.salePercentage || 0;
+    : 0;
 
   const imageUrl =
-    product.mainImage ||
-    product.images[0] ||
-    "https://via.placeholder.com/400x300?text=No+Image";
+    product.images[0] || "https://via.placeholder.com/400x300?text=No+Image";
   const categoryName = product.category?.name || "Uncategorized";
-  const averageRating = product.averageRating || 0;
+  const averageRating = product.rating || 0;
   const reviewCount = product.reviewCount || 0;
 
   return (
@@ -49,12 +47,12 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative overflow-hidden bg-gray-100 rounded-t-lg">
-        {(discount > 0 || product.isOnSale) && (
+        {(discount > 0 || product.onSale) && (
           <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
             -{discount}%
           </div>
         )}
-        {product.isFeatured && (
+        {product.featured && (
           <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
             Featured
           </div>
@@ -92,11 +90,9 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           {product.name}
         </h3>
 
-        {product.shortDescription && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {product.shortDescription}
-          </p>
-        )}
+        <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+          {product.description}
+        </p>
 
         <div className="flex items-center mb-3">
           <div className="flex items-center">

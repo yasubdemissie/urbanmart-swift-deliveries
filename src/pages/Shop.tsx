@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
-import { useProducts, useCategories } from "@/hooks/useProducts";
+import { useCategories, useProducts } from "@/hooks/useProducts";
 import { useAddToCart } from "@/hooks/useCart";
 import { toast } from "sonner";
 
@@ -36,21 +36,33 @@ const Shop = () => {
     sortOrder: sortBy === "price-high" ? "desc" : "asc",
   });
 
-  const { data: categoriesData, isLoading: categoriesLoading } =
-    useCategories();
+  const pagination = productsData ? {
+    total: productsData.total,
+    totalPages: productsData.totalPages,
+    currentPage: productsData.page,
+  } : null;
+
+  // const pagination = productsData?.pagination;
+  const {data: categoriesData, isLoading: categoriesLoading } = useCategories();
   const addToCartMutation = useAddToCart();
+  console.log("productsData", productsData);
 
   const products = productsData?.products || [];
-  const categories = categoriesData || [];
-  const pagination = productsData?.pagination;
+  const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
   // Handle add to cart
   const handleAddToCart = async (productId: string) => {
     try {
       await addToCartMutation.mutateAsync({ productId, quantity: 1 });
       toast.success("Product added to cart!");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to add to cart");
+    } catch (error: unknown) {
+      if (typeof error === "object" && error !== null && "message" in error) {
+        toast.error(
+          (error as { message?: string }).message || "Failed to add to cart"
+        );
+      } else {
+        toast.error("Failed to add to cart");
+      }
     }
   };
 
@@ -60,6 +72,7 @@ const Shop = () => {
   }, [searchQuery, selectedCategory, sortBy]);
 
   if (productsError) {
+    console.error("productsError", productsError);
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />

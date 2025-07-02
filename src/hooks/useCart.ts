@@ -19,11 +19,13 @@ export const useCart = () => {
 
 // Get cart count
 export const useCartCount = () => {
-  return useQuery({
-    queryKey: cartKeys.count(),
-    queryFn: () => apiClient.getCartCount(),
-    staleTime: 1 * 60 * 1000, // 1 minute
-  });
+  const { data: cartItems = [] } = useCart();
+  const count = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  return {
+    data: count,
+    isLoading: false,
+  };
 };
 
 // Add item to cart
