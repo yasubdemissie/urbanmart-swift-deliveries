@@ -534,6 +534,7 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
       headers: getAuthHeaders(),
     });
+    console.log("Get Admin order api ", response);
     return handleResponse(response);
   },
 
@@ -561,6 +562,7 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/admin/customers?${params}`, {
       headers: getAuthHeaders(),
     });
+    console.log("Admin customers api ", response);
     return handleResponse(response);
   },
 

@@ -54,12 +54,17 @@ export const useProducts = (filters?: {
         if (res.success) {
           return res.data;
         }
-        return {
-          products: [],
-          pagination: { page: 1, total: 0, totalPages: 1, limit: 12 },
+        return {} as {
+          products: Product[];
+          pagination: {
+            page: number;
+            total: number;
+            totalPages: number;
+            limit: number;
+          };
         };
       }),
-    staleTime: 0 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -107,7 +112,7 @@ export const useFeaturedProducts = () => {
         }
         return [];
       }),
-    staleTime: 0 * 60 * 1000, // 10 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 

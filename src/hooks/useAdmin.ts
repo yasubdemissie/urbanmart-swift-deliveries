@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient, Product } from "@/lib/api";
+import { apiClient, Order, Product, User } from "@/lib/api";
 
 // Admin query keys
 export const adminKeys = {
@@ -48,7 +48,7 @@ export const useAdminProducts = (filters?: {
           totalPages: number;
         };
       }),
-    staleTime: 0 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 
@@ -64,10 +64,16 @@ export const useAdminOrders = (filters?: {
     queryKey: [...adminKeys.orders(), filters],
     queryFn: () =>
       apiClient.getAdminOrders(filters).then((data) => {
+        console.log("Admin orders data useQuery: ", data);
         if (data.success) {
           return data.data;
         }
-        return [];
+        return {} as {
+          orders: Order[];
+          total: number;
+          page: number;
+          totalPages: number;
+        };
       }),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
@@ -83,10 +89,16 @@ export const useAdminCustomers = (filters?: {
     queryKey: [...adminKeys.customers(), filters],
     queryFn: () =>
       apiClient.getAdminCustomers(filters).then((data) => {
+        console.log("Admin customer data useQuery ", data);
         if (data.success) {
           return data.data;
         }
-        return [];
+        return {} as {
+          customers: User[];
+          total: number;
+          page: number;
+          totalPages: number;
+        };
       }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });

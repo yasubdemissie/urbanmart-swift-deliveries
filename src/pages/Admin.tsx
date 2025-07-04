@@ -67,6 +67,7 @@ const Admin = () => {
       search: searchQuery || undefined,
     });
 
+  console.log("Admin customer data on Page ", customersData);
   // Mutations
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();

@@ -6,6 +6,7 @@ import {
   AuthRequest,
 } from "../middleware/auth";
 import { formatResponse, formatError } from "../utils/helpers";
+import { $Enums } from "@prisma/client";
 
 const router = Router();
 
@@ -22,26 +23,46 @@ router.get(
         totalCustomers,
         totalProducts,
         recentOrders,
-        topProducts,
       ] = await Promise.all([
         prisma.order.aggregate({ _sum: { total: true } }),
         prisma.order.count(),
-        prisma.user.count({ where: { role: "USER" } }),
+        prisma.user.count({ where: { role: $Enums.UserRole.CUSTOMER } }),
         prisma.product.count(),
         prisma.order.findMany({
           orderBy: { createdAt: "desc" },
           take: 5,
-          include: { user: true, items: true },
+          include: { user: true, orderItems: true },
         }),
-        prisma.product.findMany({ orderBy: { rating: "desc" }, take: 5 }),
       ]);
+
+      // 1. Get top 5 product IDs by average rating
+      const topRated = await prisma.review.groupBy({
+        by: ["productId"],
+        _avg: { rating: true },
+        orderBy: { _avg: { rating: "desc" } },
+        take: 5,
+      });
+
+      // 2. Fetch the product details for those IDs
+      const productIds = topRated.map((r) => r.productId);
+
+      const topProducts = await prisma.product.findMany({
+        where: { id: { in: productIds } },
+        include: { reviews: true },
+      });
+
+      // 3. Optionally, sort the products array to match the order of average ratings
+      const topProductsSorted = productIds.map((id) =>
+        topProducts.find((p) => p.id === id)
+      );
+
       return formatResponse(res, {
         totalSales: totalSales._sum.total || 0,
         totalOrders,
         totalCustomers,
         totalProducts,
         recentOrders,
-        topProducts,
+        topProducts: topProductsSorted,
       });
     } catch (error) {
       return formatError(res, "Failed to fetch admin stats", 500);
@@ -99,7 +120,7 @@ router.get(
           where,
           skip,
           take: Number(limit),
-          include: { user: true, items: true },
+          include: { user: true, orderItems: true },
         }),
         prisma.order.count({ where }),
       ]);
@@ -144,7 +165,7 @@ router.get(
     try {
       const { page = 1, limit = 20, search } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
-      const where: any = { role: "USER" };
+      const where: any = { role: $Enums.UserRole.CUSTOMER };
       if (search) {
         where.OR = [
           { firstName: { contains: search, mode: "insensitive" } },

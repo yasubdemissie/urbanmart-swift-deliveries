@@ -6,8 +6,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProductCard from "@/components/ProductCard";
 import { useCategories, useProducts } from "@/hooks/useProducts";
-import { useAddToCart } from "@/hooks/useCart";
+import { useCart } from "@/context/cartContext";
 import { toast } from "sonner";
+import { useAddToCart } from "@/hooks/useCart";
 
 const Shop = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -38,25 +39,28 @@ const Shop = () => {
 
   const { pagination, products } = productsData || {};
 
-  const {data: categoriesData, isLoading: categoriesLoading } = useCategories();
+  const { data: categoriesData, isLoading: categoriesLoading } =
+    useCategories();
+  const { dispatch } = useCart();
   const addToCartMutation = useAddToCart();
-  console.log("productsData", productsData);
 
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
   // Handle add to cart
-  const handleAddToCart = async (productId: string) => {
+  const handleAddToCart = async (product) => {
+    // Optimistically update UI
+    dispatch({ type: "ADD_ITEM", product, quantity: 1 });
+
     try {
-      await addToCartMutation.mutateAsync({ productId, quantity: 1 });
+      await addToCartMutation.mutateAsync({
+        productId: product.id,
+        quantity: 1,
+      });
       toast.success("Product added to cart!");
-    } catch (error: unknown) {
-      if (typeof error === "object" && error !== null && "message" in error) {
-        toast.error(
-          (error as { message?: string }).message || "Failed to add to cart"
-        );
-      } else {
-        toast.error("Failed to add to cart");
-      }
+    } catch (error) {
+      // Rollback UI
+      dispatch({ type: "REMOVE_ITEM", productId: product.id });
+      toast.error("Failed to add to cart");
     }
   };
 
@@ -188,7 +192,7 @@ const Shop = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                onAddToCart={() => handleAddToCart(product.id)}
+                onAddToCart={() => handleAddToCart(product)}
               />
             ))}
           </div>
