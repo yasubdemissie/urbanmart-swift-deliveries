@@ -16,19 +16,17 @@ import { useIsAuthenticated } from "@/hooks/useAuth";
 const Cart = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useIsAuthenticated();
-  const { data: cartData, isLoading, error } = useCart();
+  const { data, isLoading, error } = useCart();
+  const cartItems = data?.data?.cartItem || [];
   const updateCartItemMutation = useUpdateCartItem();
   const removeFromCartMutation = useRemoveFromCart();
   const clearCartMutation = useClearCart();
 
-  const cartItems = cartData || [];
-
   // Calculate summary from cart items
+  // (sum, item) => sum + Number(item.product.price) * item.quantity,
+  //     0
   const summary = {
-    subtotal: cartItems.reduce(
-      (sum, item) => sum + Number(item.product.price) * item.quantity,
-      0
-    ),
+    subtotal: cartItems.reduce((sum, item) =>  sum + Number(item.product.price) * item.quantity , 0),
     shipping:
       cartItems.length > 0
         ? cartItems.reduce(

@@ -24,12 +24,12 @@ export interface Category {
 }
 
 export interface Pagination {
-  hasNext: boolean;
-  hasPrev: boolean;
-  limit: number;
   page: number;
+  limit: number;
   total: number;
   totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
 }
 export interface Product {
   id: string;
@@ -103,6 +103,12 @@ export interface Review {
   updatedAt: string;
 }
 
+export interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
 // Auth types
 export interface LoginCredentials {
   email: string;
@@ -116,18 +122,37 @@ export interface RegisterData {
   lastName: string;
 }
 
-export interface AuthResponse {
+type AuthResponse = ApiResponse<{
   user: User;
   token: string;
-}
+}>;
 
-export interface CategoryResponse {
-  success: boolean;
-  message: string;
-  data: {
-    categories: Category[];
-  };
-}
+type AdminStatResponse = ApiResponse<{
+  totalSales: number;
+  totalOrders: number;
+  totalCustomers: number;
+  totalProducts: number;
+  recentOrders: Order[];
+  topProducts: Product[];
+}>;
+
+type AdminProductResponse = ApiResponse<{
+  products: Product[];
+  total: number;
+  page: number;
+  totalPages: number;
+}>;
+
+type CategoryResponse = ApiResponse<{ categories: Category[] }>;
+
+type UserResponse = ApiResponse<{ user: User }>;
+
+type CartItemResponse = ApiResponse<{ cartItem: CartItem[] }>;
+
+type ProductResponse = ApiResponse<{
+  products: Product[];
+  pagination: Pagination;
+}>;
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -170,11 +195,11 @@ export const apiClient = {
     return handleResponse<AuthResponse>(response);
   },
 
-  async getCurrentUser(): Promise<User> {
+  async getCurrentUser(): Promise<UserResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<User>(response);
+    return handleResponse<UserResponse>(response);
   },
 
   // Product endpoints
@@ -189,12 +214,7 @@ export const apiClient = {
     sortOrder?: "asc" | "desc";
     featured?: boolean;
     onSale?: boolean;
-  }): Promise<{
-    products: Product[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  }): Promise<ProductResponse> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -217,11 +237,15 @@ export const apiClient = {
     return handleResponse<Product>(response);
   },
 
-  async getFeaturedProducts(): Promise<Product[]> {
+  async getFeaturedProducts(): Promise<ProductResponse> {
     const response = await fetch(`${API_BASE_URL}/products/featured`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<Product[]>(response);
+    console.log(
+      "Featured products from apiClient.getFeaturedProducts:",
+      response
+    );
+    return handleResponse<ProductResponse>(response);
   },
 
   async getSaleProducts(): Promise<Product[]> {
@@ -278,29 +302,35 @@ export const apiClient = {
   },
 
   // Cart endpoints
-  async getCart(): Promise<CartItem[]> {
+  async getCart(): Promise<CartItemResponse> {
     const response = await fetch(`${API_BASE_URL}/cart`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<CartItem[]>(response);
+    return handleResponse<CartItemResponse>(response);
   },
 
-  async addToCart(productId: string, quantity: number): Promise<CartItem> {
+  async addToCart(
+    productId: string,
+    quantity: number
+  ): Promise<CartItemResponse> {
     const response = await fetch(`${API_BASE_URL}/cart`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify({ productId, quantity }),
     });
-    return handleResponse<CartItem>(response);
+    return handleResponse<CartItemResponse>(response);
   },
 
-  async updateCartItem(itemId: string, quantity: number): Promise<CartItem> {
+  async updateCartItem(
+    itemId: string,
+    quantity: number
+  ): Promise<CartItemResponse> {
     const response = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
       method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify({ quantity }),
     });
-    return handleResponse<CartItem>(response);
+    return handleResponse<CartItemResponse>(response);
   },
 
   async removeFromCart(itemId: string): Promise<void> {
@@ -448,14 +478,7 @@ export const apiClient = {
   },
 
   // Admin endpoints
-  async getAdminStats(): Promise<{
-    totalSales: number;
-    totalOrders: number;
-    totalCustomers: number;
-    totalProducts: number;
-    recentOrders: any[];
-    topProducts: any[];
-  }> {
+  async getAdminStats(): Promise<AdminStatResponse> {
     const response = await fetch(`${API_BASE_URL}/admin/stats`, {
       headers: getAuthHeaders(),
     });
@@ -468,12 +491,7 @@ export const apiClient = {
     search?: string;
     category?: string;
     status?: string;
-  }): Promise<{
-    products: Product[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  }): Promise<AdminProductResponse> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -486,7 +504,8 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/admin/products?${params}`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse(response);
+    console.log("AdminProducts from the api ", response);
+    return handleResponse<AdminProductResponse>(response);
   },
 
   async getAdminOrders(filters?: {
@@ -495,12 +514,14 @@ export const apiClient = {
     status?: string;
     dateFrom?: string;
     dateTo?: string;
-  }): Promise<{
-    orders: Order[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  }): Promise<
+    ApiResponse<{
+      orders: Order[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>
+  > {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -520,12 +541,14 @@ export const apiClient = {
     page?: number;
     limit?: number;
     search?: string;
-  }): Promise<{
-    customers: User[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  }): Promise<
+    ApiResponse<{
+      customers: User[];
+      total: number;
+      page: number;
+      totalPages: number;
+    }>
+  > {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {

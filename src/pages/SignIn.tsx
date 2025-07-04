@@ -46,7 +46,7 @@ const SignIn = () => {
       }
 
       // Redirect to home page after successful auth
-      navigate("/");
+      navigate("/admin");
     } catch (error: any) {
       toast.error(error.message || "Authentication failed");
     }

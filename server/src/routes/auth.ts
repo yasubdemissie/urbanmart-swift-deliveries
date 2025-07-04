@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import prisma from "../lib/prisma";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { validateLogin, validateRegister } from "../utils/validation";
@@ -13,59 +13,62 @@ import {
 const router = Router();
 
 // Register new user
-router.post("/register", validateRegister, async (req, res) => {
-  try {
-    const { email, password, firstName, lastName, phone } = req.body;
+router.post("/register", validateRegister, async (req: Request, res: Response) => {
+    try {
+      const { email, password, firstName, lastName } = req.body;
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+      console.log(email, password, firstName, lastName);
 
-    if (existingUser) {
-      return formatError(res, "User with this email already exists", 409);
+      // Check if user already exists
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+      });
+
+      if (existingUser) {
+        return formatError(res, "User with this email already exists", 409);
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(password);
+
+      // Create user
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          firstName,
+          lastName,
+          // phone,
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          // phone: true,
+          role: true,
+          createdAt: true,
+        },
+      });
+
+      // Generate token
+      const token = generateToken(user.id, user.email, user.role);
+
+      return formatResponse(
+        res,
+        { user, token },
+        "User registered successfully",
+        201
+      );
+    } catch (error) {
+      console.error("Registration error:", error);
+      return formatError(res, "Registration failed", 500);
     }
-
-    // Hash password
-    const hashedPassword = await hashPassword(password);
-
-    // Create user
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        firstName,
-        lastName,
-        phone,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    // Generate token
-    const token = generateToken(user.id, user.email, user.role);
-
-    return formatResponse(
-      res,
-      { user, token },
-      "User registered successfully",
-      201
-    );
-  } catch (error) {
-    console.error("Registration error:", error);
-    return formatError(res, "Registration failed", 500);
   }
-});
+);
 
 // Login user
-router.post("/login", validateLogin, async (req, res) => {
+router.post("/login", validateLogin, async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 

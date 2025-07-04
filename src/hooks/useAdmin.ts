@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient } from "@/lib/api";
+import { apiClient, Product } from "@/lib/api";
 
 // Admin query keys
 export const adminKeys = {
@@ -14,7 +14,13 @@ export const adminKeys = {
 export const useAdminStats = () => {
   return useQuery({
     queryKey: adminKeys.stats(),
-    queryFn: () => apiClient.getAdminStats(),
+    queryFn: () =>
+      apiClient.getAdminStats().then((data) => {
+        if (data.success) {
+          return data.data;
+        }
+        return [];
+      }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -29,8 +35,20 @@ export const useAdminProducts = (filters?: {
 }) => {
   return useQuery({
     queryKey: [...adminKeys.products(), filters],
-    queryFn: () => apiClient.getAdminProducts(filters),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    queryFn: () =>
+      apiClient.getAdminProducts(filters).then((data) => {
+        console.log("getAdminProducts from the useQuery: ", data);
+        if (data.success) {
+          return data.data;
+        }
+        return {} as {
+          products: Product[];
+          total: number;
+          page: number;
+          totalPages: number;
+        };
+      }),
+    staleTime: 0 * 60 * 1000, // 2 minutes
   });
 };
 
@@ -44,7 +62,13 @@ export const useAdminOrders = (filters?: {
 }) => {
   return useQuery({
     queryKey: [...adminKeys.orders(), filters],
-    queryFn: () => apiClient.getAdminOrders(filters),
+    queryFn: () =>
+      apiClient.getAdminOrders(filters).then((data) => {
+        if (data.success) {
+          return data.data;
+        }
+        return [];
+      }),
     staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
@@ -57,7 +81,13 @@ export const useAdminCustomers = (filters?: {
 }) => {
   return useQuery({
     queryKey: [...adminKeys.customers(), filters],
-    queryFn: () => apiClient.getAdminCustomers(filters),
+    queryFn: () =>
+      apiClient.getAdminCustomers(filters).then((data) => {
+        if (data.success) {
+          return data.data;
+        }
+        return [];
+      }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };

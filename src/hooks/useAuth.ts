@@ -11,9 +11,14 @@ export const authKeys = {
 export const useCurrentUser = () => {
   return useQuery({
     queryKey: authKeys.user(),
-    queryFn: () => apiClient.getCurrentUser(),
+    queryFn: () =>
+      apiClient.getCurrentUser().then((data) => {
+        if (data.success) {
+          return data.data.user;
+        } else return {} as User;
+      }),
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0 * 60 * 1000, // 5 minutes
   });
 };
 
@@ -24,12 +29,14 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (credentials: LoginCredentials) => apiClient.login(credentials),
     onSuccess: (data) => {
+      const { data: userData } = data;
+
       // Store token in localStorage
-      localStorage.setItem("token", data.token);
-      // Invalidate and refetch user data
+      localStorage.setItem("token", userData.token);
+      // Invalidate and refetch user userData
       queryClient.invalidateQueries({ queryKey: authKeys.user() });
-      // Set user data in cache
-      queryClient.setQueryData(authKeys.user(), data.user);
+      // Set user userData in cache
+      queryClient.setQueryData(authKeys.user(), userData.user);
     },
   });
 };
@@ -41,12 +48,10 @@ export const useRegister = () => {
   return useMutation({
     mutationFn: (userData: RegisterData) => apiClient.register(userData),
     onSuccess: (data) => {
-      // Store token in localStorage
-      localStorage.setItem("token", data.token);
-      // Invalidate and refetch user data
+      const { data: userData } = data;
+      localStorage.setItem("token", userData.token);
       queryClient.invalidateQueries({ queryKey: authKeys.user() });
-      // Set user data in cache
-      queryClient.setQueryData(authKeys.user(), data.user);
+      queryClient.setQueryData(authKeys.user(), userData.user);
     },
   });
 };
@@ -87,15 +92,9 @@ export const useLogout = () => {
 
 // Check if user is authenticated
 export const useIsAuthenticated = () => {
-  // const { data: user, isLoading, error } = useCurrentUser();
-  // Don't forget to delete this data
   const { data, isLoading, error } = useCurrentUser();
-  const user = {
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    role: "admin",
-  };
+  const user = data;
+
   return {
     isAuthenticated: !!user && !error,
     isLoading,

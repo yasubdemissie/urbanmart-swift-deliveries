@@ -79,7 +79,11 @@ const Header = () => {
               {/* User account */}
               {isAuthenticated ? (
                 <div className="relative group">
-                  <Button variant="ghost" className="p-2">
+                  <Button
+                    variant="ghost"
+                    className="p-2"
+                    onClick={() => navigate("/profile")}
+                  >
                     <User className="h-6 w-6" />
                   </Button>
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
@@ -183,6 +187,11 @@ const Header = () => {
                 <Link to="/contact" className={getActiveClasses("/contact")}>
                   Contact
                 </Link>
+                {user?.role === "ADMIN" && (
+                  <Link to="/admin" className={getActiveClasses("/admin")}>
+                    Admin
+                  </Link>
+                )}
               </div>
             </div>
           </nav>

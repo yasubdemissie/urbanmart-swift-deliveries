@@ -20,7 +20,7 @@ import {
 const router = Router();
 
 // Get all products with pagination and filtering
-router.get("/", validatePagination, async (req, res) => {
+router.get("/", validatePagination, async (req: import("express").Request, res: import("express").Response) => {
   try {
     const {
       page = 1,
@@ -41,7 +41,14 @@ router.get("/", validatePagination, async (req, res) => {
     );
 
     // Build where clause
-    const where: any = {
+    const where: {
+      isActive: boolean;
+      category?: { slug: string };
+      OR?: Array<{ name?: { contains: string; mode: "insensitive" }; description?: { contains: string; mode: "insensitive" }; brand?: { contains: string; mode: "insensitive" } }>;
+      price?: { gte?: number; lte?: number };
+      isFeatured?: boolean;
+      isOnSale?: boolean;
+    } = {
       isActive: true,
     };
 
@@ -139,6 +146,60 @@ router.get("/", validatePagination, async (req, res) => {
   } catch (error) {
     console.error("Get products error:", error);
     return formatError(res, "Failed to fetch products", 500);
+  }
+});
+
+
+// Get featured products (for frontend compatibility)
+router.get("/featured", async (req, res) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        isFeatured: true,
+        isActive: true,
+      },
+      include: {
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        reviews: {
+          select: {
+            rating: true,
+          },
+        },
+        _count: {
+          select: {
+            reviews: true,
+          },
+        },
+      },
+      take: 8,
+    });
+
+    const productsWithRating = products.map((product) => {
+      const avgRating =
+        product.reviews.length > 0
+          ? product.reviews.reduce((sum, review) => sum + review.rating, 0) /
+            product.reviews.length
+          : 0;
+
+      return {
+        ...product,
+        averageRating: Number(avgRating.toFixed(1)),
+        reviewCount: product._count.reviews,
+        reviews: undefined,
+        _count: undefined,
+      };
+    });
+
+    return formatResponse(res, { products: productsWithRating });
+  } catch (error) {
+    console.error("Get featured products error:", error);
+    return formatError(res, "Failed to fetch featured products", 500);
   }
 });
 

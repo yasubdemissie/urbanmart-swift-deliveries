@@ -48,14 +48,17 @@ export const useProducts = (filters?: {
 }) => {
   return useQuery({
     queryKey: productKeys.list(filters),
-    queryFn: () => apiClient.getProducts(filters).then((res) => {
-      console.log("Products from apiClient.getProducts:", res);
-      if (res.success) {
-        return res.data;
-      }
-      return [];
-      return res;
-    }),
+    queryFn: () =>
+      apiClient.getProducts(filters).then((res) => {
+        // console.log("Products from apiClient.getProducts:", res);
+        if (res.success) {
+          return res.data;
+        }
+        return {
+          products: [],
+          pagination: { page: 1, total: 0, totalPages: 1, limit: 12 },
+        };
+      }),
     staleTime: 0 * 60 * 1000, // 5 minutes
   });
 };
@@ -65,17 +68,20 @@ export const useCategories = () => {
   return useQuery({
     queryKey: categoryKeys.list(),
     queryFn: () =>
-      apiClient.getCategories().then((res) => {
-        console.log("Categories from apiClient.getCategories:", res);
-        if (res.success) {
-          return res.data.categories;
-        }
-        return [];
-      }).catch((error) => {
-        console.error("Error fetching categories:", error);
-        return [];
-      }),
-    staleTime: 0, // 10 minutes
+      apiClient
+        .getCategories()
+        .then((res) => {
+          console.log("Categories from apiClient.getCategories:", res);
+          if (res.success) {
+            return res.data.categories;
+          }
+          return [];
+        })
+        .catch((error) => {
+          console.error("Error fetching categories:", error);
+          return [];
+        }),
+    staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
 
@@ -93,8 +99,15 @@ export const useProduct = (id: string) => {
 export const useFeaturedProducts = () => {
   return useQuery({
     queryKey: productKeys.featured(),
-    queryFn: () => apiClient.getFeaturedProducts(),
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    queryFn: () =>
+      apiClient.getFeaturedProducts().then((res) => {
+        if (res.success) {
+          console.log("Featured products from useQuery:", res.data.products);
+          return res.data.products;
+        }
+        return [];
+      }),
+    staleTime: 0 * 60 * 1000, // 10 minutes
   });
 };
 
@@ -112,8 +125,7 @@ export const useCreateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (productData: Product) =>
-      apiClient.createProduct(productData),
+    mutationFn: (productData: Product) => apiClient.createProduct(productData),
     onSuccess: () => {
       // Invalidate product lists
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });

@@ -36,18 +36,12 @@ const Shop = () => {
     sortOrder: sortBy === "price-high" ? "desc" : "asc",
   });
 
-  const pagination = productsData ? {
-    total: productsData.total,
-    totalPages: productsData.totalPages,
-    currentPage: productsData.page,
-  } : null;
+  const { pagination, products } = productsData || {};
 
-  // const pagination = productsData?.pagination;
   const {data: categoriesData, isLoading: categoriesLoading } = useCategories();
   const addToCartMutation = useAddToCart();
   console.log("productsData", productsData);
 
-  const products = productsData?.products || [];
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
   // Handle add to cart
