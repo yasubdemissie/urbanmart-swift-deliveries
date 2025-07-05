@@ -13,6 +13,7 @@ import TrackOrder from "./pages/TrackOrder";
 import Contact from "./pages/Contact";
 import SignIn from "./pages/SignIn";
 import Admin from "./pages/Admin";
+import ProductDetail from "./pages/ProductDetail";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import { CartProvider } from "./context/cartContext";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/product/:id" element={<ProductDetail />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Plus,
   Edit,
@@ -9,6 +10,7 @@ import {
   Search,
   Download,
   Package,
+  MoreVertical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +34,13 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import ProductForm from "./ProductForm";
 import { useCreateProduct, useUpdateProduct } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
@@ -78,6 +87,7 @@ const ProductsTab = ({
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleAddProduct = (formData: {
     name: string;
@@ -262,6 +272,10 @@ const ProductsTab = ({
     }
   };
 
+  const handleViewProduct = (productId: string) => {
+    navigate(`/product/${productId}`);
+  };
+
   const LoadingSkeleton = () => (
     <TableRow>
       <TableCell>
@@ -437,35 +451,48 @@ const ProductsTab = ({
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleEditProduct(product)}
-                            disabled={updateProductMutation.isPending}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() =>
-                              handleDeleteProductConfirm(product.id)
-                            }
-                            disabled={deleteProductMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                              onClick={() => handleViewProduct(product.id)}
+                              className="flex items-center gap-3 cursor-pointer"
+                            >
+                              <Eye className="h-4 w-4 text-blue-600" />
+                              <span>View Product</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => handleEditProduct(product)}
+                              disabled={updateProductMutation.isPending}
+                              className="flex items-center gap-3 cursor-pointer"
+                            >
+                              <Edit className="h-4 w-4 text-green-600" />
+                              <span>Edit Product</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleDeleteProductConfirm(product.id)
+                              }
+                              disabled={deleteProductMutation.isPending}
+                              className="flex items-center gap-3 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span>Delete Product</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))

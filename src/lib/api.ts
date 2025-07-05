@@ -58,6 +58,10 @@ export interface Product {
   mainImage?: string;
   createdAt: string;
   updatedAt: string;
+  // Review-related properties from backend
+  reviews?: Review[];
+  averageRating?: number;
+  reviewCount?: number;
 }
 
 export interface CartItem {
@@ -255,7 +259,10 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/products/${id}`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<Product>(response);
+    const result = await handleResponse<ApiResponse<{ product: Product }>>(
+      response
+    );
+    return result.data.product;
   },
 
   async getFeaturedProducts(): Promise<ProductResponse> {

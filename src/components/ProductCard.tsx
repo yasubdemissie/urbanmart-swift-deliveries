@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ShoppingCart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,6 +13,7 @@ interface ProductCardProps {
 const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -26,6 +28,10 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCardClick = () => {
+    navigate(`/product/${product.id}`);
   };
 
   const discount = product.originalPrice
@@ -45,6 +51,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
       className="group cursor-pointer transition-all duration-300 hover:shadow-lg border-0 shadow-sm"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleCardClick}
     >
       <div className="relative overflow-hidden bg-gray-100 rounded-t-lg">
         {(discount > 0 || product.onSale) && (
