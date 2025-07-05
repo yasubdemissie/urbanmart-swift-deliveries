@@ -34,17 +34,28 @@ export interface Pagination {
 export interface Product {
   id: string;
   name: string;
+  slug: string;
   description: string;
+  shortDescription?: string;
   price: number;
   originalPrice?: number;
-  images: string[];
+  costPrice?: number;
+  sku?: string;
+  barcode?: string;
+  weight?: number;
+  dimensions?: string;
+  stockQuantity: number;
+  minStockLevel: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  isOnSale: boolean;
+  salePercentage?: number;
   categoryId: string;
   category?: Category;
-  stock: number;
-  featured: boolean;
-  onSale: boolean;
-  rating?: number;
-  reviewCount?: number;
+  brand?: string;
+  tags: string[];
+  images: string[];
+  mainImage?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -158,9 +169,19 @@ type ProductResponse = ApiResponse<{
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(
-      errorData.message || `HTTP error! status: ${response.status}`
-    );
+    console.error("API Error Response:", {
+      status: response.status,
+      statusText: response.statusText,
+      errorData,
+    });
+    const errorMessage =
+      errorData.error ||
+      errorData.message ||
+      `HTTP error! status: ${response.status}`;
+    const details = errorData.details
+      ? `\nDetails: ${JSON.stringify(errorData.details, null, 2)}`
+      : "";
+    throw new Error(`${errorMessage}${details}`);
   }
   return response.json();
 }
@@ -241,10 +262,6 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/products/featured`, {
       headers: getAuthHeaders(),
     });
-    console.log(
-      "Featured products from apiClient.getFeaturedProducts:",
-      response
-    );
     return handleResponse<ProductResponse>(response);
   },
 
@@ -504,7 +521,6 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/admin/products?${params}`, {
       headers: getAuthHeaders(),
     });
-    console.log("AdminProducts from the api ", response);
     return handleResponse<AdminProductResponse>(response);
   },
 
@@ -534,7 +550,6 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
       headers: getAuthHeaders(),
     });
-    console.log("Get Admin order api ", response);
     return handleResponse(response);
   },
 
@@ -562,7 +577,6 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/admin/customers?${params}`, {
       headers: getAuthHeaders(),
     });
-    console.log("Admin customers api ", response);
     return handleResponse(response);
   },
 

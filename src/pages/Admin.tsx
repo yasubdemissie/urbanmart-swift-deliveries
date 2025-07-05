@@ -14,7 +14,7 @@ import {
   useAdminCustomers,
   // useCreateProduct,
   // useUpdateProduct,
-  // useDeleteProduct,
+  useDeleteProduct,
   // useExportProducts,
   useUpdateOrderStatus,
   useExportOrders,
@@ -55,11 +55,10 @@ const Admin = () => {
       search: searchQuery || undefined,
     });
 
-  console.log("Admin customer data on Page ", customersData);
   // Mutations
   // const createProductMutation = useCreateProduct();
   // const updateProductMutation = useUpdateProduct();
-  // const deleteProductMutation = useDeleteProduct();
+  const deleteProductMutation = useDeleteProduct();
   // const exportProductsMutation = useExportProducts();
 
   const updateOrderStatusMutation = useUpdateOrderStatus();
@@ -91,8 +90,23 @@ const Admin = () => {
     try {
       await updateOrderStatusMutation.mutateAsync({ id: orderId, status });
       toast.success("Order status updated successfully");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update order status");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to update order status";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteProductMutation.mutateAsync(productId);
+      toast.success("Product deleted successfully");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete product";
+      toast.error(errorMessage);
     }
   };
 
@@ -125,8 +139,10 @@ const Admin = () => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       toast.success(`${type} exported successfully`);
-    } catch (error: any) {
-      toast.error(error.message || `Failed to export ${type}`);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : `Failed to export ${type}`;
+      toast.error(errorMessage);
     }
   };
 
@@ -172,10 +188,10 @@ const Admin = () => {
               categories={categories}
               productsData={productsData}
               productsLoading={productsLoading}
-              handleDeleteProduct={() => {}} // TODO: Implement delete product
+              handleDeleteProduct={handleDeleteProduct}
               handleExport={handleExport}
               exportProductsMutation={{ isPending: false }} // TODO: Implement export products
-              deleteProductMutation={{ isPending: false }} // TODO: Implement delete product
+              deleteProductMutation={deleteProductMutation}
             />
           </TabsContent>
 

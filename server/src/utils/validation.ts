@@ -73,7 +73,7 @@ export const validateCreateProduct = [
   body("stockQuantity")
     .isInt({ min: 0 })
     .withMessage("Stock quantity must be a non-negative integer"),
-  body("categoryId").isUUID().withMessage("Valid category ID is required"),
+  body("categoryId").isString().withMessage("Valid category ID is required"),
   body("brand")
     .optional()
     .trim()
@@ -83,7 +83,7 @@ export const validateCreateProduct = [
 ];
 
 export const validateUpdateProduct = [
-  param("id").isUUID().withMessage("Valid product ID is required"),
+  param("id").notEmpty().withMessage("Valid product ID is required"),
   body("name")
     .optional()
     .trim()
@@ -108,7 +108,7 @@ export const validateUpdateProduct = [
     .withMessage("Stock quantity must be a non-negative integer"),
   body("categoryId")
     .optional()
-    .isUUID()
+    .isString()
     .withMessage("Valid category ID is required"),
   handleValidationErrors,
 ];
@@ -129,13 +129,13 @@ export const validateCreateCategory = [
 
 // Cart validation
 export const validateAddToCart = [
-  body("productId").isUUID().withMessage("Valid product ID is required"),
+  body("productId").notEmpty().withMessage("Valid product ID is required"),
   body("quantity").isInt({ min: 1 }).withMessage("Quantity must be at least 1"),
   handleValidationErrors,
 ];
 
 export const validateUpdateCartItem = [
-  param("id").isUUID().withMessage("Valid cart item ID is required"),
+  param("id").notEmpty().withMessage("Valid cart item ID is required"),
   body("quantity").isInt({ min: 1 }).withMessage("Quantity must be at least 1"),
   handleValidationErrors,
 ];
@@ -143,10 +143,10 @@ export const validateUpdateCartItem = [
 // Order validation
 export const validateCreateOrder = [
   body("shippingAddressId")
-    .isUUID()
+    .notEmpty()
     .withMessage("Valid shipping address ID is required"),
   body("billingAddressId")
-    .isUUID()
+    .notEmpty()
     .withMessage("Valid billing address ID is required"),
   body("paymentMethod")
     .isIn([
@@ -167,7 +167,7 @@ export const validateCreateOrder = [
 
 // Review validation
 export const validateCreateReview = [
-  body("productId").isUUID().withMessage("Valid product ID is required"),
+  body("productId").notEmpty().withMessage("Valid product ID is required"),
   body("rating")
     .isInt({ min: 1, max: 5 })
     .withMessage("Rating must be between 1 and 5"),

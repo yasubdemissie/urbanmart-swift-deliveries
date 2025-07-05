@@ -37,7 +37,6 @@ export const useAdminProducts = (filters?: {
     queryKey: [...adminKeys.products(), filters],
     queryFn: () =>
       apiClient.getAdminProducts(filters).then((data) => {
-        console.log("getAdminProducts from the useQuery: ", data);
         if (data.success) {
           return data.data;
         }
@@ -64,7 +63,6 @@ export const useAdminOrders = (filters?: {
     queryKey: [...adminKeys.orders(), filters],
     queryFn: () =>
       apiClient.getAdminOrders(filters).then((data) => {
-        console.log("Admin orders data useQuery: ", data);
         if (data.success) {
           return data.data;
         }
@@ -89,7 +87,6 @@ export const useAdminCustomers = (filters?: {
     queryKey: [...adminKeys.customers(), filters],
     queryFn: () =>
       apiClient.getAdminCustomers(filters).then((data) => {
-        console.log("Admin customer data useQuery ", data);
         if (data.success) {
           return data.data;
         }

@@ -50,7 +50,6 @@ export const useProducts = (filters?: {
     queryKey: productKeys.list(filters),
     queryFn: () =>
       apiClient.getProducts(filters).then((res) => {
-        // console.log("Products from apiClient.getProducts:", res);
         if (res.success) {
           return res.data;
         }
@@ -76,7 +75,6 @@ export const useCategories = () => {
       apiClient
         .getCategories()
         .then((res) => {
-          console.log("Categories from apiClient.getCategories:", res);
           if (res.success) {
             return res.data.categories;
           }
@@ -107,7 +105,6 @@ export const useFeaturedProducts = () => {
     queryFn: () =>
       apiClient.getFeaturedProducts().then((res) => {
         if (res.success) {
-          console.log("Featured products from useQuery:", res.data.products);
           return res.data.products;
         }
         return [];
@@ -125,15 +122,21 @@ export const useSaleProducts = () => {
   });
 };
 
-// Create product (Admin only)
+// Create product mutation
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (productData: Product) => apiClient.createProduct(productData),
+    mutationFn: (productData: Partial<Product>) => {
+      console.log("Product form data from the mutation fn ", productData);
+      return apiClient.createProduct(productData).then((data) => {
+        console.log(data);
+        return data;
+      });
+    },
     onSuccess: () => {
-      // Invalidate product lists
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      // Invalidate and refetch products
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
     },
   });
 };
@@ -143,7 +146,7 @@ export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Product }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<Product> }) =>
       apiClient.updateProduct(id, data),
     onSuccess: (updatedProduct) => {
       // Update product in cache

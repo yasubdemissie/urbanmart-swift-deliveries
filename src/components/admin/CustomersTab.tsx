@@ -1,7 +1,20 @@
-import { Edit, Eye, Download, Users } from "lucide-react";
+"use client";
+
+import { Edit, Eye, Download, Users, Mail, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { User } from "@/lib/api";
 
 interface CustomersTabProps {
   customersData: any;
@@ -16,91 +29,174 @@ const CustomersTab = ({
   handleExport,
   exportCustomersMutation,
 }: CustomersTabProps) => {
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case "ADMIN":
+        return "bg-purple-100 text-purple-800 hover:bg-purple-100";
+      case "USER":
+        return "bg-blue-100 text-blue-800 hover:bg-blue-100";
+      default:
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+    }
+  };
+
+  const getInitials = (firstName: string, lastName: string) => {
+    return `${firstName?.charAt(0) || ""}${
+      lastName?.charAt(0) || ""
+    }`.toUpperCase();
+  };
+
+  const LoadingSkeleton = () => (
+    <TableRow>
+      <TableCell>
+        <div className="flex items-center space-x-3">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-40" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </TableCell>
+      <TableCell>
+        <Skeleton className="h-4 w-24" />
+      </TableCell>
+      <TableCell>
+        <div className="flex space-x-2">
+          <Skeleton className="h-8 w-8" />
+          <Skeleton className="h-8 w-8" />
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Customer Management</CardTitle>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => handleExport("customers")}
-                disabled={exportCustomersMutation.isPending}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-            </div>
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <CardTitle className="text-xl font-semibold">
+              Customer Management
+            </CardTitle>
+            <Button
+              variant="outline"
+              onClick={() => handleExport("customers")}
+              disabled={exportCustomersMutation.isPending}
+              className="w-full sm:w-auto"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              {exportCustomersMutation.isPending ? "Exporting..." : "Export"}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {customersLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-600">Loading customers...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-3 px-4">Customer</th>
-                    <th className="text-left py-3 px-4">Email</th>
-                    <th className="text-left py-3 px-4">Role</th>
-                    <th className="text-left py-3 px-4">Joined</th>
-                    <th className="text-left py-3 px-4">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customersData?.customers?.map((customer: User) => (
-                    <tr key={customer.id} className="border-b hover:bg-gray-50">
-                      <td className="py-3 px-4">
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold">Customer</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Role</TableHead>
+                  <TableHead className="font-semibold">Joined</TableHead>
+                  <TableHead className="font-semibold text-right">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customersLoading ? (
+                  [...Array(5)].map((_, i) => <LoadingSkeleton key={i} />)
+                ) : customersData?.customers?.length > 0 ? (
+                  customersData.customers.map((customer: User) => (
+                    <TableRow key={customer.id} className="hover:bg-muted/50">
+                      <TableCell>
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                            <Users className="h-5 w-5 text-gray-600" />
-                          </div>
-                          <div>
-                            <p className="font-medium">
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage
+                              src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${customer.firstName} ${customer.lastName}`}
+                              alt={`${customer.firstName} ${customer.lastName}`}
+                            />
+                            <AvatarFallback className="bg-blue-100 text-blue-700">
+                              {getInitials(
+                                customer.firstName,
+                                customer.lastName
+                              )}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="space-y-1">
+                            <p className="font-medium leading-none">
                               {customer.firstName} {customer.lastName}
                             </p>
-                            <p className="text-sm text-gray-600">
-                              {customer.role}
+                            <p className="text-sm text-muted-foreground flex items-center">
+                              <Calendar className="h-3 w-3 mr-1" />
+                              Member since{" "}
+                              {new Date(customer.createdAt).getFullYear()}
                             </p>
                           </div>
                         </div>
-                      </td>
-                      <td className="py-3 px-4">{customer.email}</td>
-                      <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-1 rounded-full text-sm ${
-                            customer.role === "ADMIN"
-                              ? "bg-purple-100 text-purple-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Mail className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{customer.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={getRoleColor(customer.role)}
                         >
                           {customer.role}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {new Date(customer.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex space-x-2">
-                          <Button variant="ghost" size="sm">
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(customer.createdAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12">
+                      <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">
+                        No customers found
+                      </p>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

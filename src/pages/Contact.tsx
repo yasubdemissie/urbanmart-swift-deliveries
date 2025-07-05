@@ -23,7 +23,6 @@ const Contact = () => {
     // Simulate form submission
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    console.log('Contact form submitted:', formData);
     alert('Thank you for your message! We\'ll get back to you within 24 hours.');
     
     setFormData({ name: '', email: '', subject: '', message: '' });
