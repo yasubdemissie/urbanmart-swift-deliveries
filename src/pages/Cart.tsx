@@ -5,28 +5,21 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  useCart,
-  useUpdateCartItem,
-  useRemoveFromCart,
-  useClearCart,
-} from "@/hooks/useCart";
+import { useCart } from "@/context/cartContext";
 import { useIsAuthenticated } from "@/hooks/useAuth";
 
 const Cart = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useIsAuthenticated();
-  const { data, isLoading, error } = useCart();
-  const cartItems = data?.data?.cartItem || [];
-  const updateCartItemMutation = useUpdateCartItem();
-  const removeFromCartMutation = useRemoveFromCart();
-  const clearCartMutation = useClearCart();
+  const { state, dispatch } = useCart();
+  const cartItems = state.items;
 
   // Calculate summary from cart items
-  // (sum, item) => sum + Number(item.product.price) * item.quantity,
-  //     0
   const summary = {
-    subtotal: cartItems.reduce((sum, item) =>  sum + Number(item.product.price) * item.quantity , 0),
+    subtotal: cartItems.reduce(
+      (sum, item) => sum + Number(item.product.price) * item.quantity,
+      0
+    ),
     shipping:
       cartItems.length > 0
         ? cartItems.reduce(
@@ -45,32 +38,26 @@ const Cart = () => {
   };
   summary.total = summary.subtotal + summary.shipping + summary.tax;
 
-  const updateQuantity = async (id: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-
-    try {
-      await updateCartItemMutation.mutateAsync({ id, quantity: newQuantity });
-    } catch (error: any) {
-      toast.error(error.message || "Failed to update quantity");
-    }
-  };
-
-  const removeItem = async (id: string) => {
-    try {
-      await removeFromCartMutation.mutateAsync(id);
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      // Remove item if quantity is less than 1
+      dispatch({ type: "REMOVE_ITEM", productId });
       toast.success("Item removed from cart");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to remove item");
+      return;
     }
+
+    dispatch({ type: "UPDATE_QUANTITY", productId, quantity: newQuantity });
+    toast.success("Quantity updated");
   };
 
-  const clearCart = async () => {
-    try {
-      await clearCartMutation.mutateAsync();
-      toast.success("Cart cleared");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to clear cart");
-    }
+  const removeItem = (productId: string) => {
+    dispatch({ type: "REMOVE_ITEM", productId });
+    toast.success("Item removed from cart");
+  };
+
+  const clearCart = () => {
+    dispatch({ type: "CLEAR_CART" });
+    toast.success("Cart cleared");
   };
 
   // Redirect to login if not authenticated
@@ -93,51 +80,6 @@ const Cart = () => {
               className="bg-blue-600 hover:bg-blue-700"
             >
               Sign In
-            </Button>
-          </div>
-        </div>
-
-        <Footer />
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading your cart...</p>
-          </div>
-        </div>
-
-        <Footer />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center max-w-md mx-auto">
-            <ShoppingCart className="h-24 w-24 text-gray-300 mx-auto mb-6" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Error loading cart
-            </h1>
-            <p className="text-gray-600 mb-8">
-              There was an error loading your cart. Please try again.
-            </p>
-            <Button
-              onClick={() => window.location.reload()}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Retry
             </Button>
           </div>
         </div>
@@ -197,7 +139,7 @@ const Cart = () => {
                 <div className="space-y-6">
                   {cartItems.map((item) => (
                     <div
-                      key={item.id}
+                      key={item.product.id}
                       className="flex items-center space-x-4 py-4 border-b border-gray-200 last:border-b-0"
                     >
                       <div className="flex-shrink-0">
@@ -238,9 +180,8 @@ const Cart = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
+                              updateQuantity(item.product.id, item.quantity - 1)
                             }
-                            disabled={updateCartItemMutation.isPending}
                             className="p-2 h-8 w-8"
                           >
                             <Minus className="h-4 w-4" />
@@ -252,9 +193,8 @@ const Cart = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
+                              updateQuantity(item.product.id, item.quantity + 1)
                             }
-                            disabled={updateCartItemMutation.isPending}
                             className="p-2 h-8 w-8"
                           >
                             <Plus className="h-4 w-4" />
@@ -264,8 +204,7 @@ const Cart = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeItem(item.id)}
-                          disabled={removeFromCartMutation.isPending}
+                          onClick={() => removeItem(item.product.id)}
                           className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -289,11 +228,10 @@ const Cart = () => {
                   <Button
                     variant="outline"
                     onClick={clearCart}
-                    disabled={clearCartMutation.isPending}
                     className="text-red-600 border-red-200 hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
-                    {clearCartMutation.isPending ? "Clearing..." : "Clear Cart"}
+                    Clear Cart
                   </Button>
                 </div>
               </CardContent>
@@ -350,6 +288,7 @@ const Cart = () => {
                 <Button
                   className="w-full bg-blue-600 hover:bg-blue-700"
                   disabled={cartItems.length === 0}
+                  onClick={() => navigate("/checkout")}
                 >
                   Proceed to Checkout
                   <ArrowRight className="h-4 w-4 ml-2" />

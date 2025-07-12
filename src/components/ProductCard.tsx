@@ -4,6 +4,7 @@ import { ShoppingCart, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Product } from "@/lib/api";
+import { useCart } from "@/context/cartContext";
 
 interface ProductCardProps {
   product: Product;
@@ -14,12 +15,19 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { state: cartState, dispatch } = useCart();
+  const cartItem = cartState.items.find(
+    (item) => item.product.id === product.id
+  );
+  const cartQuantity = cartItem ? cartItem.quantity : 0;
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsLoading(true);
 
     try {
+      // Use global cart state directly
+      dispatch({ type: "ADD_ITEM", product, quantity: 1 });
       if (onAddToCart) {
         await onAddToCart();
       }
@@ -43,7 +51,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const imageUrl =
     product.images[0] || "https://via.placeholder.com/400x300?text=No+Image";
   const categoryName = product.category?.name || "Uncategorized";
-  const averageRating = product.rating || 0;
+  const averageRating = product.averageRating || 0;
   const reviewCount = product.reviewCount || 0;
 
   return (
@@ -54,12 +62,12 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
       onClick={handleCardClick}
     >
       <div className="relative overflow-hidden bg-gray-100 rounded-t-lg">
-        {(discount > 0 || product.onSale) && (
+        {(discount > 0 || product.isOnSale) && (
           <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
             -{discount}%
           </div>
         )}
-        {product.featured && (
+        {product.isFeatured && (
           <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
             Featured
           </div>
@@ -70,6 +78,12 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
         />
+        {/* Show badge if in cart */}
+        {cartQuantity > 0 && (
+          <div className="absolute bottom-3 right-3 bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
+            In Cart: {cartQuantity}
+          </div>
+        )}
         <div
           className={`absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center transition-opacity duration-300 ${
             isHovered ? "opacity-100" : "opacity-0"
@@ -81,7 +95,11 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
             className="bg-white text-gray-900 hover:bg-gray-100 shadow-lg transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />
-            {isLoading ? "Adding..." : "Add to Cart"}
+            {isLoading
+              ? "Adding..."
+              : cartQuantity > 0
+              ? "Add More"
+              : "Add to Cart"}
           </Button>
         </div>
       </div>
@@ -140,6 +158,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
             className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2"
           >
             <ShoppingCart className="h-4 w-4" />
+            {cartQuantity > 0 ? "Add More" : "Add to Cart"}
           </Button>
         </div>
 

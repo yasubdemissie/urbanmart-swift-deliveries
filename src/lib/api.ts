@@ -8,7 +8,10 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  phone?: string;
+  avatar?: string;
   role: "USER" | "ADMIN";
+  isActive?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -400,7 +403,10 @@ export const apiClient = {
 
   async createOrder(orderData: {
     items: { productId: string; quantity: number }[];
-    shippingAddress: Omit<Address, "id" | "userId" | "isDefault">;
+    shippingAddressId: string;
+    billingAddressId: string;
+    paymentMethod: string;
+    notes?: string;
   }): Promise<Order> {
     const response = await fetch(`${API_BASE_URL}/orders`, {
       method: "POST",
@@ -450,6 +456,7 @@ export const apiClient = {
 
   // User endpoints
   async updateProfile(userData: Partial<User>): Promise<User> {
+    console.log("user from the api: ", userData);
     const response = await fetch(`${API_BASE_URL}/users/profile`, {
       method: "PUT",
       headers: getAuthHeaders(),

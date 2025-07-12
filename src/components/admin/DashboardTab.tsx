@@ -1,24 +1,24 @@
-import { DollarSign, Package, Users, ShoppingCart } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { DollarSign, Package, Users, ShoppingCart } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardTabProps {
   stats:
     | {
-        totalSales: number
-        totalOrders: number
-        totalCustomers: number
-        totalProducts: number
+        totalSales: number;
+        totalOrders: number;
+        totalCustomers: number;
+        totalProducts: number;
         recentOrders: Array<{
-          id: string
-          total: number
-          status: string
-          customerName?: string
-        }>
+          id: string;
+          total: number;
+          status: string;
+          customerName?: string;
+        }>;
       }
-    | undefined
-  statsLoading: boolean
+    | undefined;
+  statsLoading: boolean;
 }
 
 const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
@@ -55,49 +55,60 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
       color: "text-orange-600",
       bgColor: "bg-orange-50",
     },
-  ]
+  ];
 
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "DELIVERED":
-        return "default"
+        return "default";
       case "SHIPPED":
-        return "secondary"
+        return "secondary";
       case "PROCESSING":
-        return "outline"
+        return "outline";
       default:
-        return "outline"
+        return "outline";
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "DELIVERED":
-        return "bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+        return "bg-emerald-100 text-emerald-800 hover:bg-emerald-100";
       case "SHIPPED":
-        return "bg-blue-100 text-blue-800 hover:bg-blue-100"
+        return "bg-blue-100 text-blue-800 hover:bg-blue-100";
       case "PROCESSING":
-        return "bg-amber-100 text-amber-800 hover:bg-amber-100"
+        return "bg-amber-100 text-amber-800 hover:bg-amber-100";
       default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100"
+        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
     }
-  }
+  };
 
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardStats.map((stat, index) => (
-          <Card key={index} className="border-0 shadow-sm hover:shadow-md transition-shadow">
+          <Card
+            key={index}
+            className="border-0 shadow-sm hover:shadow-md transition-shadow"
+          >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">{stat.title}</p>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </p>
                   <div className="space-y-1">
-                    <p className="text-3xl font-bold tracking-tight">
-                      {statsLoading ? <Skeleton className="h-8 w-20" /> : stat.value}
+                    {statsLoading ? (
+                      <Skeleton className="h-8 w-20" />
+                    ) : (
+                      <p className="text-3xl font-bold tracking-tight">
+                        {stat.value}
+                      </p>
+                    )}
+                    <p className="text-sm text-emerald-600 font-medium">
+                      {stat.change} from last month
                     </p>
-                    <p className="text-sm text-emerald-600 font-medium">{stat.change} from last month</p>
                   </div>
                 </div>
                 <div className={`${stat.bgColor} p-3 rounded-full`}>
@@ -118,7 +129,10 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
           {statsLoading ? (
             <div className="space-y-4">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-20" />
                     <Skeleton className="h-3 w-32" />
@@ -130,20 +144,31 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
                 </div>
               ))}
             </div>
-          ) : stats?.recentOrders?.length > 0 ? (
+          ) : +stats?.recentOrders?.length > 0 ? (
             <div className="space-y-3">
-              {stats.recentOrders.slice(0, 5).map((order: any) => (
+              {stats.recentOrders.slice(0, 5).map((order) => (
                 <div
                   key={order.id}
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="space-y-1">
                     <p className="font-semibold text-sm">#{order.id}</p>
-                    <p className="text-sm text-muted-foreground">{order.customerName || "Unknown Customer"}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.customerName || "Unknown Customer"}
+                    </p>
                   </div>
                   <div className="text-right space-y-2">
-                    <p className="font-semibold">${order.total.toFixed(2)}</p>
-                    <Badge variant={getStatusVariant(order.status)} className={getStatusColor(order.status)}>
+                    <p className="font-semibold">
+                      $
+                      {(() => {
+                        const total = Number(order.total);
+                        return isNaN(total) ? "0.00" : total.toFixed(2);
+                      })()}
+                    </p>
+                    <Badge
+                      variant={getStatusVariant(order.status)}
+                      className={getStatusColor(order.status)}
+                    >
                       {order.status}
                     </Badge>
                   </div>
@@ -159,7 +184,7 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default DashboardTab
+export default DashboardTab;
