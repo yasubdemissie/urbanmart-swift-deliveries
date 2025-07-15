@@ -1,3 +1,5 @@
+import { Pagination } from "@/components/ui/pagination";
+
 // API Client for UrbanMart Swift Deliveries
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || "http://localhost:5000/api";
@@ -81,7 +83,7 @@ export interface Order {
   id: string;
   userId: string;
   user?: User;
-  items: OrderItem[];
+  orderItems: OrderItem[];
   total: number;
   status: "PENDING" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
   shippingAddress: Address;
@@ -145,7 +147,7 @@ type AuthResponse = ApiResponse<{
   token: string;
 }>;
 
-type AdminStatResponse = ApiResponse<{
+export type AdminStatResponse = ApiResponse<{
   totalSales: number;
   totalOrders: number;
   totalCustomers: number;
@@ -171,6 +173,11 @@ type ProductResponse = ApiResponse<{
   products: Product[];
   pagination: Pagination;
 }>;
+
+export type OrdersWithPagination = {
+  orders: Order[];
+  pagination: Pagination;
+};
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -328,6 +335,30 @@ export const apiClient = {
     return handleResponse<Category>(response);
   },
 
+  // Wishlist
+  // Wishlist endpoints
+  async getWishlist(): Promise<Product[]> {
+    const response = await fetch(`${API_BASE_URL}/wishlist`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse<Product[]>(response);
+  },
+
+  async addToWishlist(productId: string): Promise<void> {
+    await fetch(`${API_BASE_URL}/wishlist`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ productId }),
+    });
+  },
+
+  async removeFromWishlist(productId: string): Promise<void> {
+    await fetch(`${API_BASE_URL}/wishlist/${productId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+  },
+
   // Cart endpoints
   async getCart(): Promise<CartItemResponse> {
     const response = await fetch(`${API_BASE_URL}/cart`, {
@@ -387,18 +418,19 @@ export const apiClient = {
   },
 
   // Order endpoints
-  async getOrders(): Promise<Order[]> {
+  async getOrders(): Promise<ApiResponse<OrdersWithPagination>> {
     const response = await fetch(`${API_BASE_URL}/orders`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<Order[]>(response);
+    console.log(response);
+    return handleResponse<ApiResponse<OrdersWithPagination>>(response);
   },
 
-  async getOrder(id: string): Promise<Order> {
+  async getOrder(id: string): Promise<ApiResponse<Order>> {
     const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<Order>(response);
+    return handleResponse<ApiResponse<Order>>(response);
   },
 
   async createOrder(orderData: {
@@ -418,7 +450,7 @@ export const apiClient = {
 
   async updateOrderStatus(id: string, status: Order["status"]): Promise<Order> {
     const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
-      method: "PUT",
+      method: "PATCH",
       headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     });
@@ -506,6 +538,14 @@ export const apiClient = {
         errorData.message || `HTTP error! status: ${response.status}`
       );
     }
+  },
+
+  async getCustomer(id: string): Promise<User> {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    console.log("user data ", response);
+    return handleResponse<User>(response);
   },
 
   // Admin endpoints

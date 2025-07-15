@@ -26,6 +26,7 @@ import {
   OrdersTab,
   CustomersTab,
 } from "@/components/admin";
+import { Order } from "@/lib/api";
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ const Admin = () => {
     );
   }
 
-  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+  const handleUpdateOrderStatus = async (orderId: string, status: Order["status"]) => {
     try {
       await updateOrderStatusMutation.mutateAsync({ id: orderId, status });
       toast.success("Order status updated successfully");

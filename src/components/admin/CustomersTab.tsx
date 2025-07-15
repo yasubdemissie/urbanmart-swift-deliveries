@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { User } from "@/lib/api";
+import { useNavigate } from "react-router-dom";
 
 interface CustomersTabProps {
   customersData: any;
@@ -29,6 +30,7 @@ const CustomersTab = ({
   handleExport,
   exportCustomersMutation,
 }: CustomersTabProps) => {
+  const navigate = useNavigate();
   const getRoleColor = (role: string) => {
     switch (role) {
       case "ADMIN":
@@ -170,6 +172,9 @@ const CustomersTab = ({
                             variant="ghost"
                             size="sm"
                             className="h-8 w-8 p-0"
+                            onClick={() =>
+                              navigate(`/admin/users/${customer.id}`)
+                            }
                           >
                             <Eye className="h-4 w-4" />
                           </Button>

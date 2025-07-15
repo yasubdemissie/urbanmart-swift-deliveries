@@ -52,6 +52,41 @@ router.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
         isActive: true,
         createdAt: true,
         updatedAt: true,
+        orders: {
+          select: {
+            id: true,
+            total: true,
+            status: true,
+            createdAt: true,
+            orderItems: {
+              select: {
+                id: true,
+                quantity: true,
+                price: true,
+                product: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        reviews: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            createdAt: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
     if (!user) return res.status(404).json({ error: "User not found" });

@@ -115,7 +115,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onClose }) => {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">
-                Order #{order.id.slice(-8)}
+                Order #{order?.id.slice(-8)}
               </h1>
               <p className="text-gray-600 mt-1">
                 Placed on {formatDate(order.createdAt)}
@@ -214,13 +214,13 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onClose }) => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
-                  Order Items ({order.items?.length || 0})
+                  Order Items ({order.orderItems?.length || 0})
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {order.items && order.items.length > 0 ? (
+                {order.orderItems && order.orderItems.length > 0 ? (
                   <div className="space-y-4">
-                    {order.items.map((item, index) => (
+                    {order.orderItems.map((item, index) => (
                       <div key={item.id}>
                         <div className="flex items-center gap-4">
                           <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
@@ -249,7 +249,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onClose }) => {
                             </p>
                           </div>
                         </div>
-                        {index < order.items.length - 1 && (
+                        {index < order.orderItems.length - 1 && (
                           <Separator className="mt-4" />
                         )}
                       </div>

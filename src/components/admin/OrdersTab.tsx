@@ -23,7 +23,7 @@ import {
 import { Eye, Edit, Download, List, Table as TableIcon } from "lucide-react";
 import type { Order } from "@/lib/api";
 import OrderCard from "../Order/OrderCard";
-import OrderDetails from "../Order/orderDetails";
+import OrderDetails from "../Order/OrderDetails";
 
 interface OrdersTabProps {
   ordersData:
@@ -35,7 +35,7 @@ interface OrdersTabProps {
       }
     | undefined;
   ordersLoading: boolean;
-  handleUpdateOrderStatus: (orderId: string, status: string) => void;
+  handleUpdateOrderStatus: (orderId: string, status: Order["status"]) => void;
   handleExport: (type: "orders" | "products" | "customers") => void;
   exportOrdersMutation: {
     isPending: boolean;
@@ -242,7 +242,7 @@ const OrdersTab = ({
                         <TableCell>
                           <Select
                             value={order.status}
-                            onValueChange={(value) =>
+                            onValueChange={(value: Order["status"]) =>
                               handleUpdateOrderStatus(order.id, value)
                             }
                           >

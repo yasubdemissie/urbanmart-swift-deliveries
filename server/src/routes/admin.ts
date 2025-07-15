@@ -61,7 +61,12 @@ router.get(
         totalOrders,
         totalCustomers,
         totalProducts,
-        recentOrders,
+        recentOrders: recentOrders.map((order) => ({
+          ...order,
+          customerName: order.user
+            ? `${order.user.firstName} ${order.user.lastName}`
+            : undefined,
+        })),
         topProducts: topProductsSorted,
       });
     } catch (error) {
@@ -120,7 +125,16 @@ router.get(
           where,
           skip,
           take: Number(limit),
-          include: { user: true, orderItems: true },
+          include: {
+            user: true,
+            shippingAddress: true,
+            billingAddress: true,
+            orderItems: {
+              include: {
+                product: true,
+              },
+            },
+          },
         }),
         prisma.order.count({ where }),
       ]);

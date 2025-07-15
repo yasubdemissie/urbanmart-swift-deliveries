@@ -117,7 +117,7 @@ router.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
       return formatError(res, "Order not found", 404);
     }
 
-    return formatResponse(res, { order });
+    return formatResponse(res, order);
   } catch (error) {
     console.error("Get order error:", error);
     return formatError(res, "Failed to fetch order", 500);

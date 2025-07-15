@@ -1,5 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiClient, Order, Product, User } from "@/lib/api";
+import {
+  AdminStatResponse,
+  apiClient,
+  Order,
+  OrderItem,
+  Product,
+  User,
+} from "@/lib/api";
 
 // Admin query keys
 export const adminKeys = {
@@ -19,7 +26,18 @@ export const useAdminStats = () => {
         if (data.success) {
           return data.data;
         }
-        return [];
+        return {} as {
+          totalSales: number;
+          totalOrders: number;
+          totalCustomers: number;
+          totalProducts: number;
+          recentOrders: Array<{
+            id: string;
+            total: number;
+            status: string;
+            customerName?: string;
+          }>;
+        };
       }),
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -101,6 +119,23 @@ export const useAdminCustomers = (filters?: {
   });
 };
 
+// Get a single order for admin
+export const useAdminOrder = (id?: string) => {
+  return useQuery({
+    queryKey: [...adminKeys.orders(), "detail", id],
+    queryFn: () => {
+      if (!id) throw new Error("No order ID provided");
+      return apiClient.getOrder(id).then((data) => {
+        if (data.success) {
+          console.log("order Item from the Admin query ", data);
+          return data.data;
+        } else return {} as Order;
+      });
+    },
+    enabled: !!id,
+  });
+};
+
 // Create product mutation
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
@@ -153,7 +188,7 @@ export const useUpdateOrderStatus = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
+    mutationFn: ({ id, status }: { id: string; status: Order["status"] }) =>
       apiClient.updateOrderStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.orders() });

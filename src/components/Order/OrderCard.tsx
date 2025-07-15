@@ -52,6 +52,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     return isNaN(numTotal) ? "0.00" : numTotal.toFixed(2);
   };
 
+  console.log("orders in the Component: ", order);
   return (
     <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group">
       <CardHeader className="pb-3">
@@ -110,16 +111,16 @@ const OrderCard: React.FC<OrderCardProps> = ({
         )}
 
         {/* Order Items */}
-        {order.items && order.items.length > 0 ? (
+        {order.orderItems && order.orderItems.length > 0 ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Package className="w-4 h-4" />
               <span>
-                {order.items.length} item{order.items.length > 1 ? "s" : ""}
+                {order.orderItems.length} item{order.orderItems.length > 1 ? "s" : ""}
               </span>
             </div>
             <div className="space-y-1">
-              {order.items.slice(0, 2).map((item) => (
+              {order.orderItems.slice(0, 2).map((item) => (
                 <div key={item.id} className="flex justify-between text-sm">
                   <span className="truncate">
                     {item.product?.name || "Unknown Product"}
@@ -129,10 +130,10 @@ const OrderCard: React.FC<OrderCardProps> = ({
                   </span>
                 </div>
               ))}
-              {order.items.length > 2 && (
+              {order.orderItems.length > 2 && (
                 <p className="text-xs text-muted-foreground">
-                  +{order.items.length - 2} more item
-                  {order.items.length - 2 > 1 ? "s" : ""}
+                  +{order.orderItems.length - 2} more item
+                  {order.orderItems.length - 2 > 1 ? "s" : ""}
                 </p>
               )}
             </div>

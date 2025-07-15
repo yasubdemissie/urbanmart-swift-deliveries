@@ -2,6 +2,7 @@ import { DollarSign, Package, Users, ShoppingCart } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardTabProps {
   stats:
@@ -22,6 +23,7 @@ interface DashboardTabProps {
 }
 
 const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
+  const navigate = useNavigate();
   const dashboardStats = [
     {
       title: "Total Sales",
@@ -30,6 +32,7 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
       icon: DollarSign,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
+      onClick: undefined,
     },
     {
       title: "Products",
@@ -38,6 +41,7 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
       icon: Package,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
+      onClick: undefined,
     },
     {
       title: "Customers",
@@ -46,6 +50,7 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
       icon: Users,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
+      onClick: undefined,
     },
     {
       title: "Orders",
@@ -54,6 +59,7 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
       icon: ShoppingCart,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
+      onClick: () => navigate("/admin?tab=orders"),
     },
   ];
 
@@ -90,7 +96,10 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
         {dashboardStats.map((stat, index) => (
           <Card
             key={index}
-            className="border-0 shadow-sm hover:shadow-md transition-shadow"
+            className={`border-0 shadow-sm hover:shadow-md transition-shadow ${
+              stat.onClick ? "cursor-pointer" : ""
+            }`}
+            onClick={stat.onClick}
           >
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -149,7 +158,8 @@ const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
               {stats.recentOrders.slice(0, 5).map((order) => (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/admin/orders/${order.id}`)}
                 >
                   <div className="space-y-1">
                     <p className="font-semibold text-sm">#{order.id}</p>
