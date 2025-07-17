@@ -31,6 +31,7 @@ import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import { useIsAuthenticated } from "@/hooks/useAuth";
+import { useCart } from "@/context/cartContext";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,43 +47,75 @@ const ProductDetail = () => {
   const { data: product, isLoading, error } = useProduct(id || "");
   const addToCartMutation = useAddToCart();
 
+  // const [isLoading, setIsLoading] = useState(false);
+  const { state: cartState, dispatch } = useCart();
+  const cartItem = cartState.items.find(
+    (item) => item.product.id === product.id
+  );
+  const cartQuantity = cartItem ? cartItem.quantity : 0;
+
+  const handleAddToCart = async (product) => {
+    // Optimistically update UI
+    dispatch({ type: "ADD_ITEM", product, quantity: 1 });
+
+    try {
+      await addToCartMutation.mutateAsync({
+        productId: product.id,
+        quantity: 1,
+      });
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to add items to your cart",
+        variant: "destructive",
+      });
+    } catch (error) {
+      // Rollback UI
+      dispatch({ type: "REMOVE_ITEM", productId: product.id });
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add to cart",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (product && product.images && product.images.length > 0) {
       setSelectedImage(product.mainImage || product.images[0]);
     }
   }, [product]);
 
-  const handleAddToCart = () => {
-    if (!isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to add items to your cart",
-        variant: "destructive",
-      });
-      return;
-    }
+  // const handleAddToCart = () => {
+  //   if (!isAuthenticated) {
+  //     toast({
+  //       title: "Authentication Required",
+  //       description: "Please sign in to add items to your cart",
+  //       variant: "destructive",
+  //     });
+  //     return;
+  //   }
 
-    if (!product) return;
+  //   if (!product) return;
 
-    addToCartMutation.mutate(
-      { productId: product.id, quantity },
-      {
-        onSuccess: () => {
-          toast({
-            title: "Added to Cart! 🎉",
-            description: `${product.name} has been added to your cart`,
-          });
-        },
-        onError: (error) => {
-          toast({
-            title: "Error",
-            description: error.message || "Failed to add to cart",
-            variant: "destructive",
-          });
-        },
-      }
-    );
-  };
+  //   addToCartMutation.mutate(
+  //     { productId: product.id, quantity },
+  //     {
+  //       onSuccess: () => {
+  //         toast({
+  //           title: "Added to Cart! 🎉",
+  //           description: `${product.name} has been added to your cart`,
+  //         });
+  //       },
+  //       onError: (error) => {
+  //         toast({
+  //           title: "Error",
+  //           description: error.message || "Failed to add to cart",
+  //           variant: "destructive",
+  //         });
+  //       },
+  //     }
+  //   );
+  // };
 
   const handleImageClick = (image: string) => {
     setSelectedImage(image);
@@ -422,7 +455,7 @@ const ProductDetail = () => {
                   <ShoppingBag className="h-5 w-5 mr-2" />
                   {addToCartMutation.isPending ? "Adding..." : "Add to Cart"}
                 </Button>
-                <Button
+                {/* <Button
                   variant="outline"
                   size="lg"
                   className={`h-14 w-14 border-2 transition-all duration-300 ${
@@ -435,14 +468,14 @@ const ProductDetail = () => {
                   <Heart
                     className={`h-5 w-5 ${isWishlisted ? "fill-current" : ""}`}
                   />
-                </Button>
-                <Button
+                </Button> */}
+                {/* <Button
                   variant="outline"
                   size="lg"
                   className="h-14 w-14 border-2 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-all duration-300 bg-transparent"
                 >
                   <Share2 className="h-5 w-5" />
-                </Button>
+                </Button> */}
               </div>
             </div>
 
@@ -497,7 +530,7 @@ const ProductDetail = () => {
                 {[
                   { id: "description", label: "Description", icon: "📝" },
                   { id: "specifications", label: "Specifications", icon: "⚙️" },
-                  { id: "reviews", label: "Reviews", icon: "⭐" },
+                  // { id: "reviews", label: "Reviews", icon: "⭐" },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -698,7 +731,7 @@ const ProductDetail = () => {
               )}
 
               {/* Reviews Tab */}
-              {activeTab === "reviews" && (
+              {/* {activeTab === "reviews" && (
                 <div className="space-y-8 animate-in fade-in duration-500">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full flex items-center justify-center">
@@ -711,7 +744,7 @@ const ProductDetail = () => {
 
                   {product.reviews && product.reviews.length > 0 ? (
                     <>
-                      {/* Rating Overview */}
+                      Rating Overview
                       <div className="grid md:grid-cols-3 gap-6 mb-8">
                         <div className="bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-2xl border border-yellow-200 text-center">
                           <div className="text-4xl font-bold text-gray-900 mb-2">
@@ -764,7 +797,7 @@ const ProductDetail = () => {
                         </div>
                       </div>
 
-                      {/* Individual Reviews */}
+                      Individual Reviews
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold text-gray-900">
@@ -875,7 +908,7 @@ const ProductDetail = () => {
                     </div>
                   )}
                 </div>
-              )}
+              )} */}
             </div>
           </div>
         </div>

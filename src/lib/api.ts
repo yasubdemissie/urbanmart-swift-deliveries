@@ -337,27 +337,27 @@ export const apiClient = {
 
   // Wishlist
   // Wishlist endpoints
-  async getWishlist(): Promise<Product[]> {
-    const response = await fetch(`${API_BASE_URL}/wishlist`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<Product[]>(response);
-  },
+  // async getWishlist(): Promise<Product[]> {
+  //   const response = await fetch(`${API_BASE_URL}/wishlist`, {
+  //     headers: getAuthHeaders(),
+  //   });
+  //   return handleResponse<Product[]>(response);
+  // },
 
-  async addToWishlist(productId: string): Promise<void> {
-    await fetch(`${API_BASE_URL}/wishlist`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ productId }),
-    });
-  },
+  // async addToWishlist(productId: string): Promise<void> {
+  //   await fetch(`${API_BASE_URL}/wishlist`, {
+  //     method: "POST",
+  //     headers: getAuthHeaders(),
+  //     body: JSON.stringify({ productId }),
+  //   });
+  // },
 
-  async removeFromWishlist(productId: string): Promise<void> {
-    await fetch(`${API_BASE_URL}/wishlist/${productId}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
-  },
+  // async removeFromWishlist(productId: string): Promise<void> {
+  //   await fetch(`${API_BASE_URL}/wishlist/${productId}`, {
+  //     method: "DELETE",
+  //     headers: getAuthHeaders(),
+  //   });
+  // },
 
   // Cart endpoints
   async getCart(): Promise<CartItemResponse> {

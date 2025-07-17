@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Response, Request } from "express";
 import prisma from "../lib/prisma";
 import {
   authenticateToken,
@@ -20,7 +20,7 @@ import {
 const router = Router();
 
 // Get all products with pagination and filtering
-router.get("/", validatePagination, async (req: import("express").Request, res: import("express").Response) => {
+router.get("/", validatePagination, async (req: Request, res: Response) => {
   try {
     const {
       page = 1,
@@ -44,7 +44,11 @@ router.get("/", validatePagination, async (req: import("express").Request, res: 
     const where: {
       isActive: boolean;
       category?: { slug: string };
-      OR?: Array<{ name?: { contains: string; mode: "insensitive" }; description?: { contains: string; mode: "insensitive" }; brand?: { contains: string; mode: "insensitive" } }>;
+      OR?: Array<{
+        name?: { contains: string; mode: "insensitive" };
+        description?: { contains: string; mode: "insensitive" };
+        brand?: { contains: string; mode: "insensitive" };
+      }>;
       price?: { gte?: number; lte?: number };
       isFeatured?: boolean;
       isOnSale?: boolean;
@@ -81,7 +85,7 @@ router.get("/", validatePagination, async (req: import("express").Request, res: 
     }
 
     // Build order by
-    const orderBy: any = {};
+    const orderBy: Record<string, unknown> = {};
     orderBy[sortBy as string] = sortOrder;
 
     const [products, total] = await Promise.all([
@@ -149,9 +153,8 @@ router.get("/", validatePagination, async (req: import("express").Request, res: 
   }
 });
 
-
 // Get featured products (for frontend compatibility)
-router.get("/featured", async (req, res) => {
+router.get("/featured", async (req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {
@@ -204,7 +207,7 @@ router.get("/featured", async (req, res) => {
 });
 
 // Get single product by ID or slug
-router.get("/:identifier", async (req, res) => {
+router.get("/:identifier", async (req: Request, res: Response) => {
   try {
     const { identifier } = req.params;
 
@@ -275,7 +278,7 @@ router.post(
   authenticateToken,
   requireAdmin,
   validateCreateProduct,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const {
         name,
@@ -356,7 +359,7 @@ router.put(
   authenticateToken,
   requireAdmin,
   validateUpdateProduct,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
       const updateData = req.body;
@@ -393,7 +396,7 @@ router.delete(
   "/:id",
   authenticateToken,
   requireAdmin,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
 
@@ -410,7 +413,7 @@ router.delete(
 );
 
 // Get featured products
-router.get("/featured/list", async (req, res) => {
+router.get("/featured/list", async (req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {
@@ -463,7 +466,7 @@ router.get("/featured/list", async (req, res) => {
 });
 
 // Get products on sale
-router.get("/sale/list", async (req, res) => {
+router.get("/sale/list", async (req: Request, res: Response) => {
   try {
     const products = await prisma.product.findMany({
       where: {

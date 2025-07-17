@@ -13,7 +13,7 @@ export const handleValidationErrors = (
       details: errors.array(),
     });
   }
-  next();
+  return next();
 };
 
 // Auth validation
@@ -48,7 +48,7 @@ export const validateRegister = [
     .withMessage("Last name must be at least 2 characters"),
   body("phone")
     .optional()
-    .isMobilePhone()
+    .isMobilePhone("any")
     .withMessage("Valid phone number is required"),
   handleValidationErrors,
 ];

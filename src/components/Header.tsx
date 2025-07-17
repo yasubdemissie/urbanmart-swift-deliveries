@@ -198,7 +198,7 @@ const Header = () => {
             }`}
           >
             {/* Wishlist - Desktop Only */}
-            <div className="hidden md:block">
+            {/* <div className="hidden md:block">
               <Link to="/wishlist">
                 <Button
                   variant="ghost"
@@ -223,10 +223,10 @@ const Header = () => {
                   </Badge>
                 </Button>
               </Link>
-            </div>
+            </div> */}
 
             {/* Notifications - Authenticated Users Only */}
-            {isAuthenticated && (
+            {/* {isAuthenticated && (
               <div className="hidden md:block">
                 <Button
                   variant="ghost"
@@ -251,7 +251,7 @@ const Header = () => {
                   </Badge>
                 </Button>
               </div>
-            )}
+            )} */}
 
             {/* Shopping Cart */}
             <Link to="/cart">
@@ -459,7 +459,7 @@ const Header = () => {
                 >
                   {item.icon && <item.icon className="h-4 w-4" />}
                   <span>{item.label}</span>
-                  {item.badge && (
+                  {item?.badge && (
                     <Badge className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs px-2 py-0.5">
                       {item.badge}
                     </Badge>

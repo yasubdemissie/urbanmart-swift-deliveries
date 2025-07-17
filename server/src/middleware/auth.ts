@@ -10,6 +10,8 @@ export interface AuthRequest extends Request {
   };
 }
 
+type JwtPayload = { userId: string; email: string; role: string };
+
 export const authenticateToken = async (
   req: AuthRequest,
   res: Response,
@@ -23,7 +25,7 @@ export const authenticateToken = async (
       return res.status(401).json({ error: "Access token required" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
 
     // Check if user still exists and is active
     const user = await prisma.user.findUnique({
@@ -41,7 +43,7 @@ export const authenticateToken = async (
       role: user.role,
     };
 
-    next();
+    return next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
       return res.status(401).json({ error: "Invalid token" });
@@ -63,7 +65,7 @@ export const requireRole = (roles: string[]) => {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
 
-    next();
+    return next();
   };
 };
 

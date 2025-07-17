@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import {
   authenticateToken,
@@ -20,7 +20,7 @@ router.get(
   "/",
   authenticateToken,
   validatePagination,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { page = 1, limit = 10 } = req.query;
       const offset = (Number(page) - 1) * Number(limit);
@@ -76,60 +76,64 @@ router.get(
 );
 
 // Get single order
-router.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
-  try {
-    const { id } = req.params;
+router.get(
+  "/:id",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
 
-    const order = await prisma.order.findFirst({
-      where: {
-        id,
-        userId: req.user!.id,
-      },
-      include: {
-        orderItems: {
-          include: {
-            product: {
-              select: {
-                id: true,
-                name: true,
-                mainImage: true,
-                slug: true,
-                description: true,
+      const order = await prisma.order.findFirst({
+        where: {
+          id,
+          userId: req.user!.id,
+        },
+        include: {
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  mainImage: true,
+                  slug: true,
+                  description: true,
+                },
               },
             },
           },
-        },
-        shippingAddress: true,
-        billingAddress: true,
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
+          shippingAddress: true,
+          billingAddress: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              firstName: true,
+              lastName: true,
+              phone: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!order) {
-      return formatError(res, "Order not found", 404);
+      if (!order) {
+        return formatError(res, "Order not found", 404);
+      }
+
+      return formatResponse(res, order);
+    } catch (error) {
+      console.error("Get order error:", error);
+      return formatError(res, "Failed to fetch order", 500);
     }
-
-    return formatResponse(res, order);
-  } catch (error) {
-    console.error("Get order error:", error);
-    return formatError(res, "Failed to fetch order", 500);
   }
-});
+);
 
 // Create new order
 router.post(
   "/",
   authenticateToken,
   validateCreateOrder,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { shippingAddressId, billingAddressId, paymentMethod, notes } =
         req.body;
@@ -276,12 +280,12 @@ router.patch(
   "/:id/status",
   authenticateToken,
   requireAdmin,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
       const { status, trackingNumber } = req.body;
 
-      const updateData: any = { status };
+      const updateData: Record<string, unknown> = { status };
 
       if (status === "SHIPPED") {
         updateData.shippedAt = new Date();
@@ -341,12 +345,12 @@ router.get(
   authenticateToken,
   requireAdmin,
   validatePagination,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { page = 1, limit = 10, status } = req.query;
       const offset = (Number(page) - 1) * Number(limit);
 
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (status) {
         where.status = status;
       }

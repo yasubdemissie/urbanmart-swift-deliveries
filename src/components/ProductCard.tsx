@@ -27,7 +27,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
 
     try {
       // Use global cart state directly
-      dispatch({ type: "ADD_ITEM", product, quantity: 1 });
+      // dispatch({ type: "ADD_ITEM", product, quantity: 1 });
       if (onAddToCart) {
         await onAddToCart();
       }

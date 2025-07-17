@@ -1,21 +1,32 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { Response } from 'express';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { Response } from "express";
 
 export const hashPassword = async (password: string): Promise<string> => {
   const saltRounds = 12;
   return bcrypt.hash(password, saltRounds);
 };
 
-export const comparePassword = async (password: string, hashedPassword: string): Promise<boolean> => {
+export const comparePassword = async (
+  password: string,
+  hashedPassword: string
+): Promise<boolean> => {
   return bcrypt.compare(password, hashedPassword);
 };
 
-export const generateToken = (userId: string, email: string, role: string): string => {
+export const generateToken = (
+  userId: string,
+  email: string,
+  role: string
+): string => {
+  const options: jwt.SignOptions = {
+    expiresIn: (process.env.JWT_EXPIRES_IN ||
+      "7d") as unknown as jwt.SignOptions["expiresIn"],
+  };
   return jwt.sign(
     { userId, email, role },
-    process.env.JWT_SECRET!,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    String(process.env.JWT_SECRET),
+    options
   );
 };
 
@@ -25,8 +36,13 @@ export const generateOrderNumber = (): string => {
   return `ORD-${timestamp.slice(-6)}-${random}`;
 };
 
-export const calculateOrderTotals = (items: Array<{ price: number; quantity: number }>) => {
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+export const calculateOrderTotals = (
+  items: Array<{ price: number; quantity: number }>
+) => {
+  const subtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  );
   const tax = subtotal * 0.08; // 8% tax rate
   const shipping = subtotal > 50 ? 0 : 9.99; // Free shipping over $50
   const total = subtotal + tax + shipping;
@@ -35,22 +51,27 @@ export const calculateOrderTotals = (items: Array<{ price: number; quantity: num
     subtotal: Number(subtotal.toFixed(2)),
     tax: Number(tax.toFixed(2)),
     shipping: Number(shipping.toFixed(2)),
-    total: Number(total.toFixed(2))
+    total: Number(total.toFixed(2)),
   };
 };
 
-export const formatResponse = (res: Response, data: any, message = 'Success', statusCode = 200) => {
+export const formatResponse = <T>(
+  res: Response,
+  data: T,
+  message = "Success",
+  statusCode = 200
+) => {
   return res.status(statusCode).json({
     success: true,
     message,
-    data
+    data,
   });
 };
 
 export const formatError = (res: Response, error: string, statusCode = 400) => {
   return res.status(statusCode).json({
     success: false,
-    error
+    error,
   });
 };
 
@@ -62,9 +83,9 @@ export const paginateResults = (page: number = 1, limit: number = 10) => {
 export const createSlug = (text: string): string => {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Remove special characters
-    .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
-    .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+    .replace(/[^\w\s-]/g, "") // Remove special characters
+    .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with hyphens
+    .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
 };
 
 export const validateEmail = (email: string): boolean => {
@@ -73,5 +94,5 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const sanitizeInput = (input: string): string => {
-  return input.trim().replace(/[<>]/g, '');
-}; 
+  return input.trim().replace(/[<>]/g, "");
+};

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Response, Request } from "express";
 import prisma from "../lib/prisma";
 import { authenticateToken, AuthRequest } from "../middleware/auth";
 import { validateAddToCart, validateUpdateCartItem } from "../utils/validation";
@@ -91,7 +91,7 @@ router.post(
   "/",
   authenticateToken,
   validateAddToCart,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { productId, quantity } = req.body;
 
@@ -181,7 +181,7 @@ router.put(
   "/:id",
   authenticateToken,
   validateUpdateCartItem,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
       const { quantity } = req.body;
@@ -246,7 +246,7 @@ router.put(
 );
 
 // Remove item from cart
-router.delete("/:id", authenticateToken, async (req: AuthRequest, res) => {
+router.delete("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -274,7 +274,7 @@ router.delete("/:id", authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Clear cart
-router.delete("/", authenticateToken, async (req: AuthRequest, res) => {
+router.delete("/", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     await prisma.cartItem.deleteMany({
       where: { userId: req.user!.id },
@@ -288,7 +288,7 @@ router.delete("/", authenticateToken, async (req: AuthRequest, res) => {
 });
 
 // Get cart count
-router.get("/count", authenticateToken, async (req: AuthRequest, res) => {
+router.get("/count", authenticateToken, async (req: AuthRequest, res: Response) => {
   try {
     const count = await prisma.cartItem.count({
       where: { userId: req.user!.id },

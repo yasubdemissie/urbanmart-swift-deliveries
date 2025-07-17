@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Response, Request } from "express";
 import prisma from "../lib/prisma";
 import {
   authenticateToken,
@@ -10,7 +10,7 @@ import bcrypt from "bcryptjs";
 const router = Router();
 
 // Get all users (admin only)
-router.get("/", authenticateToken, requireAdmin, async (req, res) => {
+router.get("/", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       select: {
@@ -33,7 +33,7 @@ router.get("/", authenticateToken, requireAdmin, async (req, res) => {
 });
 
 // Get a user by ID (admin or self)
-router.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
+router.get("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   if (req.user?.id !== id && req.user?.role !== "ADMIN") {
     return res.status(403).json({ error: "Forbidden" });
@@ -90,14 +90,14 @@ router.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
       },
     });
     if (!user) return res.status(404).json({ error: "User not found" });
-    res.json(user);
+    return res.json(user);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch user" });
+    return res.status(500).json({ error: "Failed to fetch user" });
   }
 });
 
 // Create a user (public, for registration)
-router.post("/", async (req, res) => {
+router.post("/", async (req: Request, res: Response) => {
   const { email, password, firstName, lastName, phone } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: "Email and password required" });
@@ -107,7 +107,7 @@ router.post("/", async (req, res) => {
     const user = await prisma.user.create({
       data: { email, password: hashedPassword, firstName, lastName, phone },
     });
-    res.status(201).json({ id: user.id, email: user.email });
+    return res.status(201).json({ id: user.id, email: user.email });
   } catch (err: unknown) {
     if (
       typeof err === "object" &&
@@ -117,12 +117,12 @@ router.post("/", async (req, res) => {
     ) {
       return res.status(409).json({ error: "Email already exists" });
     }
-    res.status(500).json({ error: "Failed to create user" });
+    return res.status(500).json({ error: "Failed to create user" });
   }
 });
 
 // Update a user (admin or self)
-router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
+router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   if (req.user?.id !== id && req.user?.role !== "ADMIN") {
     return res.status(403).json({ error: "Forbidden" });
@@ -133,25 +133,29 @@ router.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
       where: { id: req.user!.id },
       data: { firstName, lastName, phone, avatar, isActive },
     });
-    res.json({ id: updatedUser.id, email: updatedUser.email });
+    return res.json({ id: updatedUser.id, email: updatedUser.email });
   } catch (err) {
-    res.status(500).json({ error: "Failed to update user" });
+    return res.status(500).json({ error: "Failed to update user" });
   }
 });
 
 // Delete a user (admin or self)
-router.delete("/:id", authenticateToken, async (req: AuthRequest, res) => {
-  const { id } = req.params;
-  if (req.user?.id !== id && req.user?.role !== "ADMIN") {
-    return res.status(403).json({ error: "Forbidden" });
+router.delete(
+  "/:id",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    if (req.user?.id !== id && req.user?.role !== "ADMIN") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    try {
+      await prisma.user.delete({ where: { id } });
+      return res.json({ message: "User deleted" });
+    } catch (err) {
+      return res.status(500).json({ error: "Failed to delete user" });
+    }
   }
-  try {
-    await prisma.user.delete({ where: { id } });
-    res.json({ message: "User deleted" });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to delete user" });
-  }
-});
+);
 
 // Address endpoints
 // Get user addresses
@@ -222,7 +226,7 @@ router.post("/addresses", authenticateToken, async (req: AuthRequest, res) => {
 router.put(
   "/addresses/:id",
   authenticateToken,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
       const {
@@ -275,10 +279,10 @@ router.put(
         },
       });
 
-      res.json(address);
+      return res.json(address);
     } catch (err) {
       console.error("Update address error:", err);
-      res.status(500).json({ error: "Failed to update address" });
+      return res.status(500).json({ error: "Failed to update address" });
     }
   }
 );
@@ -304,10 +308,10 @@ router.delete(
         where: { id },
       });
 
-      res.json({ message: "Address deleted successfully" });
+      return res.json({ message: "Address deleted successfully" });
     } catch (err) {
       console.error("Delete address error:", err);
-      res.status(500).json({ error: "Failed to delete address" });
+      return res.status(500).json({ error: "Failed to delete address" });
     }
   }
 );

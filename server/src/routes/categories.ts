@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import prisma from "../lib/prisma";
 import {
   authenticateToken,
@@ -11,7 +11,7 @@ import { formatResponse, formatError, createSlug } from "../utils/helpers";
 const router = Router();
 
 // Get all categories
-router.get("/", async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const categories = await prisma.category.findMany({
       where: { isActive: true },
@@ -41,7 +41,7 @@ router.get("/", async (req, res) => {
 });
 
 // Get single category by ID or slug
-router.get("/:identifier", async (req, res) => {
+router.get("/:identifier", async (req: Request, res: Response) => {
   try {
     const { identifier } = req.params;
 
@@ -117,7 +117,7 @@ router.post(
   authenticateToken,
   requireAdmin,
   validateCreateCategory,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { name, description, image, sortOrder } = req.body;
 
@@ -151,7 +151,7 @@ router.put(
   "/:id",
   authenticateToken,
   requireAdmin,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
       const updateData = req.body;

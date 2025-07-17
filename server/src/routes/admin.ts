@@ -84,7 +84,7 @@ router.get(
     try {
       const { page = 1, limit = 20, search, category, status } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (search) where.name = { contains: search, mode: "insensitive" };
       if (category) where.categoryId = category;
       if (status) where.status = status;
@@ -113,12 +113,18 @@ router.get(
     try {
       const { page = 1, limit = 20, status, dateFrom, dateTo } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
-      const where: any = {};
+      const where: Record<string, unknown> = {};
       if (status) where.status = status;
       if (dateFrom || dateTo) {
         where.createdAt = {};
-        if (dateFrom) where.createdAt.gte = new Date(dateFrom as string);
-        if (dateTo) where.createdAt.lte = new Date(dateTo as string);
+        if (dateFrom)
+          (where.createdAt as { gte?: Date; lte?: Date }).gte = new Date(
+            dateFrom as string
+          );
+        if (dateTo)
+          (where.createdAt as { gte?: Date; lte?: Date }).lte = new Date(
+            dateTo as string
+          );
       }
       const [orders, total] = await Promise.all([
         prisma.order.findMany({
@@ -179,7 +185,7 @@ router.get(
     try {
       const { page = 1, limit = 20, search } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
-      const where: any = { role: $Enums.UserRole.CUSTOMER };
+      const where: Record<string, unknown> = { role: $Enums.UserRole.CUSTOMER };
       if (search) {
         where.OR = [
           { firstName: { contains: search, mode: "insensitive" } },
