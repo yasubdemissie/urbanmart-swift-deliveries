@@ -221,6 +221,7 @@ const ProfilePage = () => {
                 </Button>
                 <input
                   ref={fileInputRef}
+                  placeholder="image"
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
