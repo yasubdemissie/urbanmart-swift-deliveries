@@ -50,7 +50,7 @@ const ProductDetail = () => {
   // const [isLoading, setIsLoading] = useState(false);
   const { state: cartState, dispatch } = useCart();
   const cartItem = cartState.items.find(
-    (item) => item.product.id === product.id
+    (item) => item.product?.id === product.id
   );
   const cartQuantity = cartItem ? cartItem.quantity : 0;
 
