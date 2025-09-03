@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Filter, X, Sparkles } from "lucide-react";
 
 interface Category {
@@ -31,14 +31,28 @@ const ElegantFilterCard = ({
   const [localSortBy, setLocalSortBy] = useState(sortBy);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
+  useEffect(() => {
+    setLocalSelectedCategory(selectedCategory);
+    setLocalSortBy(sortBy);
+  }, [selectedCategory, sortBy]);
+
+
   const handleCategoryChange = (value: string) => {
     setLocalSelectedCategory(value);
     onCategoryChange(value);
+    // Setting the Params the category value
+    const params = new URLSearchParams();
+    if (value) params.set("category", value);
+    window.history.replaceState({}, "", `?${params.toString()}`);
   };
 
   const handleSortChange = (value: string) => {
     setLocalSortBy(value);
     onSortChange(value);
+    // Setting the Params the sort value
+    const params = new URLSearchParams();
+    if (value) params.set("sort", value);
+    window.history.replaceState({}, "", `?${params.toString()}`);
   };
 
   const toggleFilters = () => {

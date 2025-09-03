@@ -12,12 +12,18 @@ import { useCart } from "@/context/cartContext";
 import { toast } from "sonner";
 import { useAddToCart } from "@/hooks/useCart";
 import ElegantFilterCard from "@/components/ElegantFilterSortCard";
+import { useSearchParams } from "react-router-dom";
 
 const Shop = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortBy, setSortBy] = useState("featured");
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams] = useSearchParams();
+
+  const initialCategory = searchParams.get("category") || "all";
+  const initialSort = searchParams.get("sort") || "";
+
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [sortBy, setSortBy] = useState(initialSort);
 
   // Fetch products and categories
   const {
@@ -29,8 +35,9 @@ const Shop = () => {
     limit: 12,
     category: selectedCategory !== "all" ? selectedCategory : undefined,
     search: searchQuery || undefined,
+    featured: sortBy == "featured",
     sortBy:
-      sortBy === "featured"
+      sortBy === ""
         ? "createdAt"
         : sortBy === "price-low"
         ? "price"
@@ -47,6 +54,12 @@ const Shop = () => {
   const { dispatch } = useCart();
   const addToCartMutation = useAddToCart();
 
+  // Keep state in sync if URL changes
+  // useEffect(() => {
+  //   setSelectedCategory(searchParams.get("category") || "all");
+  //   setSortBy(searchParams.get("sort") || "");
+  // }, [searchParams]);
+
   useEffect(() => {
     // Setting the search query, category, and sort parameter in the URL
     document.title = `Shop - ${searchQuery || "All Products"}`;
@@ -56,7 +69,7 @@ const Shop = () => {
       params.set("category", selectedCategory);
     if (sortBy) params.set("sort", sortBy);
     window.history.replaceState({}, "", `?${params.toString()}`);
-  }, [searchQuery, selectedCategory, sortBy]);
+  }, [searchQuery, selectedCategory, sortBy, searchParams]);
 
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
 

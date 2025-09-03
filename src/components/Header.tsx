@@ -8,6 +8,7 @@ import { Home, ShoppingCart, User, Search, X, Menu } from "lucide-react";
 import clsx from "clsx";
 import { useState, useRef, useEffect } from "react";
 import { useIsAuthenticated } from "@/hooks/useAuth";
+import { useCart } from "@/context/cartContext";
 
 const navigationItems = [
   { path: "/", label: "Home", icon: Home },
@@ -32,6 +33,9 @@ export default function Header() {
   const pathname = location.pathname;
 
   const { user } = useIsAuthenticated();
+
+  const { state } = useCart();
+  const cartItem = state?.items.length;
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -206,8 +210,12 @@ export default function Header() {
             className="relative p-2 rounded-full hover:bg-gray-100 transition"
           >
             <ShoppingCart className="w-5 h-5 text-gray-600" />
-            <span className="absolute -top-1 -right-1 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full">
-              3
+            <span
+              className={`absolute ${
+                cartItem > 0 ? "" : "hidden"
+              } -top-1 -right-1 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full`}
+            >
+              {cartItem}
             </span>
           </Link>
           {/* User */}
