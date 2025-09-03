@@ -47,6 +47,17 @@ const Shop = () => {
   const { dispatch } = useCart();
   const addToCartMutation = useAddToCart();
 
+  useEffect(() => {
+    // Setting the search query, category, and sort parameter in the URL
+    document.title = `Shop - ${searchQuery || "All Products"}`;
+    const params = new URLSearchParams();
+    if (searchQuery) params.set("search", searchQuery);
+    if (selectedCategory && selectedCategory !== "all")
+      params.set("category", selectedCategory);
+    if (sortBy) params.set("sort", sortBy);
+    window.history.replaceState({}, "", `?${params.toString()}`);
+  }, [searchQuery, selectedCategory, sortBy]);
+
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
   // Handle add to cart

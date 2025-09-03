@@ -87,7 +87,10 @@ const Admin = () => {
     );
   }
 
-  const handleUpdateOrderStatus = async (orderId: string, status: Order["status"]) => {
+  const handleUpdateOrderStatus = async (
+    orderId: string,
+    status: Order["status"]
+  ) => {
     try {
       await updateOrderStatusMutation.mutateAsync({ id: orderId, status });
       toast.success("Order status updated successfully");
@@ -153,14 +156,14 @@ const Admin = () => {
 
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
-        <div className="mb-8">
+        {/* <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Admin Dashboard
           </h1>
           <p className="text-gray-600">
             Manage your store, products, and customers
           </p>
-        </div>
+        </div> */}
 
         <Tabs
           value={activeTab}

@@ -7,6 +7,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Home, ShoppingCart, User, Search, X, Menu } from "lucide-react";
 import clsx from "clsx";
 import { useState, useRef, useEffect } from "react";
+import { useIsAuthenticated } from "@/hooks/useAuth";
 
 const navigationItems = [
   { path: "/", label: "Home", icon: Home },
@@ -15,6 +16,7 @@ const navigationItems = [
   { path: "/deals", label: "Deals", badge: "Hot" },
   { path: "/track", label: "Track Order" },
   { path: "/contact", label: "Contact" },
+  { path: "/admin", label: "Admin" },
 ];
 
 const popularSearches = [
@@ -28,6 +30,8 @@ const popularSearches = [
 export default function Header() {
   const location = useLocation();
   const pathname = location.pathname;
+
+  const { user } = useIsAuthenticated();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -76,24 +80,46 @@ export default function Header() {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-6">
-          {navigationItems.map(({ path, label, icon: Icon, badge }) => (
-            <Link
-              key={path}
-              to={path}
-              className={clsx(
-                "relative flex items-center gap-1 text-gray-700 hover:text-blue-600 transition",
-                pathname === path && "text-blue-600 font-semibold"
-              )}
-            >
-              {Icon && <Icon className="w-4 h-4" />}
-              <span>{label}</span>
-              {badge && (
-                <span className="absolute -top-2 -right-3 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full">
-                  {badge}
-                </span>
-              )}
-            </Link>
-          ))}
+          {navigationItems.map(({ path, label, icon: Icon, badge }) => {
+            if (path == "/admin" && user?.role == "ADMIN") {
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  className={clsx(
+                    "relative flex items-center gap-1 text-gray-700 hover:text-blue-600 transition",
+                    pathname === path && "text-blue-600 font-semibold"
+                  )}
+                >
+                  {Icon && <Icon className="w-4 h-4" />}
+                  <span>{label}</span>
+                  {badge && (
+                    <span className="absolute -top-2 -right-3 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full">
+                      {badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            }
+            return (
+              <Link
+                key={path}
+                to={path}
+                className={clsx(
+                  "relative flex items-center gap-1 text-gray-700 hover:text-blue-600 transition",
+                  pathname === path && "text-blue-600 font-semibold"
+                )}
+              >
+                {Icon && <Icon className="w-4 h-4" />}
+                <span>{label}</span>
+                {badge && (
+                  <span className="absolute -top-2 -right-3 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full">
+                    {badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Right Side */}

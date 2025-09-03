@@ -24,6 +24,10 @@ import { Badge } from "@/components/ui/badge";
 // import { Input } from "@/components/ui/input";
 // import ProductCard from "@/components/ProductCard";
 import Header from "@/components/Header";
+import { useCategories, useProducts } from "@/hooks/useProducts";
+import ProductCard from "@/components/ProductCard";
+import { useNavigate } from "react-router-dom";
+import { Category } from "@/lib/api";
 // import Footer from "@/components/Footer";
 // import {
 //   useFeaturedProducts,
@@ -315,100 +319,86 @@ import Header from "@/components/Header";
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
+  const { data: Products } = useProducts({
+    featured: true,
+  });
+  const navigate = useNavigate();
+
+  const featuredProducts = Products?.products || [];
   // Mock data for the perfect design
-  const featuredProducts = [
-    {
-      id: "1",
-      name: "Premium Wireless Headphones",
-      price: 299,
-      originalPrice: 399,
-      image: "/premium-wireless-headphones.png",
-      rating: 4.8,
-      reviews: 2847,
-      badge: "Best Seller",
-    },
-    {
-      id: "2",
-      name: "Smart Fitness Watch",
-      price: 249,
-      originalPrice: 329,
-      image: "/smart-fitness-watch.png",
-      rating: 4.9,
-      reviews: 1923,
-      badge: "New",
-    },
-    {
-      id: "3",
-      name: "Minimalist Desk Lamp",
-      price: 89,
-      originalPrice: 129,
-      image: "/minimalist-desk-lamp.png",
-      rating: 4.7,
-      reviews: 856,
-      badge: "Sale",
-    },
-    {
-      id: "4",
-      name: "Organic Coffee Beans",
-      price: 24,
-      originalPrice: 32,
-      image: "/organic-coffee-beans.png",
-      rating: 4.6,
-      reviews: 1247,
-      badge: "Trending",
-    },
+  // const featuredProducts = [
+  //   {
+  //     id: "1",
+  //     name: "Premium Wireless Headphones",
+  //     price: 299,
+  //     originalPrice: 399,
+  //     image: "/premium-wireless-headphones.png",
+  //     rating: 4.8,
+  //     reviews: 2847,
+  //     badge: "Best Seller",
+  //   },
+  //   {
+  //     id: "2",
+  //     name: "Smart Fitness Watch",
+  //     price: 249,
+  //     originalPrice: 329,
+  //     image: "/smart-fitness-watch.png",
+  //     rating: 4.9,
+  //     reviews: 1923,
+  //     badge: "New",
+  //   },
+  //   {
+  //     id: "3",
+  //     name: "Minimalist Desk Lamp",
+  //     price: 89,
+  //     originalPrice: 129,
+  //     image: "/minimalist-desk-lamp.png",
+  //     rating: 4.7,
+  //     reviews: 856,
+  //     badge: "Sale",
+  //   },
+  //   {
+  //     id: "4",
+  //     name: "Organic Coffee Beans",
+  //     price: 24,
+  //     originalPrice: 32,
+  //     image: "/organic-coffee-beans.png",
+  //     rating: 4.6,
+  //     reviews: 1247,
+  //     badge: "Trending",
+  //   },
+  // ];
+
+  const { data: categories } = useCategories();
+
+  console.log(categories);
+
+  const colorAndIcon = [
+    { color: "from-blue-500 to-cyan-500", icon: "⚡" },
+    { color: "from-pink-500 to-rose-500", icon: "👗" },
+    { color: "from-green-500 to-emerald-500", icon: "🏡" },
+    { color: "from-orange-500 to-amber-500", icon: "🏃" },
+    { color: "from-purple-500 to-violet-500", icon: "📚" },
+    { color: "from-red-500 to-pink-500", icon: "💄" },
   ];
 
-  const categories = [
-    {
-      id: "1",
-      name: "Electronics",
-      slug: "electronics",
-      icon: "⚡",
-      productCount: 2847,
-      color: "from-blue-500 to-cyan-500",
-    },
-    {
-      id: "2",
-      name: "Fashion",
-      slug: "fashion",
-      icon: "👗",
-      productCount: 1923,
-      color: "from-pink-500 to-rose-500",
-    },
-    {
-      id: "3",
-      name: "Home & Garden",
-      slug: "home",
-      icon: "🏡",
-      productCount: 1456,
-      color: "from-green-500 to-emerald-500",
-    },
-    {
-      id: "4",
-      name: "Sports",
-      slug: "sports",
-      icon: "🏃",
-      productCount: 987,
-      color: "from-orange-500 to-amber-500",
-    },
-    {
-      id: "5",
-      name: "Books",
-      slug: "books",
-      icon: "📚",
-      productCount: 756,
-      color: "from-purple-500 to-violet-500",
-    },
-    {
-      id: "6",
-      name: "Beauty",
-      slug: "beauty",
-      icon: "💄",
-      productCount: 1234,
-      color: "from-red-500 to-pink-500",
-    },
-  ];
+  // Extend the Category type to include icon and color for local use
+  type CategoryWithIcon = Category & {
+    icon: string;
+    color: string;
+  };
+
+  const categoriesData: CategoryWithIcon[] =
+    categories?.map(
+      (category: Category, i: number): CategoryWithIcon => ({
+        ...category,
+        slug: category.name.toLowerCase().replace(/\s+/g, "-"),
+        icon: colorAndIcon[i].icon,
+        color: colorAndIcon[i].color,
+      })
+    ) ?? [];
+
+  console.log("data: ", categoriesData);
 
   return (
     <div className="min-h-56 bg-gradient-to-br from-slate-50 via-white to-slate-100">
@@ -529,16 +519,16 @@ const Index = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {categories.map((category) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 justify-items-center mx-auto max-w-7xl">
+            {categoriesData?.map((category: CategoryWithIcon) => (
               <div
                 key={category.id}
-                className="group relative overflow-hidden rounded-3xl p-8 text-center cursor-pointer transition-all duration-500 hover:scale-105 hover:-translate-y-2"
+                className="group relative overflow-hidden rounded-3xl p-8 text-center cursor-pointer transition-all duration-500 hover:scale-105 hover:-translate-y-2 w-full max-w-xs"
               >
                 <div
                   className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-90 group-hover:opacity-100 transition-opacity`}
                 ></div>
-                <div className="relative z-10">
+                <div className="relative z-10 flex flex-col items-center justify-center h-full">
                   <div className="text-4xl mb-4 group-hover:scale-110 transition-transform duration-300">
                     {category.icon}
                   </div>
@@ -569,6 +559,7 @@ const Index = () => {
             </div>
             <Button
               variant="outline"
+              onClick={() => navigate("/shop")}
               className="hidden md:flex items-center gap-2 rounded-full px-6 py-3 border-2 hover:bg-slate-50 bg-transparent"
             >
               View All <ArrowRight className="h-4 w-4" />
@@ -576,65 +567,13 @@ const Index = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {featuredProducts.map((product) => (
-              <div
-                key={product.id}
-                className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden hover:-translate-y-2"
-              >
-                <div className="relative overflow-hidden">
-                  <img
-                    src={product.image || "/placeholder.svg"}
-                    alt={product.name}
-                    className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <Badge
-                    className={`absolute top-4 left-4 ${
-                      product.badge === "Sale"
-                        ? "bg-red-500"
-                        : product.badge === "New"
-                        ? "bg-green-500"
-                        : product.badge === "Best Seller"
-                        ? "bg-blue-500"
-                        : "bg-purple-500"
-                    }`}
-                  >
-                    {product.badge}
-                  </Badge>
-                </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-slate-800 mb-2 text-lg group-hover:text-indigo-600 transition-colors">
-                    {product.name}
-                  </h3>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex items-center">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium text-slate-600 ml-1">
-                        {product.rating}
-                      </span>
-                    </div>
-                    <span className="text-sm text-slate-500">
-                      ({product.reviews.toLocaleString()} reviews)
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-slate-800">
-                        ${product.price}
-                      </span>
-                      <span className="text-lg text-slate-500 line-through">
-                        ${product.originalPrice}
-                      </span>
-                    </div>
-                    <Button
-                      size="sm"
-                      className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 rounded-full px-4"
-                    >
-                      Add to Cart
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
+            {featuredProducts.length > 0 ? (
+              featuredProducts.map((product) => (
+                <ProductCard product={product} key={product.id} />
+              ))
+            ) : (
+              <p>No featured products available.</p>
+            )}
           </div>
         </div>
       </section>

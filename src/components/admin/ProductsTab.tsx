@@ -403,7 +403,7 @@ const ProductsTab = ({
                               <Package className="h-5 w-5" />
                             </AvatarFallback>
                           </Avatar>
-                          <div className="space-y-1">
+                          <div className="w-fit space-y-1">
                             <p className="font-medium leading-none">
                               {product.name}
                             </p>
