@@ -43,8 +43,10 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   };
 
   const discount = product.originalPrice
-    ? Math.round(
-        (1 - Number(product.price) / Number(product.originalPrice)) * 100
+    ? Math.abs(
+        Math.round(
+          (1 - Number(product.price) / Number(product.originalPrice)) * 100
+        )
       )
     : 0;
 
@@ -62,13 +64,13 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
       onClick={handleCardClick}
     >
       <div className="relative overflow-hidden bg-gray-100 rounded-t-lg">
-        {(discount > 0 || product.isOnSale) && (
-          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
-            -{discount}%
+        {discount > 0 && product.isOnSale && (
+          <div className="absolute top-3 left-3 bg-green-700 text-green-200 text-xs font-semibold px-2 py-1 rounded-full z-10">
+            {discount}% off
           </div>
         )}
         {product.isFeatured && (
-          <div className="absolute top-3 right-3 bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
+          <div className="absolute top-3 right-3 bg-yellow-300 text-yellow-800 text-xs font-semibold px-2 py-1 rounded-full z-10">
             Featured
           </div>
         )}
@@ -155,7 +157,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
             size="sm"
             onClick={handleAddToCart}
             disabled={isLoading}
-            className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2"
+            className="lg:opacity-0 group-hover:opacity-100 transition-opacity border duration-300 p-2"
           >
             <ShoppingCart className="h-4 w-4" />
             {cartQuantity > 0 ? "Add More" : "Add to Cart"}

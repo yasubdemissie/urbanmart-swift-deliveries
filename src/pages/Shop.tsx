@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +11,7 @@ import { useCategories, useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/context/cartContext";
 import { toast } from "sonner";
 import { useAddToCart } from "@/hooks/useCart";
+import ElegantFilterCard from "@/components/ElegantFilterSortCard";
 
 const Shop = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -92,80 +95,32 @@ const Shop = () => {
       <Header />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
+        <ElegantFilterCard
+          categories={categories || []}
+          categoriesLoading={false}
+          onCategoryChange={setSelectedCategory}
+          onSortChange={setSortBy}
+          selectedCategory={selectedCategory}
+          sortBy={sortBy}
+        />
+
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Shop All Products
-          </h1>
-          <p className="text-gray-600">
-            Discover our complete collection of quality products
-          </p>
-        </div>
-
-        {/* Filters and Search */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <Input
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Category Filter */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">
-                Category:
-              </span>
-              <select
-                title="Category"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={categoriesLoading}
-              >
-                <option value="all">All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.slug}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort */}
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium text-gray-700">
-                Sort by:
-              </span>
-              <select
-                title="Sort by"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="featured">Featured</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="price-high">Price: High to Low</option>
-                <option value="rating">Highest Rated</option>
-              </select>
-            </div>
+          <div className="flex items-center justify-between">
+            {searchQuery && (
+              <>
+                <p className="text-sm text-gray-500">
+                  Results for "{searchQuery}"
+                </p>
+                <p className="text-gray-600 font-medium">
+                  {productsLoading
+                    ? "Loading products..."
+                    : `Showing ${products?.length || 0} of ${
+                        pagination?.total || 0
+                      } products`}
+                </p>
+              </>
+            )}
           </div>
-        </div>
-
-        {/* Results Info */}
-        <div className="mb-6">
-          <p className="text-gray-600">
-            {productsLoading
-              ? "Loading products..."
-              : `Showing ${products.length} of ${
-                  pagination?.total || 0
-                } products`}
-          </p>
         </div>
 
         {/* Loading State */}

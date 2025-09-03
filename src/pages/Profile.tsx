@@ -11,6 +11,7 @@ import {
   Camera,
   Save,
   Edit3,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,8 +22,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { User } from "@/lib/api";
 import { useCurrentUser, useUpdateProfile } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const ProfilePage = () => {
+  const navigate = useNavigate();
   const {
     data: user,
     isLoading: userLoading,
@@ -175,7 +178,9 @@ const ProfilePage = () => {
           </div>
           <div className="flex items-center justify-center py-12">
             <div className="text-center">
-              <p className="text-red-600 mb-4">Failed to load profile data</p>
+              <p className="text-red-600 mb-4">
+                Sorry, there is no user to look.
+              </p>
               <Button onClick={() => window.location.reload()}>
                 Try Again
               </Button>
@@ -187,7 +192,14 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8 pt-16 md:pt-8">
+      <Button
+        className=" fixed rounded-full top-6 left-4 md:left-7 border border-black/60 max-w-10"
+        variant="ghost"
+        onClick={() => navigate(-1)}
+      >
+        <ArrowLeft />
+      </Button>
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Profile Settings</h1>
