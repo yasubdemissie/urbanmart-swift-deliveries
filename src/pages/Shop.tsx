@@ -15,15 +15,25 @@ import ElegantFilterCard from "@/components/ElegantFilterSortCard";
 import { useSearchParams } from "react-router-dom";
 
 const Shop = () => {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchParams] = useSearchParams();
+
+  // Initialize search query from URL parameters
+  const initialSearchQuery = searchParams.get("search") || "";
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+
+  const [currentPage, setCurrentPage] = useState(1);
 
   const initialCategory = searchParams.get("category") || "all";
   const initialSort = searchParams.get("sort") || "";
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [sortBy, setSortBy] = useState(initialSort);
+
+  // Update search query when URL changes
+  useEffect(() => {
+    const urlSearchQuery = searchParams.get("search") || "";
+    setSearchQuery(urlSearchQuery);
+  }, [searchParams]);
 
   // Fetch products and categories
   const {
@@ -54,12 +64,6 @@ const Shop = () => {
   const { dispatch } = useCart();
   const addToCartMutation = useAddToCart();
 
-  // Keep state in sync if URL changes
-  // useEffect(() => {
-  //   setSelectedCategory(searchParams.get("category") || "all");
-  //   setSortBy(searchParams.get("sort") || "");
-  // }, [searchParams]);
-
   useEffect(() => {
     // Setting the search query, category, and sort parameter in the URL
     document.title = `Shop - ${searchQuery || "All Products"}`;
@@ -69,7 +73,7 @@ const Shop = () => {
       params.set("category", selectedCategory);
     if (sortBy) params.set("sort", sortBy);
     window.history.replaceState({}, "", `?${params.toString()}`);
-  }, [searchQuery, selectedCategory, sortBy, searchParams]);
+  }, [searchQuery, selectedCategory, sortBy]);
 
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
@@ -148,71 +152,87 @@ const Shop = () => {
         </div>
 
         {/* Loading State */}
-        {productsLoading && (
+        {productsLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {Array.from({ length: 8 }).map((_, index) => (
               <div
                 key={index}
-                className="bg-white rounded-lg shadow-sm p-4 animate-pulse"
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 animate-pulse"
               >
                 <div className="bg-gray-200 h-48 rounded-lg mb-4"></div>
-                <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                <div className="bg-gray-200 h-4 rounded w-3/4 mb-2"></div>
-                <div className="bg-gray-200 h-6 rounded w-1/2"></div>
+                <div className="space-y-2">
+                  <div className="bg-gray-200 h-4 rounded"></div>
+                  <div className="bg-gray-200 h-4 rounded w-3/4"></div>
+                  <div className="bg-gray-200 h-6 rounded w-1/2"></div>
+                </div>
               </div>
             ))}
           </div>
-        )}
-
-        {/* Product Grid */}
-        {!productsLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={() => handleAddToCart(product)}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* No Results */}
-        {!productsLoading && products.length === 0 && (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No products found
-            </h3>
-            <p className="text-gray-600">
-              Try adjusting your search or filter criteria
-            </p>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="mt-8 flex justify-center">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </Button>
-
-              <span className="px-4 py-2 text-sm text-gray-600">
-                Page {currentPage} of {pagination.totalPages}
-              </span>
-
-              <Button
-                variant="outline"
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === pagination.totalPages}
-              >
-                Next
-              </Button>
+        ) : products && products.length > 0 ? (
+          <>
+            {/* Products Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={() => handleAddToCart(product)}
+                  isLoading={addToCartMutation.isPending}
+                />
+              ))}
             </div>
+
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="mt-12 flex justify-center">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-gray-600">
+                    Page {currentPage} of {pagination.totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === pagination.totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <Search className="h-16 w-16 mx-auto" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {searchQuery ? "No products found" : "No products available"}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {searchQuery
+                ? `No products match your search for "${searchQuery}"`
+                : "Check back later for new products"}
+            </p>
+            {searchQuery && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentPage(1);
+                }}
+              >
+                Clear Search
+              </Button>
+            )}
           </div>
         )}
       </div>

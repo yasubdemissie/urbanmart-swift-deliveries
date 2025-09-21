@@ -113,6 +113,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --font-sans: var(--font-inter);
   --font-serif: var(--font-playfair);
+
+   /* Product-specific colors */
+    --product-accent: 25 95% 53%;
+    --product-accent-foreground: 0 0% 98%;
 }
 
 @layer base {

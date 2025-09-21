@@ -123,6 +123,18 @@ export interface Review {
   updatedAt: string;
 }
 
+export interface OrderStatusHistory {
+  id: string;
+  orderId: string;
+  status: Order["status"];
+  notes?: string;
+  updatedBy?: string;
+  updater?: User;
+  timestamp: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
@@ -262,6 +274,7 @@ export const apiClient = {
     const response = await fetch(`${API_BASE_URL}/products?${params}`, {
       headers: getAuthHeaders(),
     });
+
     return handleResponse(response);
   },
 
@@ -454,7 +467,22 @@ export const apiClient = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     });
+    console.log("response from the api: ", response);
     return handleResponse<Order>(response);
+  },
+
+  async getOrderStatusHistory(
+    orderId: string
+  ): Promise<ApiResponse<{ statusHistory: OrderStatusHistory[] }>> {
+    const response = await fetch(
+      `${API_BASE_URL}/orders/${orderId}/status-history`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+    return handleResponse<ApiResponse<{ statusHistory: OrderStatusHistory[] }>>(
+      response
+    );
   },
 
   // Review endpoints

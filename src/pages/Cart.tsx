@@ -140,7 +140,7 @@ const Cart = () => {
                   {cartItems.map((item) => (
                     <div
                       key={item.product.id}
-                      className="flex items-center space-x-4 py-4 border-b border-gray-200 last:border-b-0"
+                      className="flex flex-wrap items-center space-x-4 space-y-2 py-4 border-b border-gray-200 last:border-b-0"
                     >
                       <div className="flex-shrink-0">
                         <img
@@ -153,14 +153,14 @@ const Cart = () => {
                         />
                       </div>
 
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-24">
                         <h3 className="text-lg font-semibold text-gray-900 truncate">
                           {item.product.name}
                         </h3>
                         <p className="text-sm text-gray-500">
                           {item.product.category?.name || "Uncategorized"}
                         </p>
-                        <div className="flex items-center space-x-2 mt-1">
+                        {/* <div className="flex items-center space-x-2 mt-1">
                           <span className="text-lg font-bold text-gray-900">
                             ${Number(item.product.price).toFixed(2)}
                           </span>
@@ -171,10 +171,10 @@ const Cart = () => {
                                 ${Number(item.product.originalPrice).toFixed(2)}
                               </span>
                             )}
-                        </div>
+                        </div> */}
                       </div>
 
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center gap-2">
                         <div className="flex items-center border rounded-lg">
                           <Button
                             variant="ghost"
@@ -200,7 +200,6 @@ const Cart = () => {
                             <Plus className="h-4 w-4" />
                           </Button>
                         </div>
-
                         <Button
                           variant="ghost"
                           size="sm"
@@ -211,9 +210,9 @@ const Cart = () => {
                         </Button>
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right min-w-[100px] sm:ml-0">
                         <p className="text-lg font-bold text-gray-900">
-                          $
+                          ETB{" "}
                           {(Number(item.product.price) * item.quantity).toFixed(
                             2
                           )}
@@ -245,7 +244,6 @@ const Cart = () => {
               </Link>
             </div>
           </div>
-
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <Card className="sticky top-4">

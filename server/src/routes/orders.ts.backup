@@ -104,19 +104,6 @@ router.get(
           },
           shippingAddress: true,
           billingAddress: true,
-          // statusHistory: {
-          //   orderBy: { timestamp: "desc" },
-          //   include: {
-          //     updater: {
-          //       select: {
-          //         id: true,
-          //         firstName: true,
-          //         lastName: true,
-          //         role: true,
-          //       },
-          //     },
-          //   },
-          // },
           user: {
             select: {
               id: true,
@@ -288,7 +275,7 @@ router.post(
   }
 );
 
-// Update order status (Admin only) - ENHANCED WITH STATUS HISTORY
+// Update order status (Admin only)
 router.patch(
   "/:id/status",
   authenticateToken,
@@ -296,11 +283,10 @@ router.patch(
   async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
-      const { status, trackingNumber, notes } = req.body;
+      const { status, trackingNumber } = req.body;
 
       const updateData: Record<string, unknown> = { status };
 
-      // Handle specific status updates - only use fields that exist in the schema
       if (status === "SHIPPED") {
         updateData.shippedAt = new Date();
         if (trackingNumber) {
@@ -312,38 +298,9 @@ router.patch(
         updateData.deliveredAt = new Date();
       }
 
-      // Note: CONFIRMED, PROCESSING, and CANCELLED statuses don't have specific timestamp fields
-      // in the current schema, but the status change will still be tracked in statusHistory
-
-      // Use transaction with increased timeout and simplified operations
-      const result = await prisma.$transaction(
-        async (tx) => {
-          // Update the order (simplified - no complex includes)
-          const order = await tx.order.update({
-            where: { id },
-            data: updateData,
-          });
-
-          // Create status history entry
-          const statusHistory = await tx.orderStatusHistory.create({
-            data: {
-              orderId: id,
-              status: status,
-              updatedBy: req.user!.id,
-              notes: notes || `Order status changed to ${status}`,
-            },
-          });
-
-          return { order, statusHistory };
-        },
-        {
-          timeout: 10000, // Increase timeout to 10 seconds
-        }
-      );
-
-      // Fetch the complete order data after the transaction
-      const completeOrder = await prisma.order.findUnique({
+      const order = await prisma.order.update({
         where: { id },
+        data: updateData,
         include: {
           orderItems: {
             include: {
@@ -370,78 +327,14 @@ router.patch(
         },
       });
 
-      // Fetch the complete status history with updater info
-      const completeStatusHistory = await prisma.orderStatusHistory.findUnique({
-        where: { id: result.statusHistory.id },
-        include: {
-          updater: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              role: true,
-            },
-          },
-        },
-      });
-
       return formatResponse(
         res,
-        {
-          order: completeOrder,
-          statusHistory: completeStatusHistory,
-        },
+        { order },
         "Order status updated successfully"
       );
     } catch (error) {
       console.error("Update order status error:", error);
       return formatError(res, "Failed to update order status", 500);
-    }
-  }
-);
-
-// Get order status history
-router.get(
-  "/:id/status-history",
-  authenticateToken,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const { id } = req.params;
-
-      // Check if user owns the order or is admin
-      const order = await prisma.order.findFirst({
-        where: {
-          id,
-          OR: [
-            { userId: req.user!.id },
-            req.user!.role === "ADMIN" ? {} : { id: "nonexistent" },
-          ],
-        },
-      });
-
-      if (!order) {
-        return formatError(res, "Order not found", 404);
-      }
-
-      const statusHistory = await prisma.orderStatusHistory.findMany({
-        where: { orderId: id },
-        orderBy: { timestamp: "desc" },
-        include: {
-          updater: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              role: true,
-            },
-          },
-        },
-      });
-
-      return formatResponse(res, { statusHistory });
-    } catch (error) {
-      console.error("Get order status history error:", error);
-      return formatError(res, "Failed to fetch order status history", 500);
     }
   }
 );

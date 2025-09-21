@@ -1,234 +1,414 @@
-
-import { useState } from 'react';
-import { Search, Package, Truck, CheckCircle, Clock } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from "react";
+import { Package, Truck, CheckCircle, Clock, User, LogIn } from "lucide-react";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useOrders } from "@/hooks/useOrders";
+import { apiClient, Order, OrderStatusHistory } from "@/lib/api";
+import { useIsAuthenticated } from "@/hooks/useAuth";
 
 const TrackOrder = () => {
-  const [orderNumber, setOrderNumber] = useState('');
-  const [trackingResult, setTrackingResult] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    user,
+    isAuthenticated,
+    isLoading: authLoading,
+  } = useIsAuthenticated();
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    error: ordersError,
+  } = useOrders();
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [statusHistory, setStatusHistory] = useState<OrderStatusHistory[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  const handleTrack = async () => {
-    if (!orderNumber.trim()) return;
-    
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Mock tracking data
-    setTrackingResult({
-      orderNumber: orderNumber,
-      status: 'in_transit',
-      estimatedDelivery: '2024-01-25',
-      currentLocation: 'Distribution Center - Downtown',
-      trackingSteps: [
-        {
-          status: 'ordered',
-          title: 'Order Placed',
-          description: 'Your order has been received and is being processed',
-          date: '2024-01-20 10:30 AM',
-          completed: true
-        },
-        {
-          status: 'processing',
-          title: 'Order Processing',
-          description: 'Items are being picked and packed',
-          date: '2024-01-21 2:15 PM',
-          completed: true
-        },
-        {
-          status: 'shipped',
-          title: 'Shipped',
-          description: 'Package has left our facility',
-          date: '2024-01-22 9:45 AM',
-          completed: true
-        },
-        {
-          status: 'in_transit',
-          title: 'In Transit',
-          description: 'Package is on its way to you',
-          date: '2024-01-23 6:20 AM',
-          completed: true,
-          current: true
-        },
-        {
-          status: 'delivered',
-          title: 'Delivered',
-          description: 'Package delivered to your address',
-          date: 'Expected: 2024-01-25',
-          completed: false
-        }
-      ]
-    });
-    setIsLoading(false);
-  };
+  // Fetch status history when an order is selected
+  useEffect(() => {
+    if (selectedOrder) {
+      setIsLoadingHistory(true);
+      apiClient
+        .getOrderStatusHistory(selectedOrder.id)
+        .then((response) => {
+          if (response.success) {
+            setStatusHistory(response.data.statusHistory);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching status history:", error);
+          setStatusHistory([]);
+        })
+        .finally(() => {
+          setIsLoadingHistory(false);
+        });
+    }
+  }, [selectedOrder]);
 
-  const getStatusIcon = (status, completed, current) => {
-    if (current) return <Truck className="h-5 w-5 text-blue-600" />;
-    if (completed) return <CheckCircle className="h-5 w-5 text-green-600" />;
+  const getStatusIcon = (
+    status: string,
+    isCompleted: boolean,
+    isCurrent: boolean
+  ) => {
+    if (isCurrent) return <Truck className="h-5 w-5 text-blue-600" />;
+    if (isCompleted) return <CheckCircle className="h-5 w-5 text-green-600" />;
     return <Clock className="h-5 w-5 text-gray-400" />;
   };
 
-  const getStatusColor = (completed, current) => {
-    if (current) return 'border-blue-600 bg-blue-50';
-    if (completed) return 'border-green-600 bg-green-50';
-    return 'border-gray-300 bg-gray-50';
+  const getStatusColor = (isCompleted: boolean, isCurrent: boolean) => {
+    if (isCurrent) return "border-blue-600 bg-blue-50";
+    if (isCompleted) return "border-green-600 bg-green-50";
+    return "border-gray-300 bg-gray-50";
   };
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800";
+      case "CONFIRMED":
+        return "bg-blue-100 text-blue-800";
+      case "PROCESSING":
+        return "bg-purple-100 text-purple-800";
+      case "SHIPPED":
+        return "bg-indigo-100 text-indigo-800";
+      case "DELIVERED":
+        return "bg-green-100 text-green-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto text-center">
+            <Card>
+              <CardContent className="p-8">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Loading
+                </h2>
+                <p className="text-gray-600">Please wait...</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show sign-in prompt if user is not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto text-center">
+            <Card>
+              <CardContent className="p-8">
+                <LogIn className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Sign In Required
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Please sign in to view your order tracking information.
+                </p>
+                <Button onClick={() => (window.location.href = "/auth/login")}>
+                  Sign In
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (ordersLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto text-center">
+            <Card>
+              <CardContent className="p-8">
+                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Loading Orders
+                </h2>
+                <p className="text-gray-600">
+                  Please wait while we fetch your orders...
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show no orders message
+  if (!ordersData?.orders || ordersData.orders.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto text-center">
+            <Card>
+              <CardContent className="p-8">
+                <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  No Orders Found
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  You haven't placed any orders yet. Start shopping to see your
+                  order tracking here.
+                </p>
+                <Button onClick={() => (window.location.href = "/products")}>
+                  Start Shopping
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Track Your Order</h1>
-          <p className="text-gray-600">Enter your order number to see real-time tracking information</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Track Your Orders
+          </h1>
+          <p className="text-gray-600">
+            Select an order to view its tracking information
+          </p>
         </div>
 
-        {/* Track Input */}
-        <div className="max-w-md mx-auto mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="orderNumber" className="block text-sm font-medium text-gray-700 mb-2">
-                    Order Number
-                  </label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <Input
-                      id="orderNumber"
-                      placeholder="Enter your order number (e.g., UM123456)"
-                      value={orderNumber}
-                      onChange={(e) => setOrderNumber(e.target.value)}
-                      className="pl-10"
-                      onKeyPress={(e) => e.key === 'Enter' && handleTrack()}
-                    />
-                  </div>
-                </div>
-                <Button 
-                  onClick={handleTrack} 
-                  disabled={!orderNumber.trim() || isLoading}
-                  className="w-full"
-                >
-                  {isLoading ? 'Tracking...' : 'Track Order'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Tracking Results */}
-        {trackingResult && (
-          <div className="max-w-2xl mx-auto">
-            {/* Order Summary */}
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Order #{trackingResult.orderNumber}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Orders List */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Your Orders
+            </h2>
+            {ordersData.orders.map((order) => (
+              <Card
+                key={order.id}
+                className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  selectedOrder?.id === order.id
+                    ? "ring-2 ring-blue-500 bg-blue-50"
+                    : ""
+                }`}
+                onClick={() => setSelectedOrder(order)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900">
+                      Order #{order.id.slice(-8)}
                     </h3>
-                    <p className="text-gray-600">Current Status: 
-                      <span className="ml-1 font-medium text-blue-600 capitalize">
-                        {trackingResult.status.replace('_', ' ')}
-                      </span>
-                    </p>
+                    <Badge className={getStatusBadgeColor(order.status)}>
+                      {order.status}
+                    </Badge>
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Estimated Delivery</p>
-                    <p className="font-semibold text-gray-900">{trackingResult.estimatedDelivery}</p>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>Total: ${Number(order.total).toFixed(2)}</p>
+                    <p>Items: {order.orderItems.length}</p>
+                    <p>Date: {formatDate(order.createdAt)}</p>
                   </div>
-                </div>
-                
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <div className="flex items-center">
-                    <Package className="h-5 w-5 text-blue-600 mr-2" />
-                    <span className="text-blue-800 font-medium">
-                      Current Location: {trackingResult.currentLocation}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
 
-            {/* Tracking Timeline */}
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-6">Tracking Timeline</h3>
-                
-                <div className="space-y-4">
-                  {trackingResult.trackingSteps.map((step, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center ${getStatusColor(step.completed, step.current)}`}>
-                        {getStatusIcon(step.status, step.completed, step.current)}
+          {/* Order Status History */}
+          <div className="space-y-4">
+            {selectedOrder ? (
+              <>
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Order #{selectedOrder.id.slice(-8)} Status
+                </h2>
+
+                {/* Order Summary */}
+                <Card className="mb-6">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          Order #{selectedOrder.id.slice(-8)}
+                        </h3>
+                        <p className="text-gray-600">
+                          Current Status:
+                          <Badge
+                            className={`ml-2 ${getStatusBadgeColor(
+                              selectedOrder.status
+                            )}`}
+                          >
+                            {selectedOrder.status}
+                          </Badge>
+                        </p>
                       </div>
-                      
-                      <div className="ml-4 flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className={`font-medium ${step.current ? 'text-blue-600' : step.completed ? 'text-green-600' : 'text-gray-400'}`}>
-                            {step.title}
-                          </h4>
-                          <span className="text-sm text-gray-500">{step.date}</span>
-                        </div>
-                        <p className="text-gray-600 text-sm mt-1">{step.description}</p>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">Total</p>
+                        <p className="font-semibold text-gray-900">
+                          ${Number(selectedOrder.total).toFixed(2)}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
 
-            {/* Additional Info */}
-            <div className="mt-6 text-center">
-              <p className="text-gray-600 text-sm mb-4">
-                Need help? Contact our customer service team
-              </p>
-              <div className="space-x-4">
-                <Button variant="outline" size="sm">
-                  📞 Call Support
-                </Button>
-                <Button variant="outline" size="sm">
-                  💬 Live Chat
-                </Button>
-              </div>
-            </div>
+                    <div className="bg-blue-50 rounded-lg p-3">
+                      <div className="flex items-center">
+                        <Package className="h-5 w-5 text-blue-600 mr-2" />
+                        <span className="text-blue-800 font-medium">
+                          {selectedOrder.orderItems.length} item(s) ordered
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Status History Timeline */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                      Status History
+                    </h3>
+
+                    {isLoadingHistory ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                        <span className="ml-2 text-gray-600">
+                          Loading history...
+                        </span>
+                      </div>
+                    ) : statusHistory.length > 0 ? (
+                      <div className="space-y-4">
+                        {statusHistory.map((history, index) => {
+                          const isCompleted =
+                            index === 0 ||
+                            statusHistory[index - 1]?.status !== history.status;
+                          const isCurrent = index === 0;
+
+                          return (
+                            <div key={history.id} className="flex items-start">
+                              <div
+                                className={`flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center ${getStatusColor(
+                                  isCompleted,
+                                  isCurrent
+                                )}`}
+                              >
+                                {getStatusIcon(
+                                  history.status,
+                                  isCompleted,
+                                  isCurrent
+                                )}
+                              </div>
+
+                              <div className="ml-4 flex-1">
+                                <div className="flex items-center justify-between">
+                                  <h4
+                                    className={`font-medium ${
+                                      isCurrent
+                                        ? "text-blue-600"
+                                        : isCompleted
+                                        ? "text-green-600"
+                                        : "text-gray-400"
+                                    }`}
+                                  >
+                                    {history.status.replace("_", " ")}
+                                  </h4>
+                                  <span className="text-sm text-gray-500">
+                                    {formatDate(history.timestamp)}
+                                  </span>
+                                </div>
+                                {history.notes && (
+                                  <p className="text-gray-600 text-sm mt-1">
+                                    {history.notes}
+                                  </p>
+                                )}
+                                {history.updater && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Updated by: {history.updater.firstName}{" "}
+                                    {history.updater.lastName}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <Clock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                        <p>No status history available for this order.</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Select an Order
+                  </h3>
+                  <p className="text-gray-600">
+                    Choose an order from the list to view its tracking
+                    information.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
           </div>
-        )}
+        </div>
 
-        {/* Sample Order Numbers */}
-        {!trackingResult && (
-          <div className="max-w-md mx-auto">
-            <Card className="bg-blue-50 border-blue-200">
-              <CardContent className="p-4">
-                <h4 className="font-medium text-blue-900 mb-2">Try these sample order numbers:</h4>
-                <div className="space-y-1 text-sm text-blue-700">
-                  <div 
-                    className="cursor-pointer hover:underline"
-                    onClick={() => setOrderNumber('UM123456')}
-                  >
-                    UM123456 - In Transit
-                  </div>
-                  <div 
-                    className="cursor-pointer hover:underline"
-                    onClick={() => setOrderNumber('UM789012')}
-                  >
-                    UM789012 - Delivered
-                  </div>
-                  <div 
-                    className="cursor-pointer hover:underline"
-                    onClick={() => setOrderNumber('UM345678')}
-                  >
-                    UM345678 - Processing
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Additional Info */}
+        {selectedOrder && (
+          <div className="mt-8 text-center">
+            <p className="text-gray-600 text-sm mb-4">
+              Need help? Contact our customer service team
+            </p>
+            <div className="space-x-4">
+              <Button variant="outline" size="sm">
+                📞 Call Support
+              </Button>
+              <Button variant="outline" size="sm">
+                💬 Live Chat
+              </Button>
+            </div>
           </div>
         )}
       </div>

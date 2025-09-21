@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import Header from "@/components/Header";
+import AdminHeader from "@/components/admin/AdminHeader";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,10 +12,7 @@ import {
   useAdminProducts,
   useAdminOrders,
   useAdminCustomers,
-  // useCreateProduct,
-  // useUpdateProduct,
   useDeleteProduct,
-  // useExportProducts,
   useUpdateOrderStatus,
   useExportOrders,
   useExportCustomers,
@@ -57,11 +54,7 @@ const Admin = () => {
     });
 
   // Mutations
-  // const createProductMutation = useCreateProduct();
-  // const updateProductMutation = useUpdateProduct();
   const deleteProductMutation = useDeleteProduct();
-  // const exportProductsMutation = useExportProducts();
-
   const updateOrderStatusMutation = useUpdateOrderStatus();
   const exportOrdersMutation = useExportOrders();
   const exportCustomersMutation = useExportCustomers();
@@ -70,7 +63,7 @@ const Admin = () => {
   if (!isAuthenticated || user?.role !== "ADMIN") {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
+        <AdminHeader activeTab={activeTab} onTabChange={setActiveTab} />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center max-w-md mx-auto">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -151,39 +144,29 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+      <AdminHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        {/* <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        {/* Admin Page Header */}
+        <div className="mb-8 text-center">
+          {/* <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
             Admin Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Manage your store, products, and customers
+          </h1> */}
+          <p className="text-gray-600 text-lg">
+            Manage your store, products, orders, and customers
           </p>
-        </div> */}
+        </div>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
-          className="space-y-6"
-        >
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
-          </TabsList>
-
+        {/* Tab Content - No longer using Tabs component, direct rendering based on activeTab */}
+        <div className="space-y-6">
           {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="space-y-6">
+          {activeTab === "dashboard" && (
             <DashboardTab stats={stats} statsLoading={statsLoading} />
-          </TabsContent>
+          )}
 
           {/* Products Tab */}
-          <TabsContent value="products" className="space-y-6">
+          {activeTab === "products" && (
             <ProductsTab
               searchQuery={searchQuery}
               setSearchQuery={setSearchQuery}
@@ -197,10 +180,10 @@ const Admin = () => {
               exportProductsMutation={{ isPending: false }} // TODO: Implement export products
               deleteProductMutation={deleteProductMutation}
             />
-          </TabsContent>
+          )}
 
           {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-6">
+          {activeTab === "orders" && (
             <OrdersTab
               ordersData={ordersData}
               ordersLoading={ordersLoading}
@@ -208,21 +191,21 @@ const Admin = () => {
               handleExport={handleExport}
               exportOrdersMutation={exportOrdersMutation}
             />
-          </TabsContent>
+          )}
 
           {/* Customers Tab */}
-          <TabsContent value="customers" className="space-y-6">
+          {activeTab === "customers" && (
             <CustomersTab
               customersData={customersData}
               customersLoading={customersLoading}
               handleExport={handleExport}
               exportCustomersMutation={exportCustomersMutation}
             />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
 
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

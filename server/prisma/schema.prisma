@@ -32,6 +32,7 @@ model User {
   cartItems    CartItem[]
   reviews      Review[]
   wishlist     WishlistItem[]
+  statusUpdates OrderStatusHistory[]
 
   @@map("users")
 }
@@ -143,6 +144,7 @@ model Order {
   shippingAddress Address     @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   billingAddress  Address     @relation("BillingAddress", fields: [billingAddressId], references: [id])
   orderItems      OrderItem[]
+  statusHistory   OrderStatusHistory[]
 
   @@map("orders")
 }
@@ -161,6 +163,24 @@ model OrderItem {
   product Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  notes     String?
+  updatedBy String?     // User ID who made the change (optional)
+  timestamp DateTime    @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  updater User? @relation(fields: [updatedBy], references: [id])
+
+  @@map("order_status_history")
 }
 
 model CartItem {
