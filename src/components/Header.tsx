@@ -1,6 +1,6 @@
 "use client";
 
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
 import {
   ShoppingCart,
@@ -29,6 +29,7 @@ const Header = () => {
   const [profileImageNumber, setProfileImageNumber] = useState(
     Math.floor(Math.random() * 6)
   );
+  const location = useLocation();
 
   const profileImage = [
     "https://static.vecteezy.com/system/resources/previews/001/503/756/non_2x/boy-face-avatar-cartoon-free-vector.jpg",
@@ -71,6 +72,14 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
+  // Helper function to check if a path is active
+  const isActivePath = (path: string) => {
+    if (path === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <header className="bg-white/95 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100">
       <div className="container mx-auto px-4">
@@ -109,7 +118,11 @@ const Header = () => {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="relative hover:bg-blue-50 hover:text-blue-600 transition-all duration-300 rounded-xl group p-2.5"
+                  className={`relative transition-all duration-300 rounded-xl group p-2.5 ${
+                    isActivePath("/track")
+                      ? "bg-blue-50 text-blue-600 border border-blue-200"
+                      : "hover:bg-blue-50 hover:text-blue-600"
+                  }`}
                 >
                   <Package className="group-hover:scale-105 transition-transform duration-300 h-5 w-5" />
                   <span className="hidden md:inline ml-1">Track Order</span>
@@ -127,7 +140,11 @@ const Header = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="relative hover:bg-green-50 hover:text-green-600 transition-all duration-300 rounded-xl group p-2.5"
+                className={`relative transition-all duration-300 rounded-xl group p-2.5 ${
+                  isActivePath("/cart")
+                    ? "bg-green-50 text-green-600 border border-green-200"
+                    : "hover:bg-green-50 hover:text-green-600"
+                }`}
               >
                 <ShoppingCart className="group-hover:scale-105 transition-transform duration-300 h-5 w-5" />
                 <span className="hidden md:inline ml-1">Cart</span>
@@ -199,7 +216,11 @@ const Header = () => {
                       <Link
                         to="/profile"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all duration-300"
+                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
+                          isActivePath("/profile")
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                        }`}
                       >
                         <User className="h-4 w-4" />
                         <span>My Profile</span>
@@ -207,7 +228,11 @@ const Header = () => {
                       <Link
                         to="/track"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-green-50 hover:text-green-600 transition-all duration-300"
+                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
+                          isActivePath("/track")
+                            ? "bg-green-50 text-green-600 font-medium"
+                            : "text-gray-700 hover:bg-green-50 hover:text-green-600"
+                        }`}
                       >
                         <Package className="h-4 w-4" />
                         <span>My Orders</span>
@@ -220,7 +245,11 @@ const Header = () => {
                       <Link
                         to="/cart"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-orange-50 hover:text-orange-600 transition-all duration-300"
+                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
+                          isActivePath("/cart")
+                            ? "bg-orange-50 text-orange-600 font-medium"
+                            : "text-gray-700 hover:bg-orange-50 hover:text-orange-600"
+                        }`}
                       >
                         <ShoppingCart className="h-4 w-4" />
                         <span>My Cart</span>
@@ -233,7 +262,11 @@ const Header = () => {
                       <Link
                         to="/wishlist"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-300"
+                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
+                          isActivePath("/wishlist")
+                            ? "bg-red-50 text-red-600 font-medium"
+                            : "text-gray-700 hover:bg-red-50 hover:text-red-600"
+                        }`}
                       >
                         <Heart className="h-4 w-4" />
                         <span>Wishlist</span>
@@ -241,7 +274,11 @@ const Header = () => {
                       <Link
                         to="/settings"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all duration-300"
+                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
+                          isActivePath("/settings")
+                            ? "bg-gray-50 text-gray-900 font-medium"
+                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                        }`}
                       >
                         <Settings className="h-4 w-4" />
                         <span>Settings</span>
@@ -253,7 +290,11 @@ const Header = () => {
                           <Link
                             to="/admin"
                             onClick={() => setIsUserMenuOpen(false)}
-                            className="flex items-center space-x-3 px-4 py-2.5 text-purple-600 hover:bg-purple-50 transition-all duration-300 font-medium"
+                            className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
+                              isActivePath("/admin")
+                                ? "bg-purple-50 text-purple-600 font-medium"
+                                : "text-purple-600 hover:bg-purple-50"
+                            }`}
                           >
                             <Shield className="h-4 w-4" />
                             <span>Admin Dashboard</span>
@@ -305,7 +346,11 @@ const Header = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="flex items-center space-x-2 py-1.5 px-1 text-gray-700 hover:text-blue-600 transition-colors duration-300 relative hover:after:absolute hover:after:bottom-0 hover:after:left-0 hover:after:w-full hover:after:h-0.5 hover:after:bg-blue-600 hover:after:rounded-full"
+                  className={`flex items-center space-x-2 py-1.5 px-1 transition-colors duration-300 relative ${
+                    isActivePath(item.path)
+                      ? "text-blue-600 font-medium after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-blue-600 after:rounded-full"
+                      : "text-gray-700 hover:text-blue-600 hover:after:absolute hover:after:bottom-0 hover:after:left-0 hover:after:w-full hover:after:h-0.5 hover:after:bg-blue-600 hover:after:rounded-full"
+                  }`}
                 >
                   <span>{item.label}</span>
                 </Link>
@@ -337,7 +382,11 @@ const Header = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className="flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 text-gray-700 hover:bg-gray-50"
+                  className={`flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 ${
+                    isActivePath(item.path)
+                      ? "bg-blue-50 text-blue-600 font-medium"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <span>{item.label}</span>
@@ -348,7 +397,11 @@ const Header = () => {
               {isAuthenticated && (
                 <Link
                   to="/track"
-                  className="flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 text-gray-700 hover:bg-gray-50"
+                  className={`flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 ${
+                    isActivePath("/track")
+                      ? "bg-blue-50 text-blue-600 font-medium"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <span className="flex items-center space-x-2">
@@ -366,7 +419,11 @@ const Header = () => {
               {/* Mobile Cart */}
               <Link
                 to="/cart"
-                className="flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 text-gray-700 hover:bg-gray-50"
+                className={`flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 ${
+                  isActivePath("/cart")
+                    ? "bg-green-50 text-green-600 font-medium"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 <span className="flex items-center space-x-2">
@@ -408,73 +465,75 @@ const Header = () => {
                       </div>
                     </div>
 
-                    <Link
-                      to="/profile"
-                      className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-300"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <User className="h-5 w-5" />
-                      <span>Profile</span>
-                    </Link>
-                    <Link
-                      to="/track"
-                      className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-300"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Package className="h-5 w-5" />
-                      <span>Orders</span>
-                      {orderCount > 0 && (
-                        <Badge className="ml-auto bg-blue-500 text-white text-xs">
-                          {orderCount}
-                        </Badge>
-                      )}
-                    </Link>
-                    <Link
-                      to="/cart"
-                      className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-300"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <ShoppingCart className="h-5 w-5" />
-                      <span>Cart</span>
-                      {cartItemCount > 0 && (
-                        <Badge className="ml-auto bg-red-500 text-white text-xs">
-                          {cartItemCount}
-                        </Badge>
-                      )}
-                    </Link>
-                    <Link
-                      to="/wishlist"
-                      className="flex items-center space-x-3 px-4 py-2.5 text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-300"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Heart className="h-5 w-5" />
-                      <span>Wishlist</span>
-                    </Link>
-
-                    {user?.role === "ADMIN" && (
+                    <div className="space-y-1">
                       <Link
-                        to="/admin"
-                        className="flex items-center space-x-3 px-4 py-2.5 text-purple-600 hover:bg-purple-50 rounded-xl transition-all duration-300 font-medium"
+                        to="/profile"
                         onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                          isActivePath("/profile")
+                            ? "bg-blue-50 text-blue-600 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
                       >
-                        <Shield className="h-5 w-5" />
-                        <span>Admin Dashboard</span>
+                        <User className="h-4 w-4" />
+                        <span>My Profile</span>
                       </Link>
-                    )}
+                      <Link
+                        to="/wishlist"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                          isActivePath("/wishlist")
+                            ? "bg-red-50 text-red-600 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Heart className="h-4 w-4" />
+                        <span>Wishlist</span>
+                      </Link>
+                      <Link
+                        to="/settings"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                          isActivePath("/settings")
+                            ? "bg-gray-50 text-gray-900 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>Settings</span>
+                      </Link>
 
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center space-x-3 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all duration-300 w-full text-left"
-                    >
-                      <LogOut className="h-5 w-5" />
-                      <span>Sign Out</span>
-                    </button>
+                      {user?.role === "ADMIN" && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                            isActivePath("/admin")
+                              ? "bg-purple-50 text-purple-600 font-medium"
+                              : "text-purple-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Shield className="h-4 w-4" />
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      )}
+
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center space-x-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-all duration-300 w-full text-left rounded-xl"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  <Link to="/signin" onClick={() => setIsMenuOpen(false)}>
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2.5 rounded-xl font-medium transition-all duration-300">
-                      Sign In
-                    </Button>
+                  <Link
+                    to="/signin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center justify-center py-2.5 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105"
+                  >
+                    Sign In
                   </Link>
                 )}
               </div>
@@ -482,14 +541,6 @@ const Header = () => {
           </div>
         )}
       </div>
-
-      {/* Click outside to close user menu */}
-      {isUserMenuOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsUserMenuOpen(false)}
-        />
-      )}
     </header>
   );
 };
