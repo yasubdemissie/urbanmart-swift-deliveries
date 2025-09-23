@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -32,8 +29,79 @@ model User {
   cartItems    CartItem[]
   reviews      Review[]
   wishlist     WishlistItem[]
+  statusUpdates OrderStatusHistory[]
+  
+  // Merchant-specific relations
+  merchantStore MerchantStore?
+  merchantOrders Order[] @relation("MerchantOrders")
+  reports        Report[] @relation("Reporter")
+  assignedReports Report[] @relation("AssignedAdmin")
+  transactions   Transaction[]
 
   @@map("users")
+}
+
+model MerchantStore {
+  id          String   @id @default(cuid())
+  merchantId  String   @unique
+  name        String
+  description String?
+  logo        String?
+  banner      String?
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  merchant   User      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products   Product[]
+  orders     Order[]    @relation("StoreOrders")
+
+  @@map("merchant_stores")
+}
+
+model Report {
+  id          String      @id @default(cuid())
+  reporterId  String
+  assignedAdminId String?
+  type        ReportType
+  title       String
+  description String
+  status      ReportStatus @default(OPEN)
+  priority    ReportPriority @default(MEDIUM)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  reporter       User   @relation("Reporter", fields: [reporterId], references: [id])
+  assignedAdmin  User?  @relation("AssignedAdmin", fields: [assignedAdminId], references: [id])
+
+  @@map("reports")
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  orderId       String
+  merchantId    String?
+  amount        Decimal           @db.Decimal(10, 2)
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  paymentMethod PaymentMethod
+  reference     String?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  order     Order @relation(fields: [orderId], references: [id])
+  merchant  User? @relation(fields: [merchantId], references: [id])
+
+  @@map("transactions")
 }
 
 model Address {
@@ -99,6 +167,7 @@ model Product {
   isOnSale      Boolean  @default(false)
   salePercentage Int?
   categoryId    String
+  merchantStoreId String?
   brand         String?
   tags          String[]
   images        String[]
@@ -108,6 +177,7 @@ model Product {
 
   // Relations
   category     Category     @relation(fields: [categoryId], references: [id])
+  merchantStore MerchantStore? @relation(fields: [merchantStoreId], references: [id])
   orderItems   OrderItem[]
   cartItems    CartItem[]
   reviews      Review[]
@@ -120,6 +190,8 @@ model Order {
   id            String        @id @default(cuid())
   orderNumber   String        @unique
   userId        String
+  merchantId    String?
+  storeId       String?
   status        OrderStatus   @default(PENDING)
   subtotal      Decimal       @db.Decimal(10, 2)
   tax           Decimal       @db.Decimal(10, 2)
@@ -140,9 +212,13 @@ model Order {
 
   // Relations
   user            User        @relation(fields: [userId], references: [id])
+  merchant        User?        @relation("MerchantOrders", fields: [merchantId], references: [id])
+  store           MerchantStore? @relation("StoreOrders", fields: [storeId], references: [id])
   shippingAddress Address     @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   billingAddress  Address     @relation("BillingAddress", fields: [billingAddressId], references: [id])
   orderItems      OrderItem[]
+  statusHistory   OrderStatusHistory[]
+  transactions    Transaction[]
 
   @@map("orders")
 }
@@ -161,6 +237,24 @@ model OrderItem {
   product Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  notes     String?
+  updatedBy String?     // User ID who made the change (optional)
+  timestamp DateTime    @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  updater User? @relation(fields: [updatedBy], references: [id])
+
+  @@map("order_status_history")
 }
 
 model CartItem {
@@ -214,9 +308,10 @@ model WishlistItem {
 
 // Enums
 enum UserRole {
+  SUPER_ADMIN
   ADMIN
+  MERCHANT
   CUSTOMER
-  VENDOR
 }
 
 enum AddressType {
@@ -249,4 +344,41 @@ enum PaymentStatus {
   FAILED
   REFUNDED
   PARTIALLY_REFUNDED
+}
+
+enum ReportType {
+  TECHNICAL_ISSUE
+  PAYMENT_PROBLEM
+  PRODUCT_COMPLAINT
+  MERCHANT_COMPLAINT
+  GENERAL_INQUIRY
+  ACCOUNT_ISSUE
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ReportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  COMMISSION
+  WITHDRAWAL
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
 }

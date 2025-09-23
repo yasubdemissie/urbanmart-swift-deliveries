@@ -1,244 +1,494 @@
-import { Router } from "express";
+import { Request, Response, Router } from "express";
 import prisma from "../lib/prisma";
 import {
   authenticateToken,
-  requireAdmin,
   AuthRequest,
+  requireAdmin,
+  requireSuperAdmin,
+  canManageUsers,
+  canViewReports,
 } from "../middleware/auth";
 import { formatResponse, formatError } from "../utils/helpers";
-import { $Enums } from "@prisma/client";
 
 const router = Router();
 
-// GET /admin/stats - Dashboard stats
+// Get admin dashboard data
 router.get(
-  "/stats",
+  "/dashboard",
   authenticateToken,
   requireAdmin,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
-      const [
-        totalSales,
-        totalOrders,
-        totalCustomers,
-        totalProducts,
-        recentOrders,
-      ] = await Promise.all([
-        prisma.order.aggregate({ _sum: { total: true } }),
-        prisma.order.count(),
-        prisma.user.count({ where: { role: $Enums.UserRole.CUSTOMER } }),
-        prisma.product.count(),
-        prisma.order.findMany({
-          orderBy: { createdAt: "desc" },
-          take: 5,
-          include: { user: true, orderItems: true },
-        }),
-      ]);
-
-      // 1. Get top 5 product IDs by average rating
-      const topRated = await prisma.review.groupBy({
-        by: ["productId"],
-        _avg: { rating: true },
-        orderBy: { _avg: { rating: "desc" } },
-        take: 5,
+      // Get user statistics
+      const userStats = await prisma.user.groupBy({
+        by: ["role"],
+        _count: { id: true },
       });
 
-      // 2. Fetch the product details for those IDs
-      const productIds = topRated.map((r) => r.productId);
-
-      const topProducts = await prisma.product.findMany({
-        where: { id: { in: productIds } },
-        include: { reviews: true },
+      // Get order statistics
+      const orderStats = await prisma.order.aggregate({
+        _count: { id: true },
+        _sum: { total: true },
       });
 
-      // 3. Optionally, sort the products array to match the order of average ratings
-      const topProductsSorted = productIds.map((id) =>
-        topProducts.find((p) => p.id === id)
-      );
-
-      return formatResponse(res, {
-        totalSales: totalSales._sum.total || 0,
-        totalOrders,
-        totalCustomers,
-        totalProducts,
-        recentOrders: recentOrders.map((order) => ({
-          ...order,
-          customerName: order.user
-            ? `${order.user.firstName} ${order.user.lastName}`
-            : undefined,
-        })),
-        topProducts: topProductsSorted,
+      // Get product statistics
+      const productStats = await prisma.product.aggregate({
+        _count: { id: true },
       });
-    } catch (error) {
-      return formatError(res, "Failed to fetch admin stats", 500);
-    }
-  }
-);
 
-// GET /admin/products - List products with filters
-router.get(
-  "/products",
-  authenticateToken,
-  requireAdmin,
-  async (req: AuthRequest, res) => {
-    try {
-      const { page = 1, limit = 20, search, category, status } = req.query;
-      const skip = (Number(page) - 1) * Number(limit);
-      const where: Record<string, unknown> = {};
-      if (search) where.name = { contains: search, mode: "insensitive" };
-      if (category) where.categoryId = category;
-      if (status) where.status = status;
-      const [products, total] = await Promise.all([
-        prisma.product.findMany({ where, skip, take: Number(limit) }),
-        prisma.product.count({ where }),
-      ]);
-      return formatResponse(res, {
-        products,
-        total,
-        page: Number(page),
-        totalPages: Math.ceil(total / Number(limit)),
-      });
-    } catch (error) {
-      return formatError(res, "Failed to fetch products", 500);
-    }
-  }
-);
-
-// GET /admin/orders - List orders with filters
-router.get(
-  "/orders",
-  authenticateToken,
-  requireAdmin,
-  async (req: AuthRequest, res) => {
-    try {
-      const { page = 1, limit = 20, status, dateFrom, dateTo } = req.query;
-      const skip = (Number(page) - 1) * Number(limit);
-      const where: Record<string, unknown> = {};
-      if (status) where.status = status;
-      if (dateFrom || dateTo) {
-        where.createdAt = {};
-        if (dateFrom)
-          (where.createdAt as { gte?: Date; lte?: Date }).gte = new Date(
-            dateFrom as string
-          );
-        if (dateTo)
-          (where.createdAt as { gte?: Date; lte?: Date }).lte = new Date(
-            dateTo as string
-          );
-      }
-      const [orders, total] = await Promise.all([
-        prisma.order.findMany({
-          where,
-          skip,
-          take: Number(limit),
-          include: {
-            user: true,
-            shippingAddress: true,
-            billingAddress: true,
-            orderItems: {
-              include: {
-                product: true,
-              },
-            },
+      // Get recent reports
+      const recentReports = await prisma.report.findMany({
+        include: {
+          reporter: {
+            select: { id: true, firstName: true, lastName: true, email: true },
           },
-        }),
-        prisma.order.count({ where }),
-      ]);
-      return formatResponse(res, {
-        orders,
-        total,
-        page: Number(page),
-        totalPages: Math.ceil(total / Number(limit)),
+          assignedAdmin: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
       });
+
+      // Get recent transactions
+      const recentTransactions = await prisma.transaction.findMany({
+        include: {
+          order: {
+            select: { id: true, orderNumber: true },
+          },
+          merchant: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      });
+
+      const dashboardData = {
+        stats: {
+          users: userStats.reduce((acc, stat) => {
+            acc[stat.role.toLowerCase()] = stat._count.id;
+            return acc;
+          }, {} as Record<string, number>),
+          totalOrders: orderStats._count.id || 0,
+          totalRevenue: orderStats._sum.total || 0,
+          totalProducts: productStats._count.id || 0,
+        },
+        recentReports,
+        recentTransactions,
+      };
+
+      return formatResponse(
+        res,
+        dashboardData,
+        "Admin dashboard data retrieved successfully"
+      );
     } catch (error) {
-      return formatError(res, "Failed to fetch orders", 500);
+      console.error("Error fetching admin dashboard:", error);
+      return formatError(res, "Failed to fetch dashboard data", 500);
     }
   }
 );
 
-// PUT /admin/orders/:id/status - Update order status
-router.put(
-  "/orders/:id/status",
+// Get all users (Admin only)
+router.get(
+  "/users",
   authenticateToken,
-  requireAdmin,
-  async (req: AuthRequest, res) => {
+  canManageUsers,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { page = 1, limit = 10, role, search } = req.query;
+
+      const where: any = {};
+
+      if (role) {
+        where.role = role;
+      }
+
+      if (search) {
+        where.OR = [
+          { firstName: { contains: search as string, mode: "insensitive" } },
+          { lastName: { contains: search as string, mode: "insensitive" } },
+          { email: { contains: search as string, mode: "insensitive" } },
+        ];
+      }
+
+      const users = await prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          merchantStore: {
+            select: { id: true, name: true, isVerified: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit),
+      });
+
+      const total = await prisma.user.count({ where });
+
+      return formatResponse(
+        res,
+        {
+          users,
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            pages: Math.ceil(total / Number(limit)),
+          },
+        },
+        "Users retrieved successfully"
+      );
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      return formatError(res, "Failed to fetch users", 500);
+    }
+  }
+);
+
+// Update user role (Super Admin only)
+router.patch(
+  "/users/:id/role",
+  authenticateToken,
+  requireSuperAdmin,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+
+      const validRoles = ["CUSTOMER", "MERCHANT", "ADMIN"];
+      if (!validRoles.includes(role)) {
+        return formatError(res, "Invalid role", 400);
+      }
+
+      const user = await prisma.user.update({
+        where: { id },
+        data: { role },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+        },
+      });
+
+      return formatResponse(res, user, "User role updated successfully");
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      return formatError(res, "Failed to update user role", 500);
+    }
+  }
+);
+
+// Toggle user active status
+router.patch(
+  "/users/:id/status",
+  authenticateToken,
+  canManageUsers,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { isActive } = req.body;
+
+      const user = await prisma.user.update({
+        where: { id },
+        data: { isActive },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          role: true,
+          isActive: true,
+        },
+      });
+
+      return formatResponse(res, user, "User status updated successfully");
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      return formatError(res, "Failed to update user status", 500);
+    }
+  }
+);
+
+// Get all reports
+router.get(
+  "/reports",
+  authenticateToken,
+  canViewReports,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { page = 1, limit = 10, status, priority, type } = req.query;
+
+      const where: any = {};
+
+      if (status) {
+        where.status = status;
+      }
+
+      if (priority) {
+        where.priority = priority;
+      }
+
+      if (type) {
+        where.type = type;
+      }
+
+      const reports = await prisma.report.findMany({
+        where,
+        include: {
+          reporter: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+          assignedAdmin: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit),
+      });
+
+      const total = await prisma.report.count({ where });
+
+      return formatResponse(
+        res,
+        {
+          reports,
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            pages: Math.ceil(total / Number(limit)),
+          },
+        },
+        "Reports retrieved successfully"
+      );
+    } catch (error) {
+      console.error("Error fetching reports:", error);
+      return formatError(res, "Failed to fetch reports", 500);
+    }
+  }
+);
+
+// Assign report to admin
+router.patch(
+  "/reports/:id/assign",
+  authenticateToken,
+  canViewReports,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { assignedAdminId } = req.body;
+
+      const report = await prisma.report.update({
+        where: { id },
+        data: {
+          assignedAdminId,
+          status: "IN_PROGRESS",
+        },
+        include: {
+          reporter: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+          assignedAdmin: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+        },
+      });
+
+      return formatResponse(res, report, "Report assigned successfully");
+    } catch (error) {
+      console.error("Error assigning report:", error);
+      return formatError(res, "Failed to assign report", 500);
+    }
+  }
+);
+
+// Update report status
+router.patch(
+  "/reports/:id/status",
+  authenticateToken,
+  canViewReports,
+  async (req: AuthRequest, res: Response) => {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const order = await prisma.order.update({
+
+      const report = await prisma.report.update({
         where: { id },
         data: { status },
+        include: {
+          reporter: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+          assignedAdmin: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+        },
       });
-      return formatResponse(res, { order }, "Order status updated");
+
+      return formatResponse(res, report, "Report status updated successfully");
     } catch (error) {
-      return formatError(res, "Failed to update order status", 500);
+      console.error("Error updating report status:", error);
+      return formatError(res, "Failed to update report status", 500);
     }
   }
 );
 
-// GET /admin/customers - List customers with filters
+// Get all transactions
 router.get(
-  "/customers",
+  "/transactions",
   authenticateToken,
   requireAdmin,
-  async (req: AuthRequest, res) => {
+  async (req: AuthRequest, res: Response) => {
     try {
-      const { page = 1, limit = 20, search } = req.query;
-      const skip = (Number(page) - 1) * Number(limit);
-      const where: Record<string, unknown> = { role: $Enums.UserRole.CUSTOMER };
+      const { page = 1, limit = 10, status, type } = req.query;
+
+      const where: any = {};
+
+      if (status) {
+        where.status = status;
+      }
+
+      if (type) {
+        where.type = type;
+      }
+
+      const transactions = await prisma.transaction.findMany({
+        where,
+        include: {
+          order: {
+            select: { id: true, orderNumber: true },
+          },
+          merchant: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit),
+      });
+
+      const total = await prisma.transaction.count({ where });
+
+      return formatResponse(
+        res,
+        {
+          transactions,
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            pages: Math.ceil(total / Number(limit)),
+          },
+        },
+        "Transactions retrieved successfully"
+      );
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      return formatError(res, "Failed to fetch transactions", 500);
+    }
+  }
+);
+
+// Get merchant stores
+router.get(
+  "/merchant-stores",
+  authenticateToken,
+  requireAdmin,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { page = 1, limit = 10, isVerified, search } = req.query;
+
+      const where: any = {};
+
+      if (isVerified !== undefined) {
+        where.isVerified = isVerified === "true";
+      }
+
       if (search) {
         where.OR = [
-          { firstName: { contains: search, mode: "insensitive" } },
-          { lastName: { contains: search, mode: "insensitive" } },
-          { email: { contains: search, mode: "insensitive" } },
+          { name: { contains: search as string, mode: "insensitive" } },
+          { description: { contains: search as string, mode: "insensitive" } },
         ];
       }
-      const [customers, total] = await Promise.all([
-        prisma.user.findMany({ where, skip, take: Number(limit) }),
-        prisma.user.count({ where }),
-      ]);
-      return formatResponse(res, {
-        customers,
-        total,
-        page: Number(page),
-        totalPages: Math.ceil(total / Number(limit)),
+
+      const stores = await prisma.merchantStore.findMany({
+        where,
+        include: {
+          merchant: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+          _count: {
+            select: { products: true, orders: true },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        skip: (Number(page) - 1) * Number(limit),
+        take: Number(limit),
       });
+
+      const total = await prisma.merchantStore.count({ where });
+
+      return formatResponse(
+        res,
+        {
+          stores,
+          pagination: {
+            page: Number(page),
+            limit: Number(limit),
+            total,
+            pages: Math.ceil(total / Number(limit)),
+          },
+        },
+        "Merchant stores retrieved successfully"
+      );
     } catch (error) {
-      return formatError(res, "Failed to fetch customers", 500);
+      console.error("Error fetching merchant stores:", error);
+      return formatError(res, "Failed to fetch merchant stores", 500);
     }
   }
 );
 
-// Export endpoints (dummy implementation, replace with real export logic)
-router.get(
-  "/orders/export",
+// Verify merchant store
+router.patch(
+  "/merchant-stores/:id/verify",
   authenticateToken,
   requireAdmin,
-  async (req: AuthRequest, res) => {
-    // TODO: Implement export logic
-    return res.status(501).json({ message: "Export orders not implemented" });
-  }
-);
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const { isVerified } = req.body;
 
-router.get(
-  "/products/export",
-  authenticateToken,
-  requireAdmin,
-  async (req: AuthRequest, res) => {
-    // TODO: Implement export logic
-    return res.status(501).json({ message: "Export products not implemented" });
-  }
-);
+      const store = await prisma.merchantStore.update({
+        where: { id },
+        data: { isVerified },
+        include: {
+          merchant: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
+        },
+      });
 
-router.get(
-  "/customers/export",
-  authenticateToken,
-  requireAdmin,
-  async (req: AuthRequest, res) => {
-    // TODO: Implement export logic
-    return res
-      .status(501)
-      .json({ message: "Export customers not implemented" });
+      return formatResponse(
+        res,
+        store,
+        "Store verification status updated successfully"
+      );
+    } catch (error) {
+      console.error("Error updating store verification:", error);
+      return formatError(res, "Failed to update store verification", 500);
+    }
   }
 );
 

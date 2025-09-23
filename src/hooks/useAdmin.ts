@@ -1,217 +1,169 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  AdminStatResponse,
-  apiClient,
+import apiClient, {
   Order,
-  OrderItem,
-  Product,
   User,
+  Report,
+  Transaction,
+  MerchantStore,
+  Pagination,
 } from "@/lib/api";
 
 // Admin query keys
 export const adminKeys = {
   all: ["admin"] as const,
-  products: () => [...adminKeys.all, "products"] as const,
-  orders: () => [...adminKeys.all, "orders"] as const,
-  customers: () => [...adminKeys.all, "customers"] as const,
-  stats: () => [...adminKeys.all, "stats"] as const,
+  dashboard: () => [...adminKeys.all, "dashboard"] as const,
+  users: () => [...adminKeys.all, "users"] as const,
+  reports: () => [...adminKeys.all, "reports"] as const,
+  transactions: () => [...adminKeys.all, "transactions"] as const,
+  merchantStores: () => [...adminKeys.all, "merchantStores"] as const,
 };
 
 // Get admin dashboard stats
-export const useAdminStats = () => {
+export const useAdminDashboard = () => {
   return useQuery({
-    queryKey: adminKeys.stats(),
-    queryFn: () =>
-      apiClient.getAdminStats().then((data) => {
-        if (data.success) {
-          return data.data;
-        }
-        return {} as {
-          totalSales: number;
-          totalOrders: number;
-          totalCustomers: number;
-          totalProducts: number;
-          recentOrders: Array<{
-            id: string;
-            total: number;
-            status: string;
-            customerName?: string;
-          }>;
-        };
-      }),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: adminKeys.dashboard(),
+    queryFn: () => apiClient.getAdminDashboard(),
+    staleTime: 5 * 60 * 1000,
   });
 };
 
-// Get all products for admin (with pagination and filters)
-export const useAdminProducts = (filters?: {
+// Get all users for admin
+export const useAdminUsers = (filters?: {
   page?: number;
   limit?: number;
-  search?: string;
-  category?: string;
-  status?: string;
-}) => {
-  return useQuery({
-    queryKey: [...adminKeys.products(), filters],
-    queryFn: () =>
-      apiClient.getAdminProducts(filters).then((data) => {
-        if (data.success) {
-          return data.data;
-        }
-        return {} as {
-          products: Product[];
-          total: number;
-          page: number;
-          totalPages: number;
-        };
-      }),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  });
-};
-
-// Get all orders for admin
-export const useAdminOrders = (filters?: {
-  page?: number;
-  limit?: number;
-  status?: string;
-  dateFrom?: string;
-  dateTo?: string;
-}) => {
-  return useQuery({
-    queryKey: [...adminKeys.orders(), filters],
-    queryFn: () =>
-      apiClient.getAdminOrders(filters).then((data) => {
-        if (data.success) {
-          return data.data;
-        }
-        return {} as {
-          orders: Order[];
-          total: number;
-          page: number;
-          totalPages: number;
-        };
-      }),
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  });
-};
-
-// Get all customers for admin
-export const useAdminCustomers = (filters?: {
-  page?: number;
-  limit?: number;
+  role?: string;
   search?: string;
 }) => {
   return useQuery({
-    queryKey: [...adminKeys.customers(), filters],
-    queryFn: () =>
-      apiClient.getAdminCustomers(filters).then((data) => {
-        if (data.success) {
-          return data.data;
-        }
-        return {} as {
-          customers: User[];
-          total: number;
-          page: number;
-          totalPages: number;
-        };
-      }),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    queryKey: [...adminKeys.users(), filters],
+    queryFn: async () => {
+      const response = await apiClient.getUsers(filters);
+      if (response.success) {
+        return response.data;
+      }
+      return {
+        users: [] as User[],
+        pagination: { total: 0, page: 1, limit: 10 } as Pagination,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
   });
 };
 
-// Get a single order for admin
-export const useAdminOrder = (id?: string) => {
+// Get all reports for admin
+export const useAdminReports = (filters?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  priority?: string;
+  type?: string;
+}) => {
   return useQuery({
-    queryKey: [...adminKeys.orders(), "detail", id],
-    queryFn: () => {
-      if (!id) throw new Error("No order ID provided");
-      return apiClient.getOrder(id).then((data) => {
-        if (data.success) {
-          console.log("order Item from the Admin query ", data);
-          return data.data;
-        } else return {} as Order;
-      });
-    },
-    enabled: !!id,
+    queryKey: [...adminKeys.reports(), filters],
+    queryFn: () => apiClient.getReports(filters),
+    staleTime: 2 * 60 * 1000,
   });
 };
 
-// Create product mutation
-export const useCreateProduct = () => {
-  const queryClient = useQueryClient();
+// Get all transactions for admin
+export const useAdminTransactions = (filters?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+  type?: string;
+}) => {
+  return useQuery({
+    queryKey: [...adminKeys.transactions(), filters],
+    queryFn: () => apiClient.getTransactions(filters),
+    staleTime: 2 * 60 * 1000,
+  });
+};
 
+// Get all merchant stores for admin
+export const useAdminMerchantStores = (filters?: {
+  page?: number;
+  limit?: number;
+  isVerified?: boolean;
+  search?: string;
+}) => {
+  return useQuery({
+    queryKey: [...adminKeys.merchantStores(), filters],
+    queryFn: () => apiClient.getMerchantStores(filters),
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
+// Update user role mutation
+export const useUpdateUserRole = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (productData: any) => apiClient.createProduct(productData),
+    mutationFn: ({ userId, role }: { userId: string; role: User["role"] }) =>
+      apiClient.updateUserRole(userId, role),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.products() });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: adminKeys.users() });
     },
   });
 };
 
-// Update product mutation
-export const useUpdateProduct = () => {
+// Update user status mutation
+export const useUpdateUserStatus = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
-      apiClient.updateProduct(id, data),
-    onSuccess: (updatedProduct) => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.products() });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.setQueryData(
-        ["products", "detail", updatedProduct.id],
-        updatedProduct
-      );
-    },
-  });
-};
-
-// Delete product mutation
-export const useDeleteProduct = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => apiClient.deleteProduct(id),
-    onSuccess: (_, deletedId) => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.products() });
-      queryClient.invalidateQueries({ queryKey: ["products"] });
-      queryClient.removeQueries({
-        queryKey: ["products", "detail", deletedId],
-      });
-    },
-  });
-};
-
-// Update order status mutation
-export const useUpdateOrderStatus = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: Order["status"] }) =>
-      apiClient.updateOrderStatus(id, status),
+    mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+      apiClient.updateUserStatus(userId, isActive),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: adminKeys.orders() });
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: adminKeys.users() });
     },
   });
 };
 
-// Export data mutations
-export const useExportOrders = () => {
+// Assign report mutation
+export const useAssignReport = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (filters?: any) => apiClient.exportOrders(filters),
+    mutationFn: ({
+      reportId,
+      assignedAdminId,
+    }: {
+      reportId: string;
+      assignedAdminId: string;
+    }) => apiClient.assignReport(reportId, assignedAdminId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.reports() });
+    },
   });
 };
 
-export const useExportProducts = () => {
+// Update report status mutation
+export const useUpdateReportStatus = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (filters?: any) => apiClient.exportProducts(filters),
+    mutationFn: ({
+      reportId,
+      status,
+    }: {
+      reportId: string;
+      status: Report["status"];
+    }) => apiClient.updateReportStatus(reportId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.reports() });
+    },
   });
 };
 
-export const useExportCustomers = () => {
+// Verify merchant store mutation
+export const useVerifyMerchantStore = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (filters?: any) => apiClient.exportCustomers(filters),
+    mutationFn: ({
+      storeId,
+      isVerified,
+    }: {
+      storeId: string;
+      isVerified: boolean;
+    }) => apiClient.verifyMerchantStore(storeId, isVerified),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.merchantStores() });
+    },
   });
 };

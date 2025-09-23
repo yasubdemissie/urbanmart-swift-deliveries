@@ -1,198 +1,218 @@
-import { DollarSign, Package, Users, ShoppingCart } from "lucide-react";
+import {
+  DollarSign,
+  Package,
+  Users,
+  ShoppingCart,
+  FileText,
+  CreditCard,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+import { AdminDashboard } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
 interface DashboardTabProps {
-  stats:
-    | {
-        totalSales: number;
-        totalOrders: number;
-        totalCustomers: number;
-        totalProducts: number;
-        recentOrders: Array<{
-          id: string;
-          total: number;
-          status: string;
-          customerName?: string;
-        }>;
-      }
-    | undefined;
+  stats: AdminDashboard | undefined;
   statsLoading: boolean;
 }
 
 const DashboardTab = ({ stats, statsLoading }: DashboardTabProps) => {
   const navigate = useNavigate();
+
   const dashboardStats = [
     {
-      title: "Total Sales",
-      value: stats ? `$${stats.totalSales.toLocaleString("en-US")}` : "$0",
+      title: "Total Revenue",
+      value: stats
+        ? `$${stats.stats?.totalRevenue.toLocaleString("en-US")}`
+        : "$0",
       change: "+12%",
       icon: DollarSign,
       color: "text-emerald-600",
       bgColor: "bg-emerald-50",
-      onClick: undefined,
+      onClick: () => navigate("/admin/transactions"),
     },
     {
-      title: "Products",
-      value: stats ? stats.totalProducts.toLocaleString("en-US") : "0",
+      title: "Total Orders",
+      value: stats ? stats.stats?.totalOrders.toLocaleString("en-US") : "0",
       change: "+5%",
-      icon: Package,
+      icon: ShoppingCart,
       color: "text-blue-600",
       bgColor: "bg-blue-50",
-      onClick: undefined,
+      onClick: () => navigate("/admin/orders"),
     },
     {
-      title: "Customers",
-      value: stats ? stats.totalCustomers.toLocaleString("en-US") : "0",
+      title: "Total Users",
+      value: stats
+        ? Object.values(stats.stats?.users || {})
+            .reduce((a, b) => a + b, 0)
+            .toLocaleString("en-US")
+        : "0",
       change: "+8%",
       icon: Users,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      onClick: undefined,
+      onClick: () => navigate("/admin/users"),
     },
     {
-      title: "Orders",
-      value: stats ? stats.totalOrders.toLocaleString("en-US") : "0",
-      change: "+15%",
-      icon: ShoppingCart,
+      title: "Total Products",
+      value: stats ? stats.stats?.totalProducts.toLocaleString("en-US") : "0",
+      change: "+3%",
+      icon: Package,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
-      onClick: () => navigate("/admin?tab=orders"),
+      onClick: () => navigate("/admin/products"),
     },
   ];
 
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "DELIVERED":
-        return "default";
-      case "SHIPPED":
-        return "secondary";
-      case "PROCESSING":
-        return "outline";
-      default:
-        return "outline";
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "DELIVERED":
-        return "bg-emerald-100 text-emerald-800 hover:bg-emerald-100";
-      case "SHIPPED":
-        return "bg-blue-100 text-blue-800 hover:bg-blue-100";
-      case "PROCESSING":
-        return "bg-amber-100 text-amber-800 hover:bg-amber-100";
-      default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-100";
-    }
-  };
+  if (statsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {dashboardStats.map((stat, index) => (
           <Card
             key={index}
-            className={`border-0 shadow-sm hover:shadow-md transition-shadow ${
-              stat.onClick ? "cursor-pointer" : ""
-            }`}
+            className={`cursor-pointer transition-all duration-200 hover:shadow-md ${stat.bgColor}`}
             onClick={stat.onClick}
           >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
-                  </p>
-                  <div className="space-y-1">
-                    {statsLoading ? (
-                      <Skeleton className="h-8 w-20" />
-                    ) : (
-                      <p className="text-3xl font-bold tracking-tight">
-                        {stat.value}
-                      </p>
-                    )}
-                    <p className="text-sm text-emerald-600 font-medium">
-                      {stat.change} from last month
-                    </p>
-                  </div>
-                </div>
-                <div className={`${stat.bgColor} p-3 rounded-full`}>
-                  <stat.icon className={`h-6 w-6 ${stat.color}`} />
-                </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-gray-600">
+                {stat.title}
+              </CardTitle>
+              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-900">
+                {stat.value}
               </div>
+              <p className="text-xs text-emerald-600 mt-1">{stat.change}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Recent Orders */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-xl font-semibold">Recent Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {statsLoading ? (
+      {/* Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Reports */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Recent Reports
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
+              {stats?.recentReports?.slice(0, 5).map((report) => (
                 <div
-                  key={i}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  key={report.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                 >
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-3 w-32" />
-                  </div>
-                  <div className="space-y-2 text-right">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-6 w-20" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : +stats?.recentOrders?.length > 0 ? (
-            <div className="space-y-3">
-              {stats.recentOrders.slice(0, 5).map((order) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => navigate(`/admin/orders/${order.id}`)}
-                >
-                  <div className="space-y-1">
-                    <p className="font-semibold text-sm">#{order.id}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {order.customerName || "Unknown Customer"}
+                  <div>
+                    <p className="font-medium text-sm">{report.title}</p>
+                    <p className="text-xs text-gray-600">
+                      {report.reporter?.firstName} {report.reporter?.lastName}
                     </p>
                   </div>
-                  <div className="text-right space-y-2">
-                    <p className="font-semibold">
-                      $
-                      {(() => {
-                        const total = Number(order.total);
-                        return isNaN(total) ? "0.00" : total.toFixed(2);
-                      })()}
-                    </p>
+                  <div className="text-right">
                     <Badge
-                      variant={getStatusVariant(order.status)}
-                      className={getStatusColor(order.status)}
+                      variant={
+                        report.status === "RESOLVED"
+                          ? "default"
+                          : report.status === "IN_PROGRESS"
+                          ? "secondary"
+                          : "destructive"
+                      }
                     >
-                      {order.status}
+                      {report.status}
                     </Badge>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(report.createdAt).toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <ShoppingCart className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No recent orders</p>
+            <Button
+              variant="outline"
+              className="w-full mt-4"
+              onClick={() => navigate("/admin/reports")}
+            >
+              View All Reports
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Recent Transactions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5" />
+              Recent Transactions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {stats?.recentTransactions?.slice(0, 5).map((transaction) => (
+                <div
+                  key={transaction.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium text-sm">
+                      ${transaction.amount.toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {transaction.merchant?.firstName}{" "}
+                      {transaction.merchant?.lastName}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <Badge
+                      variant={
+                        transaction.status === "COMPLETED"
+                          ? "default"
+                          : transaction.status === "PENDING"
+                          ? "secondary"
+                          : "destructive"
+                      }
+                    >
+                      {transaction.status}
+                    </Badge>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(transaction.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <Button
+              variant="outline"
+              className="w-full mt-4"
+              onClick={() => navigate("/admin/transactions")}
+            >
+              View All Transactions
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

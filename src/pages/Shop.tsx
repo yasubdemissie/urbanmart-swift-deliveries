@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import ProductCard from "@/components/ProductCard";
+import Header from "@/components/Custom/Header";
+import Footer from "@/components/Custom/Footer";
+import ProductCard from "@/components/Custom/ProductCard";
 import { useCategories, useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/context/cartContext";
 import { toast } from "sonner";
 import { useAddToCart } from "@/hooks/useCart";
-import ElegantFilterCard from "@/components/ElegantFilterSortCard";
+import ElegantFilterCard from "@/components/Custom/ElegantFilterSortCard";
 import { useSearchParams } from "react-router-dom";
 
 const Shop = () => {
@@ -237,7 +237,7 @@ const Shop = () => {
         )}
       </div>
 
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

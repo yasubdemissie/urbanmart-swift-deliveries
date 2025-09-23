@@ -6,7 +6,22 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("🌱 Starting database seed...");
 
-  // Create admin user
+  // Create Super Admin user
+  const superAdminPassword = await hashPassword("superadmin123");
+  const superAdmin = await prisma.user.upsert({
+    where: { email: "superadmin@urbanmart.com" },
+    update: {},
+    create: {
+      email: "superadmin@urbanmart.com",
+      password: superAdminPassword,
+      firstName: "Super",
+      lastName: "Admin",
+      role: "SUPER_ADMIN",
+      isActive: true,
+    },
+  });
+
+  // Create Admin user
   const adminPassword = await hashPassword("admin123");
   const admin = await prisma.user.upsert({
     where: { email: "admin@urbanmart.com" },
@@ -21,18 +36,166 @@ async function main() {
     },
   });
 
-  // Create sample customer
-  const customerPassword = await hashPassword("customer123");
-  const customer = await prisma.user.upsert({
-    where: { email: "customer@example.com" },
+  // Create Merchant users
+  const merchant1Password = await hashPassword("merchant123");
+  const merchant1 = await prisma.user.upsert({
+    where: { email: "merchant1@urbanmart.com" },
     update: {},
     create: {
-      email: "customer@example.com",
-      password: customerPassword,
+      email: "merchant1@urbanmart.com",
+      password: merchant1Password,
+      firstName: "Sarah",
+      lastName: "Johnson",
+      role: "MERCHANT",
+      isActive: true,
+    },
+  });
+
+  const merchant2Password = await hashPassword("merchant123");
+  const merchant2 = await prisma.user.upsert({
+    where: { email: "merchant2@urbanmart.com" },
+    update: {},
+    create: {
+      email: "merchant2@urbanmart.com",
+      password: merchant2Password,
+      firstName: "Michael",
+      lastName: "Chen",
+      role: "MERCHANT",
+      isActive: true,
+    },
+  });
+
+  const merchant3Password = await hashPassword("merchant123");
+  const merchant3 = await prisma.user.upsert({
+    where: { email: "merchant3@urbanmart.com" },
+    update: {},
+    create: {
+      email: "merchant3@urbanmart.com",
+      password: merchant3Password,
+      firstName: "Emily",
+      lastName: "Rodriguez",
+      role: "MERCHANT",
+      isActive: true,
+    },
+  });
+
+  // Create Customer users
+  const customer1Password = await hashPassword("customer123");
+  const customer1 = await prisma.user.upsert({
+    where: { email: "customer1@example.com" },
+    update: {},
+    create: {
+      email: "customer1@example.com",
+      password: customer1Password,
       firstName: "John",
       lastName: "Doe",
       role: "CUSTOMER",
       isActive: true,
+    },
+  });
+
+  const customer2Password = await hashPassword("customer123");
+  const customer2 = await prisma.user.upsert({
+    where: { email: "customer2@example.com" },
+    update: {},
+    create: {
+      email: "customer2@example.com",
+      password: customer2Password,
+      firstName: "Jane",
+      lastName: "Smith",
+      role: "CUSTOMER",
+      isActive: true,
+    },
+  });
+
+  const customer3Password = await hashPassword("customer123");
+  const customer3 = await prisma.user.upsert({
+    where: { email: "customer3@example.com" },
+    update: {},
+    create: {
+      email: "customer3@example.com",
+      password: customer3Password,
+      firstName: "David",
+      lastName: "Wilson",
+      role: "CUSTOMER",
+      isActive: true,
+    },
+  });
+
+  const customer4Password = await hashPassword("customer123");
+  const customer4 = await prisma.user.upsert({
+    where: { email: "customer4@example.com" },
+    update: {},
+    create: {
+      email: "customer4@example.com",
+      password: customer4Password,
+      firstName: "Lisa",
+      lastName: "Brown",
+      role: "CUSTOMER",
+      isActive: true,
+    },
+  });
+
+  const customer5Password = await hashPassword("customer123");
+  const customer5 = await prisma.user.upsert({
+    where: { email: "customer5@example.com" },
+    update: {},
+    create: {
+      email: "customer5@example.com",
+      password: customer5Password,
+      firstName: "Robert",
+      lastName: "Taylor",
+      role: "CUSTOMER",
+      isActive: true,
+    },
+  });
+
+  // Create Merchant Stores
+  const store1 = await prisma.merchantStore.upsert({
+    where: { merchantId: merchant1.id },
+    update: {},
+    create: {
+      merchantId: merchant1.id,
+      name: "TechGear Store",
+      description: "Premium electronics and gadgets for tech enthusiasts",
+      address: "123 Tech Street, Silicon Valley, CA 94000",
+      phone: "+1-555-0123",
+      email: "contact@techgear.com",
+      website: "https://techgear.com",
+      isActive: true,
+      isVerified: true,
+    },
+  });
+
+  const store2 = await prisma.merchantStore.upsert({
+    where: { merchantId: merchant2.id },
+    update: {},
+    create: {
+      merchantId: merchant2.id,
+      name: "Fashion Forward",
+      description: "Trendy clothing and accessories for modern lifestyle",
+      address: "456 Fashion Ave, New York, NY 10001",
+      phone: "+1-555-0456",
+      email: "hello@fashionforward.com",
+      website: "https://fashionforward.com",
+      isActive: true,
+      isVerified: true,
+    },
+  });
+
+  const store3 = await prisma.merchantStore.upsert({
+    where: { merchantId: merchant3.id },
+    update: {},
+    create: {
+      merchantId: merchant3.id,
+      name: "Home & Garden Essentials",
+      description: "Everything you need for your home and garden",
+      address: "789 Garden Lane, Portland, OR 97201",
+      phone: "+1-555-0789",
+      email: "info@homegarden.com",
+      website: "https://homegarden.com",
+      isActive: true,
+      isVerified: false, // This store is pending verification
     },
   });
 
@@ -90,7 +253,7 @@ async function main() {
     }),
   ]);
 
-  // Create sample products
+  // Create sample products (some owned by merchants)
   const products = await Promise.all([
     prisma.product.upsert({
       where: { slug: "wireless-bluetooth-headphones" },
@@ -104,6 +267,7 @@ async function main() {
         originalPrice: 99.99,
         stockQuantity: 50,
         categoryId: categories[0].id, // Electronics
+        merchantStoreId: store1.id, // Owned by TechGear Store
         brand: "AudioTech",
         tags: ["wireless", "bluetooth", "headphones"],
         images: [
@@ -125,6 +289,7 @@ async function main() {
         price: 29.99,
         stockQuantity: 100,
         categoryId: categories[1].id, // Clothing
+        merchantStoreId: store2.id, // Owned by Fashion Forward
         brand: "UrbanWear",
         tags: ["cotton", "tshirt", "casual"],
         images: [
@@ -146,6 +311,7 @@ async function main() {
         originalPrice: 299.99,
         stockQuantity: 25,
         categoryId: categories[0].id, // Electronics
+        merchantStoreId: store1.id, // Owned by TechGear Store
         brand: "TechWatch",
         tags: ["smartwatch", "health", "fitness"],
         images: [
@@ -169,6 +335,7 @@ async function main() {
         price: 24.99,
         stockQuantity: 75,
         categoryId: categories[2].id, // Home & Garden
+        merchantStoreId: store3.id, // Owned by Home & Garden Essentials
         brand: "HomeStyle",
         tags: ["ceramic", "coffee", "mugs"],
         images: [
@@ -190,6 +357,7 @@ async function main() {
         originalPrice: 120.0,
         stockQuantity: 30,
         categoryId: categories[3].id, // Accessories
+        merchantStoreId: store2.id, // Owned by Fashion Forward
         brand: "LeatherCraft",
         tags: ["leather", "laptop", "bag"],
         images: [
@@ -212,6 +380,7 @@ async function main() {
         price: 19.99,
         stockQuantity: 200,
         categoryId: categories[4].id, // Food & Beverages
+        merchantStoreId: store3.id, // Owned by Home & Garden Essentials
         brand: "NatureTea",
         tags: ["organic", "tea", "green"],
         images: [
@@ -223,11 +392,68 @@ async function main() {
     }),
   ]);
 
+  // Create sample reports
+  const reports = await Promise.all([
+    prisma.report.create({
+      data: {
+        reporterId: customer1.id,
+        type: "TECHNICAL_ISSUE",
+        title: "Website loading slowly",
+        description: "The website takes too long to load on mobile devices",
+        priority: "MEDIUM",
+        status: "OPEN",
+      },
+    }),
+    prisma.report.create({
+      data: {
+        reporterId: customer2.id,
+        type: "PAYMENT_PROBLEM",
+        title: "Payment not processed",
+        description: "My payment was declined but the money was charged",
+        priority: "HIGH",
+        status: "IN_PROGRESS",
+        assignedAdminId: admin.id,
+      },
+    }),
+    prisma.report.create({
+      data: {
+        reporterId: merchant1.id,
+        type: "MERCHANT_COMPLAINT",
+        title: "Product review system issue",
+        description: "Cannot respond to customer reviews on my products",
+        priority: "MEDIUM",
+        status: "OPEN",
+      },
+    }),
+  ]);
+
   console.log("✅ Database seeded successfully!");
-  console.log(`👤 Admin user: admin@urbanmart.com / admin123`);
-  console.log(`👤 Customer user: customer@example.com / customer123`);
+  console.log("\n👥 User Accounts Created:");
+  console.log(`🔑 Super Admin: superadmin@urbanmart.com / superadmin123`);
+  console.log(`👨‍💼 Admin: admin@urbanmart.com / admin123`);
+  console.log(
+    `🏪 Merchant 1: merchant1@urbanmart.com / merchant123 (TechGear Store)`
+  );
+  console.log(
+    `🏪 Merchant 2: merchant2@urbanmart.com / merchant123 (Fashion Forward)`
+  );
+  console.log(
+    `🏪 Merchant 3: merchant3@urbanmart.com / merchant123 (Home & Garden Essentials)`
+  );
+  console.log(`👤 Customer 1: customer1@example.com / customer123`);
+  console.log(`👤 Customer 2: customer2@example.com / customer123`);
+  console.log(`👤 Customer 3: customer3@example.com / customer123`);
+  console.log(`👤 Customer 4: customer4@example.com / customer123`);
+  console.log(`👤 Customer 5: customer5@example.com / customer123`);
+
+  console.log("\n📊 Summary:");
+  console.log(
+    `👥 Created ${8} users (1 Super Admin, 1 Admin, 3 Merchants, 5 Customers)`
+  );
+  console.log(`🏪 Created ${3} merchant stores`);
   console.log(`📦 Created ${categories.length} categories`);
   console.log(`🛍️ Created ${products.length} products`);
+  console.log(`📋 Created ${reports.length} sample reports`);
 }
 
 main()

@@ -25,15 +25,15 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/Custom/Header";
+import Footer from "@/components/Custom/Footer";
 import { useProduct } from "@/hooks/useProducts";
 import { useAddToCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import { useIsAuthenticated } from "@/hooks/useAuth";
 import { useCart } from "@/context/cartContext";
 import ProductInfo from "@/components/productDetail/ProductInfo";
-import BackButton from "@/components/BackButon";
+import BackButton from "@/components/Custom/BackButon";
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();

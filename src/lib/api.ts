@@ -12,10 +12,73 @@ export interface User {
   lastName: string;
   phone?: string;
   avatar?: string;
-  role: "USER" | "ADMIN";
+  role: "SUPER_ADMIN" | "ADMIN" | "MERCHANT" | "CUSTOMER";
   isActive?: boolean;
   createdAt: string;
   updatedAt: string;
+  merchantStore?: MerchantStore;
+}
+
+export interface MerchantStore {
+  id: string;
+  merchantId: string;
+  name: string;
+  description?: string;
+  logo?: string;
+  banner?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  isActive: boolean;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  merchant?: User;
+  products?: Product[];
+  orders?: Order[];
+}
+
+export interface Report {
+  id: string;
+  reporterId: string;
+  assignedAdminId?: string;
+  type:
+    | "TECHNICAL_ISSUE"
+    | "PAYMENT_PROBLEM"
+    | "PRODUCT_COMPLAINT"
+    | "MERCHANT_COMPLAINT"
+    | "GENERAL_INQUIRY"
+    | "ACCOUNT_ISSUE";
+  title: string;
+  description: string;
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  createdAt: string;
+  updatedAt: string;
+  reporter?: User;
+  assignedAdmin?: User;
+}
+
+export interface Transaction {
+  id: string;
+  orderId: string;
+  merchantId?: string;
+  amount: number;
+  type: "PAYMENT" | "REFUND" | "COMMISSION" | "WITHDRAWAL";
+  status: "PENDING" | "COMPLETED" | "FAILED" | "CANCELLED";
+  paymentMethod:
+    | "CREDIT_CARD"
+    | "DEBIT_CARD"
+    | "PAYPAL"
+    | "BANK_TRANSFER"
+    | "CASH_ON_DELIVERY";
+  reference?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  order?: Order;
+  merchant?: User;
 }
 
 export interface Category {
@@ -36,6 +99,7 @@ export interface Pagination {
   hasNext: boolean;
   hasPrev: boolean;
 }
+
 export interface Product {
   id: string;
   name: string;
@@ -56,7 +120,9 @@ export interface Product {
   isOnSale: boolean;
   salePercentage?: number;
   categoryId: string;
+  merchantStoreId?: string;
   category?: Category;
+  merchantStore?: MerchantStore;
   brand?: string;
   tags: string[];
   images: string[];
@@ -81,15 +147,50 @@ export interface CartItem {
 
 export interface Order {
   id: string;
+  orderNumber: string;
   userId: string;
+  merchantId?: string;
+  storeId?: string;
   user?: User;
+  merchant?: User;
+  store?: MerchantStore;
   orderItems: OrderItem[];
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  discount?: number;
   total: number;
-  status: "PENDING" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+  currency: string;
+  paymentMethod:
+    | "CREDIT_CARD"
+    | "DEBIT_CARD"
+    | "PAYPAL"
+    | "BANK_TRANSFER"
+    | "CASH_ON_DELIVERY";
+  paymentStatus:
+    | "PENDING"
+    | "PAID"
+    | "FAILED"
+    | "REFUNDED"
+    | "PARTIALLY_REFUNDED";
+  status:
+    | "PENDING"
+    | "CONFIRMED"
+    | "PROCESSING"
+    | "SHIPPED"
+    | "DELIVERED"
+    | "CANCELLED"
+    | "REFUNDED";
   shippingAddress: Address;
-  paymentStatus: "PENDING" | "PAID" | "FAILED";
+  billingAddress: Address;
+  notes?: string;
+  trackingNumber?: string;
+  shippedAt?: string;
+  deliveredAt?: string;
   createdAt: string;
   updatedAt: string;
+  statusHistory?: OrderStatusHistory[];
+  transactions?: Transaction[];
 }
 
 export interface OrderItem {
@@ -99,28 +200,8 @@ export interface OrderItem {
   product: Product;
   quantity: number;
   price: number;
-}
-
-export interface Address {
-  id: string;
-  userId: string;
-  street: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  country: string;
-  isDefault: boolean;
-}
-
-export interface Review {
-  id: string;
-  productId: string;
-  userId: string;
-  user?: User;
-  rating: number;
-  comment: string;
+  total: number;
   createdAt: string;
-  updatedAt: string;
 }
 
 export interface OrderStatusHistory {
@@ -135,13 +216,56 @@ export interface OrderStatusHistory {
   updatedAt: string;
 }
 
-export interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
+export interface Address {
+  id: string;
+  userId: string;
+  type: "SHIPPING" | "BILLING" | "BOTH";
+  firstName: string;
+  lastName: string;
+  company?: string;
+  address1: string;
+  address2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+  phone: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-// Auth types
+export interface Review {
+  id: string;
+  userId: string;
+  productId: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user?: User;
+  product?: Product;
+}
+
+export interface WishlistItem {
+  id: string;
+  userId: string;
+  productId: string;
+  createdAt: string;
+  user?: User;
+  product?: Product;
+}
+
+// API Response Types
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -152,85 +276,66 @@ export interface RegisterData {
   password: string;
   firstName: string;
   lastName: string;
+  phone?: string;
 }
-
-type AuthResponse = ApiResponse<{
+export interface AuthResponse {
   user: User;
   token: string;
-}>;
+}
 
-export type AdminStatResponse = ApiResponse<{
-  totalSales: number;
-  totalOrders: number;
-  totalCustomers: number;
-  totalProducts: number;
+// Dashboard Types
+export interface AdminDashboard {
+  stats: {
+    users: Record<string, number>;
+    totalOrders: number;
+    totalRevenue: number;
+    totalProducts: number;
+  };
+  recentReports: Report[];
+  recentTransactions: Transaction[];
+}
+
+export interface MerchantDashboard {
+  store: MerchantStore;
+  stats: {
+    totalOrders: number;
+    totalRevenue: number;
+    totalProducts: number;
+    lowStockCount: number;
+  };
   recentOrders: Order[];
-  topProducts: Product[];
-}>;
-
-type AdminProductResponse = ApiResponse<{
-  products: Product[];
-  total: number;
-  page: number;
-  totalPages: number;
-}>;
-
-type CategoryResponse = ApiResponse<{ categories: Category[] }>;
-
-type UserResponse = ApiResponse<{ user: User }>;
-
-type CartItemResponse = ApiResponse<{ cartItem: CartItem[] }>;
-
-type ProductResponse = ApiResponse<{
-  products: Product[];
-  pagination: Pagination;
-}>;
-
-export type OrdersWithPagination = {
-  orders: Order[];
-  pagination: Pagination;
-};
-
-// Helper function to handle API responses
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    console.error("API Error Response:", {
-      status: response.status,
-      statusText: response.statusText,
-      errorData,
-    });
-    const errorMessage =
-      errorData.error ||
-      errorData.message ||
-      `HTTP error! status: ${response.status}`;
-    const details = errorData.details
-      ? `\nDetails: ${JSON.stringify(errorData.details, null, 2)}`
-      : "";
-    throw new Error(`${errorMessage}${details}`);
-  }
-  return response.json();
+  lowStockProducts: Product[];
 }
 
 // Helper function to get auth headers
-function getAuthHeaders(): HeadersInit {
+const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
   return {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),
   };
-}
+};
 
 // API Client
 export const apiClient = {
-  // Auth endpoints
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  // Auth
+  async login(
+    credentials: LoginCredentials
+  ): Promise<ApiResponse<AuthResponse>> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
     });
-    return handleResponse<AuthResponse>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Login failed");
+    }
+
+    const data = await response.json();
+    localStorage.setItem("token", data.token);
+    return data;
   },
 
   async register(data: RegisterData): Promise<AuthResponse> {
@@ -239,226 +344,244 @@ export const apiClient = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
-    return handleResponse<AuthResponse>(response);
-  },
 
-  async getCurrentUser(): Promise<UserResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<UserResponse>(response);
-  },
-
-  // Product endpoints
-  async getProducts(filters?: {
-    page?: number;
-    limit?: number;
-    category?: string;
-    search?: string;
-    minPrice?: number;
-    maxPrice?: number;
-    sortBy?: string;
-    sortOrder?: "asc" | "desc";
-    featured?: boolean;
-    onSale?: boolean;
-  }): Promise<ProductResponse> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
-        }
-      });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Registration failed");
     }
 
-    const response = await fetch(`${API_BASE_URL}/products?${params}`, {
+    const result = await response.json();
+    localStorage.setItem("token", result.token);
+    return result;
+  },
+
+  async logout(): Promise<void> {
+    localStorage.removeItem("token");
+  },
+
+  // Get current user
+  async getCurrentUser(): Promise<{ success: boolean; data: { user: User } }> {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("No token found");
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      method: "GET",
       headers: getAuthHeaders(),
     });
 
-    return handleResponse(response);
+    if (!response.ok) {
+      localStorage.removeItem("token");
+      throw new Error("Invalid token");
+    }
+
+    const data = await response.json();
+    // The backend returns { success: true, message: "Success", data: { user: ... } }
+    // We need to return it as { success: true, data: { user: ... } }
+    return {
+      success: data.success,
+      data: data.data, // data.data contains { user: ... }
+    };
+  },
+
+  // Update profile
+  async updateProfile(profileData: Partial<User>): Promise<User> {
+    const response = await fetch(`${API_BASE_URL}/users/profile`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(profileData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update profile");
+    }
+
+    return response.json();
+  },
+
+  // Products
+  async getProducts(params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    category?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  }): Promise<{ products: Product[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.category) searchParams.append("category", params.category);
+    if (params?.sortBy) searchParams.append("sortBy", params.sortBy);
+    if (params?.sortOrder) searchParams.append("sortOrder", params.sortOrder);
+
+    const response = await fetch(`${API_BASE_URL}/products?${searchParams}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch products");
+    }
+
+    return response.json();
   },
 
   async getProduct(id: string): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    const result = await handleResponse<ApiResponse<{ product: Product }>>(
-      response
-    );
-    return result.data.product;
-  },
+    const response = await fetch(`${API_BASE_URL}/products/${id}`);
 
-  async getFeaturedProducts(): Promise<ProductResponse> {
-    const response = await fetch(`${API_BASE_URL}/products/featured`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<ProductResponse>(response);
-  },
-
-  async getSaleProducts(): Promise<Product[]> {
-    const response = await fetch(`${API_BASE_URL}/products/sale`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<Product[]>(response);
-  },
-
-  async createProduct(productData: any): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(productData),
-    });
-    return handleResponse<Product>(response);
-  },
-
-  async updateProduct(id: string, productData: any): Promise<Product> {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(productData),
-    });
-    return handleResponse<Product>(response);
-  },
-
-  async deleteProduct(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/products/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch product");
     }
+
+    return response.json();
   },
 
-  // Category endpoints
-  async getCategories(): Promise<CategoryResponse> {
-    const response = await fetch(`${API_BASE_URL}/categories`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<CategoryResponse>(response);
+  async getProductReviews(productId: string): Promise<Review[]> {
+    const response = await fetch(
+      `${API_BASE_URL}/reviews/product/${productId}`
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch reviews");
+    }
+
+    return response.json();
   },
 
-  async getCategory(id: string): Promise<Category> {
-    const response = await fetch(`${API_BASE_URL}/categories/${id}`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<Category>(response);
+  // Categories
+  async getCategories(): Promise<Category[]> {
+    const response = await fetch(`${API_BASE_URL}/categories`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch categories");
+    }
+
+    return response.json();
   },
 
-  // Wishlist
-  // Wishlist endpoints
-  // async getWishlist(): Promise<Product[]> {
-  //   const response = await fetch(`${API_BASE_URL}/wishlist`, {
-  //     headers: getAuthHeaders(),
-  //   });
-  //   return handleResponse<Product[]>(response);
-  // },
-
-  // async addToWishlist(productId: string): Promise<void> {
-  //   await fetch(`${API_BASE_URL}/wishlist`, {
-  //     method: "POST",
-  //     headers: getAuthHeaders(),
-  //     body: JSON.stringify({ productId }),
-  //   });
-  // },
-
-  // async removeFromWishlist(productId: string): Promise<void> {
-  //   await fetch(`${API_BASE_URL}/wishlist/${productId}`, {
-  //     method: "DELETE",
-  //     headers: getAuthHeaders(),
-  //   });
-  // },
-
-  // Cart endpoints
-  async getCart(): Promise<CartItemResponse> {
+  // Cart
+  async getCart(): Promise<CartItem[]> {
     const response = await fetch(`${API_BASE_URL}/cart`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<CartItemResponse>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch cart");
+    }
+
+    return response.json();
   },
 
-  async addToCart(
-    productId: string,
-    quantity: number
-  ): Promise<CartItemResponse> {
+  async addToCart(productId: string, quantity: number): Promise<CartItem> {
     const response = await fetch(`${API_BASE_URL}/cart`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify({ productId, quantity }),
     });
-    return handleResponse<CartItemResponse>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to add to cart");
+    }
+
+    return response.json();
   },
 
-  async updateCartItem(
-    itemId: string,
-    quantity: number
-  ): Promise<CartItemResponse> {
-    const response = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
+  async updateCartItem(productId: string, quantity: number): Promise<CartItem> {
+    const response = await fetch(`${API_BASE_URL}/cart/${productId}`, {
       method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify({ quantity }),
     });
-    return handleResponse<CartItemResponse>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update cart item");
+    }
+
+    return response.json();
   },
 
-  async removeFromCart(itemId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/cart/${itemId}`, {
+  async removeFromCart(productId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/cart/${productId}`, {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to remove from cart");
     }
   },
 
   async clearCart(): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/cart`, {
+    const response = await fetch(`${API_BASE_URL}/cart/clear`, {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to clear cart");
     }
   },
 
-  // Order endpoints
-  async getOrders(): Promise<ApiResponse<OrdersWithPagination>> {
-    const response = await fetch(`${API_BASE_URL}/orders`, {
+  // Orders
+  async getOrders(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<{ orders: Order[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.status) searchParams.append("status", params.status);
+
+    const response = await fetch(`${API_BASE_URL}/orders?${searchParams}`, {
       headers: getAuthHeaders(),
     });
-    console.log(response);
-    return handleResponse<ApiResponse<OrdersWithPagination>>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch orders");
+    }
+
+    return response.json();
   },
 
-  async getOrder(id: string): Promise<ApiResponse<Order>> {
+  async getOrder(id: string): Promise<Order> {
     const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<ApiResponse<Order>>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch order");
+    }
+
+    return response.json();
   },
 
-  async createOrder(orderData: {
-    items: { productId: string; quantity: number }[];
-    shippingAddressId: string;
-    billingAddressId: string;
-    paymentMethod: string;
-    notes?: string;
-  }): Promise<Order> {
+  async createOrder(orderData: any): Promise<Order> {
     const response = await fetch(`${API_BASE_URL}/orders`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(orderData),
     });
-    return handleResponse<Order>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to create order");
+    }
+
+    return response.json();
   },
 
   async updateOrderStatus(id: string, status: Order["status"]): Promise<Order> {
@@ -467,274 +590,464 @@ export const apiClient = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     });
-    console.log("response from the api: ", response);
-    return handleResponse<Order>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update order status");
+    }
+
+    return response.json();
   },
 
   async getOrderStatusHistory(
     orderId: string
-  ): Promise<ApiResponse<{ statusHistory: OrderStatusHistory[] }>> {
+  ): Promise<ApiResponse<OrderStatusHistory[]>> {
     const response = await fetch(
       `${API_BASE_URL}/orders/${orderId}/status-history`,
       {
         headers: getAuthHeaders(),
       }
     );
-    return handleResponse<ApiResponse<{ statusHistory: OrderStatusHistory[] }>>(
-      response
-    );
-  },
 
-  // Review endpoints
-  async getProductReviews(productId: string): Promise<Review[]> {
-    const response = await fetch(
-      `${API_BASE_URL}/products/${productId}/reviews`,
-      {
-        headers: getAuthHeaders(),
-      }
-    );
-    return handleResponse<Review[]>(response);
-  },
-
-  async createReview(
-    productId: string,
-    reviewData: {
-      rating: number;
-      comment: string;
-    }
-  ): Promise<Review> {
-    const response = await fetch(
-      `${API_BASE_URL}/products/${productId}/reviews`,
-      {
-        method: "POST",
-        headers: getAuthHeaders(),
-        body: JSON.stringify(reviewData),
-      }
-    );
-    return handleResponse<Review>(response);
-  },
-
-  // User endpoints
-  async updateProfile(userData: Partial<User>): Promise<User> {
-    console.log("user from the api: ", userData);
-    const response = await fetch(`${API_BASE_URL}/users/profile`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(userData),
-    });
-    return handleResponse<User>(response);
-  },
-
-  async getAddresses(): Promise<Address[]> {
-    const response = await fetch(`${API_BASE_URL}/users/addresses`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<Address[]>(response);
-  },
-
-  async addAddress(
-    addressData: Omit<Address, "id" | "userId">
-  ): Promise<Address> {
-    const response = await fetch(`${API_BASE_URL}/users/addresses`, {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(addressData),
-    });
-    return handleResponse<Address>(response);
-  },
-
-  async updateAddress(
-    id: string,
-    addressData: Partial<Address>
-  ): Promise<Address> {
-    const response = await fetch(`${API_BASE_URL}/users/addresses/${id}`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(addressData),
-    });
-    return handleResponse<Address>(response);
-  },
-
-  async deleteAddress(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/users/addresses/${id}`, {
-      method: "DELETE",
-      headers: getAuthHeaders(),
-    });
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorData = await response.json();
       throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
+        errorData.error || "Failed to fetch order status history"
       );
     }
+
+    return response.json();
   },
 
-  async getCustomer(id: string): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+  // Admin
+  async getAdminDashboard(): Promise<AdminDashboard> {
+    const response = await fetch(`${API_BASE_URL}/admin/dashboard`, {
       headers: getAuthHeaders(),
     });
-    console.log("user data ", response);
-    return handleResponse<User>(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch admin dashboard");
+    }
+
+    return response.json();
   },
 
-  // Admin endpoints
-  async getAdminStats(): Promise<AdminStatResponse> {
-    const response = await fetch(`${API_BASE_URL}/admin/stats`, {
+  async getUsers(params?: {
+    page?: number;
+    limit?: number;
+    role?: string;
+    search?: string;
+  }): Promise<ApiResponse<{ users: User[]; pagination: Pagination }>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.role) searchParams.append("role", params.role);
+    if (params?.search) searchParams.append("search", params.search);
+
+    const response = await fetch(
+      `${API_BASE_URL}/admin/users?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch users");
+    }
+
+    return response.json();
+  },
+
+  async updateUserRole(userId: string, role: User["role"]): Promise<User> {
+    const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ role }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update user role");
+    }
+
+    return response.json();
+  },
+
+  async updateUserStatus(userId: string, isActive: boolean): Promise<User> {
+    const response = await fetch(
+      `${API_BASE_URL}/admin/users/${userId}/status`,
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ isActive }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update user status");
+    }
+
+    return response.json();
+  },
+
+  async getReports(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    priority?: string;
+    type?: string;
+  }): Promise<{ reports: Report[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.priority) searchParams.append("priority", params.priority);
+    if (params?.type) searchParams.append("type", params.type);
+
+    const response = await fetch(
+      `${API_BASE_URL}/admin/reports?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch reports");
+    }
+
+    return response.json();
+  },
+
+  async assignReport(
+    reportId: string,
+    assignedAdminId: string
+  ): Promise<Report> {
+    const response = await fetch(
+      `${API_BASE_URL}/admin/reports/${reportId}/assign`,
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ assignedAdminId }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to assign report");
+    }
+
+    return response.json();
+  },
+
+  async updateReportStatus(
+    reportId: string,
+    status: Report["status"]
+  ): Promise<Report> {
+    const response = await fetch(
+      `${API_BASE_URL}/admin/reports/${reportId}/status`,
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update report status");
+    }
+
+    return response.json();
+  },
+
+  async getTransactions(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    type?: string;
+  }): Promise<{ transactions: Transaction[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.status) searchParams.append("status", params.status);
+    if (params?.type) searchParams.append("type", params.type);
+
+    const response = await fetch(
+      `${API_BASE_URL}/admin/transactions?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch transactions");
+    }
+
+    return response.json();
+  },
+
+  async getMerchantStores(params?: {
+    page?: number;
+    limit?: number;
+    isVerified?: boolean;
+    search?: string;
+  }): Promise<{ stores: MerchantStore[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.isVerified !== undefined)
+      searchParams.append("isVerified", params.isVerified.toString());
+    if (params?.search) searchParams.append("search", params.search);
+
+    const response = await fetch(
+      `${API_BASE_URL}/admin/merchant-stores?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchant stores");
+    }
+
+    return response.json();
+  },
+
+  async verifyMerchantStore(
+    storeId: string,
+    isVerified: boolean
+  ): Promise<MerchantStore> {
+    const response = await fetch(
+      `${API_BASE_URL}/admin/merchant-stores/${storeId}/verify`,
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ isVerified }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to verify merchant store");
+    }
+
+    return response.json();
+  },
+
+  // Merchant
+  async getMerchantDashboard(): Promise<ApiResponse<MerchantDashboard>> {
+    const response = await fetch(`${API_BASE_URL}/merchant/dashboard`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse(response);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchant dashboard");
+    }
+
+    return response.json();
   },
 
-  async getAdminProducts(filters?: {
+  async getMerchantProducts(params?: {
     page?: number;
     limit?: number;
     search?: string;
     category?: string;
-    status?: string;
-  }): Promise<AdminProductResponse> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
-        }
-      });
+  }): Promise<{ products: Product[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.category) searchParams.append("category", params.category);
+
+    const response = await fetch(
+      `${API_BASE_URL}/merchant/products?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchant products");
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/products?${params}`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse<AdminProductResponse>(response);
+    return response.json();
   },
 
-  async getAdminOrders(filters?: {
+  async createMerchantProduct(productData: Partial<Product>): Promise<Product> {
+    const response = await fetch(`${API_BASE_URL}/merchant/products`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(productData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to create product");
+    }
+
+    return response.json();
+  },
+
+  async updateMerchantProduct(
+    productId: string,
+    productData: Partial<Product>
+  ): Promise<Product> {
+    const response = await fetch(
+      `${API_BASE_URL}/merchant/products/${productId}`,
+      {
+        method: "PUT",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(productData),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update product");
+    }
+
+    return response.json();
+  },
+
+  async getMerchantOrders(params?: {
     page?: number;
     limit?: number;
     status?: string;
-    dateFrom?: string;
-    dateTo?: string;
-  }): Promise<
-    ApiResponse<{
-      orders: Order[];
-      total: number;
-      page: number;
-      totalPages: number;
-    }>
-  > {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
-        }
-      });
+  }): Promise<{ orders: Order[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.status) searchParams.append("status", params.status);
+
+    const response = await fetch(
+      `${API_BASE_URL}/merchant/orders?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchant orders");
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/orders?${params}`, {
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+    return response.json();
   },
 
-  async getAdminCustomers(filters?: {
+  async updateMerchantOrderStatus(
+    orderId: string,
+    status: Order["status"],
+    notes?: string
+  ): Promise<Order> {
+    const response = await fetch(
+      `${API_BASE_URL}/merchant/orders/${orderId}/status`,
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status, notes }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update order status");
+    }
+
+    return response.json();
+  },
+
+  async getMerchantCustomers(params?: {
     page?: number;
     limit?: number;
-    search?: string;
-  }): Promise<
-    ApiResponse<{
-      customers: User[];
-      total: number;
-      page: number;
-      totalPages: number;
-    }>
-  > {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
-        }
-      });
+  }): Promise<{ customers: User[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+
+    const response = await fetch(
+      `${API_BASE_URL}/merchant/customers?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchant customers");
     }
 
-    const response = await fetch(`${API_BASE_URL}/admin/customers?${params}`, {
+    return response.json();
+  },
+
+  async updateMerchantStore(
+    storeData: Partial<MerchantStore>
+  ): Promise<MerchantStore> {
+    const response = await fetch(`${API_BASE_URL}/merchant/store`, {
+      method: "POST",
       headers: getAuthHeaders(),
+      body: JSON.stringify(storeData),
     });
-    return handleResponse(response);
-  },
 
-  async exportOrders(filters?: any): Promise<Blob> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
-        }
-      });
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update store");
     }
 
+    return response.json();
+  },
+
+  // Reports
+  async submitReport(reportData: {
+    type: Report["type"];
+    title: string;
+    description: string;
+    priority?: Report["priority"];
+  }): Promise<Report> {
+    const response = await fetch(`${API_BASE_URL}/reports`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(reportData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to submit report");
+    }
+
+    return response.json();
+  },
+
+  async getMyReports(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<{ reports: Report[]; pagination: Pagination }> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.status) searchParams.append("status", params.status);
+
     const response = await fetch(
-      `${API_BASE_URL}/admin/orders/export?${params}`,
+      `${API_BASE_URL}/reports/my-reports?${searchParams}`,
       {
         headers: getAuthHeaders(),
       }
     );
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
-    }
-    return response.blob();
-  },
-
-  async exportProducts(filters?: any): Promise<Blob> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
-        }
-      });
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch reports");
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/admin/products/export?${params}`,
-      {
-        headers: getAuthHeaders(),
-      }
-    );
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
-    }
-    return response.blob();
-  },
-
-  async exportCustomers(filters?: any): Promise<Blob> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          params.append(key, value.toString());
-        }
-      });
-    }
-
-    const response = await fetch(
-      `${API_BASE_URL}/admin/customers/export?${params}`,
-      {
-        headers: getAuthHeaders(),
-      }
-    );
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
-    }
-    return response.blob();
+    return response.json();
   },
 };
 

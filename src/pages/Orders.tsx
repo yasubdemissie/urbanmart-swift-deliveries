@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingCart, Plus, ArrowLeft } from "lucide-react";
 import { useOrders } from "@/hooks/useOrders";
-import Header from "@/components/Header";
+import Header from "@/components/Custom/Header";
 
 const OrdersPage = () => {
   const navigate = useNavigate();

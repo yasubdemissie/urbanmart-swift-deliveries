@@ -69,6 +69,30 @@ export const requireRole = (roles: string[]) => {
   };
 };
 
-export const requireAdmin = requireRole(["ADMIN"]);
-export const requireCustomer = requireRole(["CUSTOMER", "ADMIN"]);
-export const requireVendor = requireRole(["VENDOR", "ADMIN"]);
+// Role-based middleware functions
+export const requireSuperAdmin = requireRole(["SUPER_ADMIN"]);
+export const requireAdmin = requireRole(["ADMIN", "SUPER_ADMIN"]);
+export const requireMerchant = requireRole([
+  "MERCHANT",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);
+export const requireCustomer = requireRole([
+  "CUSTOMER",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);
+
+// Legacy support
+export const requireVendor = requireRole(["VENDOR", "ADMIN", "SUPER_ADMIN"]);
+
+// Permission-based middleware
+export const canManageUsers = requireRole(["ADMIN", "SUPER_ADMIN"]);
+export const canManageMerchants = requireRole(["ADMIN", "SUPER_ADMIN"]);
+export const canManageProducts = requireRole([
+  "MERCHANT",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);
+export const canViewReports = requireRole(["ADMIN", "SUPER_ADMIN"]);
+export const canManageTransactions = requireRole(["ADMIN", "SUPER_ADMIN"]);

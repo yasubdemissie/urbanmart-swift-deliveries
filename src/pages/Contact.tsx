@@ -1,38 +1,37 @@
-
-import { useState } from 'react';
-import { Mail, Phone, MapPin, MessageCircle, Clock } from 'lucide-react';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from "react";
+import { Mail, Phone, MapPin, MessageCircle, Clock } from "lucide-react";
+import Header from "@/components/Custom/Header";
+import Footer from "@/components/Custom/Footer";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    alert('Thank you for your message! We\'ll get back to you within 24 hours.');
-    
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    alert("Thank you for your message! We'll get back to you within 24 hours.");
+
+    setFormData({ name: "", email: "", subject: "", message: "" });
     setIsSubmitting(false);
   };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
@@ -41,56 +40,62 @@ const Contact = () => {
       icon: <Phone className="h-6 w-6 text-blue-600" />,
       title: "Phone",
       details: "1-800-URBAN-MART",
-      subtext: "Mon-Fri 9AM-6PM EST"
+      subtext: "Mon-Fri 9AM-6PM EST",
     },
     {
       icon: <Mail className="h-6 w-6 text-blue-600" />,
       title: "Email",
       details: "support@urbanmart.com",
-      subtext: "We reply within 24 hours"
+      subtext: "We reply within 24 hours",
     },
     {
       icon: <MapPin className="h-6 w-6 text-blue-600" />,
       title: "Address",
       details: "123 Commerce Street",
-      subtext: "New York, NY 10001"
+      subtext: "New York, NY 10001",
     },
     {
       icon: <MessageCircle className="h-6 w-6 text-blue-600" />,
       title: "Live Chat",
       details: "Available 24/7",
-      subtext: "Click to start chatting"
-    }
+      subtext: "Click to start chatting",
+    },
   ];
 
   const faqItems = [
     {
       question: "How can I track my order?",
-      answer: "You can track your order using our order tracking page. Just enter your order number and email address."
+      answer:
+        "You can track your order using our order tracking page. Just enter your order number and email address.",
     },
     {
       question: "What is your return policy?",
-      answer: "We offer a 30-day return policy for most items. Items must be in original condition with tags attached."
+      answer:
+        "We offer a 30-day return policy for most items. Items must be in original condition with tags attached.",
     },
     {
       question: "How long does shipping take?",
-      answer: "Standard shipping takes 3-5 business days. Express shipping is available for 1-2 business days."
+      answer:
+        "Standard shipping takes 3-5 business days. Express shipping is available for 1-2 business days.",
     },
     {
       question: "Do you ship internationally?",
-      answer: "Currently, we ship to the United States and Canada. International shipping is coming soon."
-    }
+      answer:
+        "Currently, we ship to the United States and Canada. International shipping is coming soon.",
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Contact Us</h1>
-          <p className="text-gray-600">We're here to help! Reach out to us anytime.</p>
+          <p className="text-gray-600">
+            We're here to help! Reach out to us anytime.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -104,7 +109,10 @@ const Contact = () => {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="name"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Name *
                       </label>
                       <Input
@@ -117,7 +125,10 @@ const Contact = () => {
                       />
                     </div>
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
                         Email *
                       </label>
                       <Input
@@ -131,9 +142,12 @@ const Contact = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div>
-                    <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="subject"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Subject *
                     </label>
                     <select
@@ -153,9 +167,12 @@ const Contact = () => {
                       <option value="feedback">Feedback</option>
                     </select>
                   </div>
-                  
+
                   <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="message"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Message *
                     </label>
                     <textarea
@@ -169,13 +186,13 @@ const Contact = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  
-                  <Button 
-                    type="submit" 
+
+                  <Button
+                    type="submit"
                     disabled={isSubmitting}
                     className="w-full"
                   >
-                    {isSubmitting ? 'Sending...' : 'Send Message'}
+                    {isSubmitting ? "Sending..." : "Send Message"}
                   </Button>
                 </form>
               </CardContent>
@@ -196,11 +213,11 @@ const Contact = () => {
                 <div className="space-y-4">
                   {contactInfo.map((info, index) => (
                     <div key={index} className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        {info.icon}
-                      </div>
+                      <div className="flex-shrink-0">{info.icon}</div>
                       <div>
-                        <h4 className="font-medium text-gray-900">{info.title}</h4>
+                        <h4 className="font-medium text-gray-900">
+                          {info.title}
+                        </h4>
                         <p className="text-gray-700">{info.details}</p>
                         <p className="text-sm text-gray-500">{info.subtext}</p>
                       </div>
@@ -219,7 +236,9 @@ const Contact = () => {
                 <div className="space-y-4">
                   {faqItems.map((item, index) => (
                     <div key={index}>
-                      <h4 className="font-medium text-gray-900 mb-2">{item.question}</h4>
+                      <h4 className="font-medium text-gray-900 mb-2">
+                        {item.question}
+                      </h4>
                       <p className="text-sm text-gray-600">{item.answer}</p>
                       {index < faqItems.length - 1 && <hr className="mt-4" />}
                     </div>

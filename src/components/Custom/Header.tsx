@@ -23,6 +23,15 @@ import { useCart } from "@/context/cartContext";
 import { useLogout } from "@/hooks/useAuth";
 import { useOrders } from "@/hooks/useOrders";
 
+export const profileImages = [
+  "https://static.vecteezy.com/system/resources/previews/001/503/756/non_2x/boy-face-avatar-cartoon-free-vector.jpg",
+  "https://clipart-library.com/2024/face-cartoon/face-cartoon-9.webp",
+  "https://img.freepik.com/premium-photo/3d-animation-character_113255-5631.jpg?w=360",
+  "https://img.freepik.com/premium-psd/anjan-realistic-isolated-transparent-background_1279562-12566.jpg?semt=ais_incoming&w=740&q=80",
+  "https://img.favpng.com/19/11/21/timothee-chalamet-smiling-animated-boy-character-in-glasses-23rqUB1e_t.jpg",
+  "https://banner2.cleanpng.com/lnd/20240503/jko/ava0kkhv2.webp",
+];
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -31,16 +40,7 @@ const Header = () => {
   );
   const location = useLocation();
 
-  const profileImage = [
-    "https://static.vecteezy.com/system/resources/previews/001/503/756/non_2x/boy-face-avatar-cartoon-free-vector.jpg",
-    "https://clipart-library.com/2024/face-cartoon/face-cartoon-9.webp",
-    "https://img.freepik.com/premium-photo/3d-animation-character_113255-5631.jpg?w=360",
-    "https://img.freepik.com/premium-psd/anjan-realistic-isolated-transparent-background_1279562-12566.jpg?semt=ais_incoming&w=740&q=80",
-    "https://img.favpng.com/19/11/21/timothee-chalamet-smiling-animated-boy-character-in-glasses-23rqUB1e_t.jpg",
-    "https://banner2.cleanpng.com/lnd/20240503/jko/ava0kkhv2.webp",
-  ];
-
-  const randomProfileImage = profileImage[profileImageNumber];
+  const randomProfileImage = profileImages[profileImageNumber];
 
   // Get real authentication data
   const {
@@ -207,6 +207,12 @@ const Header = () => {
                               Admin
                             </Badge>
                           )}
+                          {user?.role === "MERCHANT" && (
+                            <Badge className="mt-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs">
+                              <Shield className="h-3 w-3 mr-1" />
+                              Merchant
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -298,6 +304,23 @@ const Header = () => {
                           >
                             <Shield className="h-4 w-4" />
                             <span>Admin Dashboard</span>
+                          </Link>
+                        </>
+                      )}
+                      {user?.role === "MERCHANT" && (
+                        <>
+                          <div className="border-t border-gray-100 my-1"></div>
+                          <Link
+                            to="/merchant-dashboard"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
+                              isActivePath("/merchant-dashboard")
+                                ? "bg-green-50 text-green-600 font-medium"
+                                : "text-gray-700 hover:bg-green-50 hover:text-green-600"
+                            }`}
+                          >
+                            <Shield className="h-4 w-4" />
+                            <span>Merchant Dashboard</span>
                           </Link>
                         </>
                       )}

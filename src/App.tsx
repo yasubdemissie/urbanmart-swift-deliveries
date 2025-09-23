@@ -19,8 +19,9 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import { CartProvider } from "./context/cartContext";
 import UserDetails from "./components/admin/userDetails";
-import AdminOrderDetailsPage from "./pages/AdminOrderDetailsPage";
+// import AdminOrderDetailsPage from "./pages/AdminOrderDetailsPage";
 import OrdersPage from "./pages/Orders";
+import MerchantDashboard from "./pages/MerchantDashboard";
 
 const queryClient = new QueryClient();
 
@@ -35,20 +36,28 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/shop" element={<Shop />} />
-              {/* <Route path="/categories" element={<Categories />} /> */}
-              {/* <Route path="/deals" element={<Deals />} /> */}
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/track" element={<TrackOrder />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/profile" element={<Profile />} />
+
+              {/* Merchant Routes - Nested routing */}
+              <Route
+                path="/merchant-dashboard/*"
+                element={<MerchantDashboard />}
+              />
+
+              {/* Customer Routes */}
               <Route path="/signin" element={<SignIn />} />
+
+              {/* Admin Routes */}
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/users/:id" element={<UserDetails />} />
-              <Route
+              {/* <Route
                 path="/admin/orders/:id"
-                element={<AdminOrderDetailsPage />}
-              />
+                element={<AdminOrdersPage />}
+              /> */}
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
@@ -62,3 +71,10 @@ const App = () => (
 );
 
 export default App;
+
+{
+  /* <Route path="/categories" element={<Categories />} /> */
+}
+{
+  /* <Route path="/deals" element={<Deals />} /> */
+}

@@ -9,16 +9,31 @@ export const authKeys = {
 
 // Get current user
 export const useCurrentUser = () => {
+  // Check token directly instead of using state to avoid race conditions
+  const token = localStorage.getItem("token");
+  const hasToken = !!token;
+
   return useQuery({
     queryKey: authKeys.user(),
-    queryFn: () =>
-      apiClient.getCurrentUser().then((data) => {
-        if (data.success) {
+    queryFn: async () => {
+      try {
+        const data = await apiClient.getCurrentUser();
+
+        if (data.success && data.data?.user) {
           return data.data.user;
-        } else return {} as User;
-      }),
+        }
+
+        return null;
+      } catch (error) {
+        return null;
+      }
+    },
     retry: false,
-    staleTime: 0 * 60 * 1000, // 5 minutes
+    staleTime: 10 * 60 * 1000, // 10 minutes - increased stale time
+    enabled: hasToken,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false, // Prevent refetch on network reconnect
   });
 };
 
@@ -28,15 +43,17 @@ export const useLogin = () => {
 
   return useMutation({
     mutationFn: (credentials: LoginCredentials) => apiClient.login(credentials),
-    onSuccess: (data) => {
-      const { data: userData } = data;
+    onSuccess: (response) => {
+      // Handle the wrapped API response
+      const { data } = response as unknown as {
+        data: { user: User; token: string };
+      };
 
-      // Store token in localStorage
-      localStorage.setItem("token", userData.token);
-      // Invalidate and refetch user userData
-      queryClient.invalidateQueries({ queryKey: authKeys.user() });
-      // Set user userData in cache
-      queryClient.setQueryData(authKeys.user(), userData.user);
+      // Store token first
+      localStorage.setItem("token", data.token);
+
+      // Set user data in cache immediately
+      queryClient.setQueryData(authKeys.user(), data.user);
     },
   });
 };
@@ -47,11 +64,17 @@ export const useRegister = () => {
 
   return useMutation({
     mutationFn: (userData: RegisterData) => apiClient.register(userData),
-    onSuccess: (data) => {
-      const { data: userData } = data;
-      localStorage.setItem("token", userData.token);
-      queryClient.invalidateQueries({ queryKey: authKeys.user() });
-      queryClient.setQueryData(authKeys.user(), userData.user);
+    onSuccess: (response) => {
+      // Handle the wrapped API response
+      const { data } = response as unknown as {
+        data: { user: User; token: string };
+      };
+
+      // Store token first
+      localStorage.setItem("token", data.token);
+
+      // Set user data in cache immediately
+      queryClient.setQueryData(authKeys.user(), data.user);
     },
   });
 };

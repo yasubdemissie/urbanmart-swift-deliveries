@@ -1,8 +1,8 @@
 import { Clock, Percent } from "lucide-react";
 import { useState } from "react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import ProductCard from "@/components/ProductCard";
+import Header from "@/components/Custom/Header";
+import Footer from "@/components/Custom/Footer";
+import ProductCard from "@/components/Custom/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useSaleProducts } from "@/hooks/useProducts";

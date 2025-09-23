@@ -2,8 +2,8 @@ import { useState } from "react";
 import { Eye, EyeOff, Mail, Lock, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/Custom/Header";
+import Footer from "@/components/Custom/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,18 +37,48 @@ const SignIn = () => {
           lastName: formData.lastName,
         });
         toast.success("Account created successfully!");
+        navigate("/");
       } else {
-        await loginMutation.mutateAsync({
+        const result = await loginMutation.mutateAsync({
           email: formData.email,
           password: formData.password,
         });
         toast.success("Signed in successfully!");
-      }
 
-      // Redirect to home page after successful auth
-      navigate("/admin");
-    } catch (error: any) {
-      toast.error(error.message || "Authentication failed");
+        // The API response has data.user and data.token
+        if (
+          result &&
+          result.data &&
+          result.data.user &&
+          result.data.user.role
+        ) {
+          // Redirect based on user role
+          const userRole = result.data.user.role;
+          switch (userRole) {
+            case "SUPER_ADMIN":
+            case "ADMIN":
+              navigate("/admin");
+              break;
+            case "MERCHANT":
+              navigate("/merchant-dashboard");
+              break;
+            case "CUSTOMER":
+            default:
+              navigate("/");
+              break;
+          }
+        } else {
+          // Fallback: redirect to home if role is not available
+          console.warn(
+            "User role not found in login response, redirecting to home"
+          );
+          navigate("/");
+        }
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Authentication failed";
+      toast.error(errorMessage);
     }
   };
 

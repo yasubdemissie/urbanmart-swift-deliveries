@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Package, Truck, CheckCircle, Clock, User, LogIn } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/Custom/Header";
+import Footer from "@/components/Custom/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -2,65 +2,84 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
-import Footer from "@/components/Footer";
+import Footer from "@/components/Custom/Footer";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useIsAuthenticated } from "@/hooks/useAuth";
-import { useCategories } from "@/hooks/useProducts";
 import {
-  useAdminStats,
-  useAdminProducts,
-  useAdminOrders,
-  useAdminCustomers,
-  useDeleteProduct,
-  useUpdateOrderStatus,
-  useExportOrders,
-  useExportCustomers,
+  useAdminDashboard,
+  useAdminUsers,
+  useUpdateUserRole,
+  useUpdateUserStatus,
 } from "@/hooks/useAdmin";
 import {
   DashboardTab,
   ProductsTab,
   OrdersTab,
   CustomersTab,
+  ReportsTab,
+  TransactionsTab,
+  MerchantStoresTab,
 } from "@/components/admin";
-import { Order } from "@/lib/api";
 
 const Admin = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useIsAuthenticated();
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
+  const [userPage, setUserPage] = useState(1);
+  const [userSearch, setUserSearch] = useState("");
 
-  // Fetch data
-  const { data: stats, isLoading: statsLoading } = useAdminStats();
-  const { data: categories = [] } = useCategories();
-  const { data: productsData, isLoading: productsLoading } = useAdminProducts({
-    page: currentPage,
+  // Fetch admin dashboard data
+  const { data: dashboardData, isLoading: dashboardLoading } =
+    useAdminDashboard();
+
+  // Fetch users data
+  const { data: usersData, isLoading: usersLoading } = useAdminUsers({
+    page: userPage,
     limit: 10,
-    search: searchQuery || undefined,
-    category: selectedCategory !== "all" ? selectedCategory : undefined,
+    search: userSearch || undefined,
   });
-  const { data: ordersData, isLoading: ordersLoading } = useAdminOrders({
-    page: currentPage,
-    limit: 10,
-  });
-  const { data: customersData, isLoading: customersLoading } =
-    useAdminCustomers({
-      page: currentPage,
-      limit: 10,
-      search: searchQuery || undefined,
-    });
 
-  // Mutations
-  const deleteProductMutation = useDeleteProduct();
-  const updateOrderStatusMutation = useUpdateOrderStatus();
-  const exportOrdersMutation = useExportOrders();
-  const exportCustomersMutation = useExportCustomers();
+  // User management mutations
+  const updateUserRoleMutation = useUpdateUserRole();
+  const updateUserStatusMutation = useUpdateUserStatus();
 
-  // Check if user is admin
-  if (!isAuthenticated || user?.role !== "ADMIN") {
+  const handleUpdateUserRole = async (
+    userId: string,
+    role: "SUPER_ADMIN" | "ADMIN" | "MERCHANT" | "CUSTOMER"
+  ) => {
+    try {
+      await updateUserRoleMutation.mutateAsync({ userId, role });
+      toast.success("User role updated successfully");
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update user role";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleUpdateUserStatus = async (userId: string, isActive: boolean) => {
+    try {
+      await updateUserStatusMutation.mutateAsync({ userId, isActive });
+      toast.success(
+        `User ${isActive ? "activated" : "deactivated"} successfully`
+      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update user status";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleExportUsers = async () => {
+    // TODO: Implement user export functionality
+    toast.info("User export functionality coming soon");
+  };
+
+  // Check if user is admin or super admin
+  if (
+    !isAuthenticated ||
+    (user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN")
+  ) {
     return (
       <div className="min-h-screen bg-gray-50">
         <AdminHeader activeTab={activeTab} onTabChange={setActiveTab} />
@@ -80,129 +99,54 @@ const Admin = () => {
     );
   }
 
-  const handleUpdateOrderStatus = async (
-    orderId: string,
-    status: Order["status"]
-  ) => {
-    try {
-      await updateOrderStatusMutation.mutateAsync({ id: orderId, status });
-      toast.success("Order status updated successfully");
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Failed to update order status";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleDeleteProduct = async (productId: string) => {
-    try {
-      await deleteProductMutation.mutateAsync(productId);
-      toast.success("Product deleted successfully");
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to delete product";
-      toast.error(errorMessage);
-    }
-  };
-
-  const handleExport = async (type: "orders" | "products" | "customers") => {
-    try {
-      let blob: Blob;
-      let filename: string;
-
-      switch (type) {
-        case "orders":
-          blob = await exportOrdersMutation.mutateAsync({});
-          filename = "orders.csv";
-          break;
-        case "products":
-          // TODO: Implement products export
-          toast.error("Products export not implemented yet");
-          return;
-        case "customers":
-          blob = await exportCustomersMutation.mutateAsync({});
-          filename = "customers.csv";
-          break;
-      }
-
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success(`${type} exported successfully`);
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : `Failed to export ${type}`;
-      toast.error(errorMessage);
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return (
+          <DashboardTab stats={dashboardData} statsLoading={dashboardLoading} />
+        );
+      case "users":
+        return (
+          <CustomersTab
+            customersData={usersData}
+            customersLoading={usersLoading}
+            handleExport={handleExportUsers}
+            exportCustomersMutation={{ isPending: false }}
+            onUpdateUserRole={handleUpdateUserRole}
+            onUpdateUserStatus={handleUpdateUserStatus}
+            searchQuery={userSearch}
+            setSearchQuery={setUserSearch}
+            currentPage={userPage}
+            setCurrentPage={setUserPage}
+          />
+        );
+      case "reports":
+        return <ReportsTab />;
+      case "transactions":
+        return <TransactionsTab />;
+      case "merchant-stores":
+        return <MerchantStoresTab />;
+      default:
+        return (
+          <DashboardTab stats={dashboardData} statsLoading={dashboardLoading} />
+        );
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       <AdminHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="container mx-auto px-4 py-8">
         {/* Admin Page Header */}
-        <div className="mb-8 text-center">
-          {/* <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
-            Admin Dashboard
-          </h1> */}
+        {/* <div className="mb-8 text-center">
           <p className="text-gray-600 text-lg">
-            Manage your store, products, orders, and customers
+            Manage users, reports, transactions, and merchant stores
           </p>
-        </div>
+        </div> */}
 
-        {/* Tab Content - No longer using Tabs component, direct rendering based on activeTab */}
-        <div className="space-y-6">
-          {/* Dashboard Tab */}
-          {activeTab === "dashboard" && (
-            <DashboardTab stats={stats} statsLoading={statsLoading} />
-          )}
-
-          {/* Products Tab */}
-          {activeTab === "products" && (
-            <ProductsTab
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
-              categories={categories}
-              productsData={productsData}
-              productsLoading={productsLoading}
-              handleDeleteProduct={handleDeleteProduct}
-              handleExport={handleExport}
-              exportProductsMutation={{ isPending: false }} // TODO: Implement export products
-              deleteProductMutation={deleteProductMutation}
-            />
-          )}
-
-          {/* Orders Tab */}
-          {activeTab === "orders" && (
-            <OrdersTab
-              ordersData={ordersData}
-              ordersLoading={ordersLoading}
-              handleUpdateOrderStatus={handleUpdateOrderStatus}
-              handleExport={handleExport}
-              exportOrdersMutation={exportOrdersMutation}
-            />
-          )}
-
-          {/* Customers Tab */}
-          {activeTab === "customers" && (
-            <CustomersTab
-              customersData={customersData}
-              customersLoading={customersLoading}
-              handleExport={handleExport}
-              exportCustomersMutation={exportCustomersMutation}
-            />
-          )}
-        </div>
+        {/* Tab Content */}
+        <div className="space-y-6">{renderTabContent()}</div>
       </div>
 
       {/* <Footer /> */}

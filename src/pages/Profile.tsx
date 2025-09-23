@@ -23,7 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import type { User } from "@/lib/api";
 import { useCurrentUser, useUpdateProfile } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import BackButton from "@/components/BackButon";
+import BackButton from "@/components/Custom/BackButon";
 
 const ProfilePage = () => {
   const navigate = useNavigate();

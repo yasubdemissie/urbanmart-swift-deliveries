@@ -14,7 +14,9 @@ import cartRoutes from "./routes/cart";
 import orderRoutes from "./routes/orders";
 import reviewRoutes from "./routes/reviews";
 import adminRoutes from "./routes/admin";
-// import wishlistRoutes from "./routes/wishlist";
+import merchantRoutes from "./routes/merchant";
+import reportRoutes from "./routes/reports";
+import wishlistRoutes from "./routes/wishlist";
 
 // Load environment variables
 dotenv.config();
@@ -67,6 +69,8 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/merchant", merchantRoutes);
+app.use("/api/reports", reportRoutes);
 // app.use("/api/wishlist", wishlistRoutes);
 
 // 404 handler
@@ -101,37 +105,30 @@ app.use(
       }
     }
 
-    return res.status(500).json({
+    res.status(500).json({
       error: "Internal Server Error",
       message:
-        process.env.NODE_ENV === "development" &&
-        typeof err === "object" &&
-        err !== null &&
-        "message" in err
-          ? (err as { message?: string }).message
+        process.env.NODE_ENV === "development"
+          ? (err as Error)?.message
           : "Something went wrong",
     });
   }
 );
 
 // Graceful shutdown
-process.on("SIGTERM", async () => {
-  console.log("SIGTERM received, shutting down gracefully");
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
 process.on("SIGINT", async () => {
-  console.log("SIGINT received, shutting down gracefully");
+  console.log("Shutting down gracefully...");
   await prisma.$disconnect();
   process.exit(0);
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+process.on("SIGTERM", async () => {
+  console.log("Shutting down gracefully...");
+  await prisma.$disconnect();
+  process.exit(0);
 });
 
-export default app;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
+});

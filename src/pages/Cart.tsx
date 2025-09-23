@@ -1,8 +1,8 @@
 import { Minus, Plus, Trash2, ShoppingCart, ArrowRight } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import Header from "@/components/Custom/Header";
+import Footer from "@/components/Custom/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCart } from "@/context/cartContext";

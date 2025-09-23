@@ -1,3 +1,211 @@
+// import { useNavigate } from "react-router-dom";
+// import { useState } from "react";
+// import {
+//   Shield,
+//   BarChart3,
+//   Users,
+//   Settings,
+//   LogOut,
+//   Menu,
+//   X,
+//   Home,
+//   Bell,
+//   FileText,
+//   CreditCard,
+//   Store,
+// } from "lucide-react";
+// import { Button } from "@/components/ui/button";
+// import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+// import { Badge } from "@/components/ui/badge";
+// import { useIsAuthenticated } from "@/hooks/useAuth";
+// import { useLogout } from "@/hooks/useAuth";
+
+// interface AdminHeaderProps {
+//   activeTab: string;
+//   onTabChange: (tab: string) => void;
+// }
+
+// const AdminHeader = ({ activeTab, onTabChange }: AdminHeaderProps) => {
+//   const navigate = useNavigate();
+//   const [isMenuOpen, setIsMenuOpen] = useState(false);
+//   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+//   const { user, isAuthenticated } = useIsAuthenticated();
+//   const logout = useLogout();
+
+//   const adminNavigationItems = [
+//     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+//     { id: "users", label: "Users", icon: Users },
+//     { id: "reports", label: "Reports", icon: FileText },
+//     { id: "transactions", label: "Transactions", icon: CreditCard },
+//     { id: "merchant-stores", label: "Merchant Stores", icon: Store },
+//   ];
+
+//   const handleTabClick = (tabId: string) => {
+//     onTabChange(tabId);
+//     setIsMenuOpen(false);
+//   };
+
+//   const handleLogout = () => {
+//     logout();
+//     setIsUserMenuOpen(false);
+//     navigate("/");
+//   };
+
+//   if (
+//     !isAuthenticated ||
+//     (user?.role !== "ADMIN" && user?.role !== "SUPER_ADMIN")
+//   ) {
+//     return null;
+//   }
+
+//   return (
+//     <header className="bg-white shadow-sm border-b sticky top-0 z-50">
+//       {/* Top Bar */}
+//       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+//         <div className="container mx-auto px-4 py-2">
+//           <div className="flex items-center justify-between">
+//             <div className="flex items-center space-x-4">
+//               <Shield className="h-6 w-6" />
+//               <div>
+//                 <h1 className="text-lg font-semibold">Admin Dashboard</h1>
+//                 <p className="text-sm text-purple-100">
+//                   {user?.firstName} {user?.lastName} - {user?.role}
+//                 </p>
+//               </div>
+//             </div>
+
+//             <div className="flex items-center space-x-4">
+//               {/* Notifications */}
+//               <Button
+//                 variant="ghost"
+//                 size="sm"
+//                 className="text-white hover:bg-white/20"
+//               >
+//                 <Bell className="h-5 w-5" />
+//                 <Badge variant="destructive" className="ml-1 h-5 w-5 text-xs">
+//                   3
+//                 </Badge>
+//               </Button>
+
+//               {/* User Menu */}
+//               <div className="relative">
+//                 <Button
+//                   variant="ghost"
+//                   size="sm"
+//                   className="text-white hover:bg-white/20"
+//                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+//                 >
+//                   <Avatar className="h-8 w-8">
+//                     <AvatarImage src={user?.avatar} />
+//                     <AvatarFallback>
+//                       {user?.firstName?.[0]}
+//                       {user?.lastName?.[0]}
+//                     </AvatarFallback>
+//                   </Avatar>
+//                 </Button>
+
+//                 {isUserMenuOpen && (
+//                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+//                     <div className="px-4 py-2 border-b">
+//                       <p className="text-sm font-medium text-gray-900">
+//                         {user?.firstName} {user?.lastName}
+//                       </p>
+//                       <p className="text-sm text-gray-500">{user?.email}</p>
+//                     </div>
+//                     <button
+//                       onClick={handleLogout}
+//                       className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+//                     >
+//                       <LogOut className="h-4 w-4 inline mr-2" />
+//                       Logout
+//                     </button>
+//                   </div>
+//                 )}
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Navigation Bar */}
+//       <div className="container mx-auto px-4">
+//         <div className="flex items-center justify-between py-3">
+//           {/* Desktop Navigation */}
+//           <nav className="hidden md:flex items-center space-x-1">
+//             {adminNavigationItems.map((item) => {
+//               const Icon = item.icon;
+//               const isActive = activeTab === item.id;
+
+//               return (
+//                 <Button
+//                   key={item.id}
+//                   variant={isActive ? "default" : "ghost"}
+//                   size="sm"
+//                   onClick={() => handleTabClick(item.id)}
+//                   className={`flex items-center space-x-2 ${
+//                     isActive
+//                       ? "bg-purple-600 text-white"
+//                       : "text-gray-600 hover:text-purple-600 hover:bg-purple-50"
+//                   }`}
+//                 >
+//                   <Icon className="h-4 w-4" />
+//                   <span>{item.label}</span>
+//                 </Button>
+//               );
+//             })}
+//           </nav>
+
+//           {/* Mobile Menu Button */}
+//           <Button
+//             variant="ghost"
+//             size="sm"
+//             className="md:hidden"
+//             onClick={() => setIsMenuOpen(!isMenuOpen)}
+//           >
+//             {isMenuOpen ? (
+//               <X className="h-5 w-5" />
+//             ) : (
+//               <Menu className="h-5 w-5" />
+//             )}
+//           </Button>
+//         </div>
+
+//         {/* Mobile Navigation */}
+//         {isMenuOpen && (
+//           <div className="md:hidden border-t py-3">
+//             <nav className="flex flex-col space-y-2">
+//               {adminNavigationItems.map((item) => {
+//                 const Icon = item.icon;
+//                 const isActive = activeTab === item.id;
+
+//                 return (
+//                   <Button
+//                     key={item.id}
+//                     variant={isActive ? "default" : "ghost"}
+//                     size="sm"
+//                     onClick={() => handleTabClick(item.id)}
+//                     className={`justify-start ${
+//                       isActive
+//                         ? "bg-purple-600 text-white"
+//                         : "text-gray-600 hover:text-purple-600"
+//                     }`}
+//                   >
+//                     <Icon className="h-4 w-4 mr-2" />
+//                     <span>{item.label}</span>
+//                   </Button>
+//                 );
+//               })}
+//             </nav>
+//           </div>
+//         )}
+//       </div>
+//     </header>
+//   );
+// };
+
+// export default AdminHeader;
+
 "use client";
 
 import { Link, useNavigate } from "react-router-dom";
@@ -13,6 +221,9 @@ import {
   X,
   Home,
   Bell,
+  FileText,
+  CreditCard,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,10 +246,19 @@ const AdminHeader = ({ activeTab, onTabChange }: AdminHeaderProps) => {
 
   const adminNavigationItems = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "products", label: "Products", icon: Package },
-    { id: "orders", label: "Orders", icon: Package },
-    { id: "customers", label: "Customers", icon: Users },
+    { id: "users", label: "Users", icon: Users },
+    { id: "reports", label: "Reports", icon: FileText },
+    { id: "transactions", label: "Transactions", icon: CreditCard },
+    { id: "merchant-stores", label: "Stores", icon: Store },
   ];
+
+  //   const adminNavigationItems = [
+//     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
+//     { id: "users", label: "Users", icon: Users },
+//     { id: "reports", label: "Reports", icon: FileText },
+//     { id: "transactions", label: "Transactions", icon: CreditCard },
+//     { id: "merchant-stores", label: "Merchant Stores", icon: Store },
+//   ];
 
   const handleTabClick = (tabId: string) => {
     onTabChange(tabId);
