@@ -23,6 +23,8 @@ router.get(
           firstName: true,
           lastName: true,
           phone: true,
+          countryCode: true,
+          location: true,
           avatar: true,
           role: true,
           isActive: true,
@@ -67,6 +69,8 @@ router.get(
           firstName: true,
           lastName: true,
           phone: true,
+          countryCode: true,
+          location: true,
           avatar: true,
           role: true,
           isActive: true,
@@ -119,14 +123,23 @@ router.get(
 
 // Create a user (public, for registration)
 router.post("/", async (req: Request, res: Response) => {
-  const { email, password, firstName, lastName, phone } = req.body;
+  const { email, password, firstName, lastName, phone, countryCode, location, avatarUrl } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: "Email and password required" });
   try {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email, password: hashedPassword, firstName, lastName, phone },
+      data: {
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        phone,
+        countryCode,
+        location,
+        avatar: avatarUrl,
+      },
     });
     return res.status(201).json({ id: user.id, email: user.email });
   } catch (err: unknown) {
@@ -151,11 +164,19 @@ router.put(
     if (req.user?.id !== id && req.user?.role !== "ADMIN") {
       return res.status(403).json({ error: "Forbidden" });
     }
-    const { firstName, lastName, phone, avatar, isActive } = req.body;
+    const { firstName, lastName, phone, countryCode, location, avatarUrl, isActive } = req.body;
     try {
       const updatedUser = await prisma.user.update({
         where: { id: req.user!.id },
-        data: { firstName, lastName, phone, avatar, isActive },
+        data: {
+          firstName,
+          lastName,
+          phone,
+          countryCode,
+          location,
+          avatar: avatarUrl,
+          isActive,
+        },
       });
       return res.json({ id: updatedUser.id, email: updatedUser.email });
     } catch (err) {

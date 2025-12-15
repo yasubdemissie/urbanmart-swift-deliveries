@@ -20,6 +20,8 @@ model User {
   firstName String?
   lastName  String?
   phone     String?
+  countryCode String?
+  location  String?
   avatar    String?
   role      UserRole @default(CUSTOMER)
   isActive  Boolean  @default(true)

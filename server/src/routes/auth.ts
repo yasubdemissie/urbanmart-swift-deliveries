@@ -15,9 +15,16 @@ const router = Router();
 // Register new user
 router.post("/register", validateRegister, async (req: Request, res: Response) => {
     try {
-      const { email, password, firstName, lastName } = req.body;
-
-      console.log(email, password, firstName, lastName);
+      const {
+        email,
+        password,
+        firstName,
+        lastName,
+        phone,
+        countryCode,
+        location,
+        avatarUrl,
+      } = req.body;
 
       // Check if user already exists
       const existingUser = await prisma.user.findUnique({
@@ -38,14 +45,20 @@ router.post("/register", validateRegister, async (req: Request, res: Response) =
           password: hashedPassword,
           firstName,
           lastName,
-          // phone,
+          phone,
+          countryCode,
+          location,
+          avatar: avatarUrl,
         },
         select: {
           id: true,
           email: true,
           firstName: true,
           lastName: true,
-          // phone: true,
+          phone: true,
+          countryCode: true,
+          location: true,
+          avatar: true,
           role: true,
           createdAt: true,
         },
@@ -111,6 +124,8 @@ router.get("/me", authenticateToken, async (req: AuthRequest, res) => {
         firstName: true,
         lastName: true,
         phone: true,
+        countryCode: true,
+        location: true,
         avatar: true,
         role: true,
         isActive: true,
@@ -133,7 +148,8 @@ router.get("/me", authenticateToken, async (req: AuthRequest, res) => {
 // Update user profile
 router.put("/profile", authenticateToken, async (req: AuthRequest, res) => {
   try {
-    const { firstName, lastName, phone } = req.body;
+    const { firstName, lastName, phone, countryCode, location, avatarUrl } =
+      req.body;
 
     const updatedUser = await prisma.user.update({
       where: { id: req.user!.id },
@@ -141,6 +157,9 @@ router.put("/profile", authenticateToken, async (req: AuthRequest, res) => {
         firstName,
         lastName,
         phone,
+        countryCode,
+        location,
+        avatar: avatarUrl,
       },
       select: {
         id: true,
@@ -148,6 +167,8 @@ router.put("/profile", authenticateToken, async (req: AuthRequest, res) => {
         firstName: true,
         lastName: true,
         phone: true,
+        countryCode: true,
+        location: true,
         avatar: true,
         role: true,
         isActive: true,

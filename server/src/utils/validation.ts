@@ -50,6 +50,18 @@ export const validateRegister = [
     .optional()
     .isMobilePhone("any")
     .withMessage("Valid phone number is required"),
+  body("countryCode")
+    .optional()
+    .isLength({ min: 1, max: 6 })
+    .withMessage("Country code must be between 1 and 6 characters"),
+  body("location")
+    .optional()
+    .isLength({ min: 2, max: 200 })
+    .withMessage("Location must be between 2 and 200 characters"),
+  body("avatarUrl")
+    .optional()
+    .isURL()
+    .withMessage("Avatar URL must be valid"),
   handleValidationErrors,
 ];
 

@@ -1,4 +1,4 @@
-import type React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
   Eye,
@@ -13,10 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  type AuthFormData,
-  useAuthFormState,
-} from "@/hooks/useAuthFormState";
+import { type AuthFormData, useAuthFormState } from "@/hooks/useAuthFormState";
 
 const SignIn = () => {
   const navigate = useNavigate();
@@ -25,7 +22,12 @@ const SignIn = () => {
     isSignUp,
     showPassword,
     isLoading,
+    signupStep,
+    totalSignupSteps,
     handleChange,
+    handleUseCurrentLocation,
+    handleSendOtp,
+    prevStep,
     toggleMode,
     togglePassword,
     handleSubmit,
@@ -36,22 +38,27 @@ const SignIn = () => {
       <AuthHeader onNavigateHome={() => navigate("/")} />
 
       <div className="container mx-auto px-4 py-1 sm:px-6 lg:px-8">
-        <div className="mx-auto mt-20 flex max-h-screen max-w-6xl flex-col items-center justify-center gap-8 md:grid md:min-h-screen lg:grid-cols-2 lg:gap-12 lg:py-12">
+        <div className="mx-auto mt-3 flex max-h-screen max-w-6xl flex-col items-center justify-center gap-8 md:grid md:min-h-screen lg:grid-cols-2 lg:gap-12 lg:py-3">
           <MarketingPanel isSignUp={isSignUp} />
 
           <div className="flex items-center justify-center">
-            <div className="w-full max-w-md">
-              <div className="rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:shadow-primary/20">
+            <div className="w-full max-w-[780px]">
+              <div className="w-full rounded-2xl border border-border bg-card p-8 shadow-2xl backdrop-blur-sm transition-all duration-500 hover:shadow-primary/20">
                 <FormHeader isSignUp={isSignUp} />
                 <AuthForm
                   formData={formData}
                   isSignUp={isSignUp}
                   isLoading={isLoading}
                   showPassword={showPassword}
+                  signupStep={signupStep}
+                  totalSignupSteps={totalSignupSteps}
                   onSubmit={handleSubmit}
                   onToggleMode={toggleMode}
                   onTogglePassword={togglePassword}
                   onChange={handleChange}
+                  onUseCurrentLocation={handleUseCurrentLocation}
+                  onSendOtp={handleSendOtp}
+                  onBack={prevStep}
                 />
               </div>
               <FormFooter />
@@ -68,10 +75,15 @@ interface AuthFormProps {
   isSignUp: boolean;
   isLoading: boolean;
   showPassword: boolean;
+  signupStep: number;
+  totalSignupSteps: number;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onChange: (field: keyof AuthFormData, value: string) => void;
   onTogglePassword: () => void;
   onToggleMode: () => void;
+  onUseCurrentLocation: () => void;
+  onSendOtp: () => void;
+  onBack: () => void;
 }
 
 const AuthForm: React.FC<AuthFormProps> = ({
@@ -79,61 +91,104 @@ const AuthForm: React.FC<AuthFormProps> = ({
   isSignUp,
   isLoading,
   showPassword,
+  signupStep,
+  totalSignupSteps,
   onSubmit,
   onChange,
   onTogglePassword,
   onToggleMode,
+  onUseCurrentLocation,
+  onSendOtp,
+  onBack,
 }) => (
   <form onSubmit={onSubmit} className="space-y-5">
-    {isSignUp && (
-      <NameFields formData={formData} onChange={onChange} isSignUp={isSignUp} />
+    {isSignUp ? (
+      <>
+        <SignupStepper current={signupStep} total={totalSignupSteps} />
+        <SignupSteps
+          step={signupStep}
+          formData={formData}
+          onChange={onChange}
+          onTogglePassword={onTogglePassword}
+          showPassword={showPassword}
+          onUseCurrentLocation={onUseCurrentLocation}
+          onSendOtp={onSendOtp}
+        />
+        <div className="flex items-center gap-3">
+          {signupStep > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onBack}
+              disabled={isLoading}
+              className="w-1/3"
+            >
+              Back
+            </Button>
+          )}
+          <Button
+            type="submit"
+            className="flex-1 shadow-lg"
+            size="lg"
+            disabled={isLoading}
+          >
+            {isLoading
+              ? "Processing..."
+              : signupStep === totalSignupSteps
+              ? "Create Account"
+              : "Next"}
+          </Button>
+        </div>
+        <Divider label="Already have an account?" />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onToggleMode}
+          className="w-full transition-all duration-300 hover:border-primary hover:text-primary"
+        >
+          Sign in instead
+        </Button>
+      </>
+    ) : (
+      <>
+        <EmailField
+          value={formData.email}
+          onChange={(value) => onChange("email", value)}
+        />
+        <PasswordField
+          value={formData.password}
+          showPassword={showPassword}
+          onChange={(value) => onChange("password", value)}
+          onTogglePassword={onTogglePassword}
+        />
+        <Button
+          type="submit"
+          className="w-full shadow-lg"
+          size="lg"
+          disabled={isLoading}
+        >
+          {isLoading ? "Processing..." : "Sign In"}
+        </Button>
+        <Divider label="New to UrbanMart?" />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onToggleMode}
+          className="w-full transition-all duration-300 hover:border-primary hover:text-primary"
+        >
+          Create an account
+        </Button>
+      </>
     )}
-
-    <EmailField
-      value={formData.email}
-      onChange={(value) => onChange("email", value)}
-    />
-
-    <PasswordField
-      value={formData.password}
-      showPassword={showPassword}
-      onChange={(value) => onChange("password", value)}
-      onTogglePassword={onTogglePassword}
-    />
-
-    <Button
-      type="submit"
-      className="w-full shadow-lg"
-      size="lg"
-      disabled={isLoading}
-    >
-      {isLoading ? "Processing..." : isSignUp ? "Create Account" : "Sign In"}
-    </Button>
-
-    <Divider label={isSignUp ? "Already have an account?" : "New to UrbanMart?"} />
-
-    <Button
-      type="button"
-      variant="outline"
-      onClick={onToggleMode}
-      className="w-full transition-all duration-300 hover:border-primary hover:text-primary"
-    >
-      {isSignUp ? "Sign in instead" : "Create an account"}
-    </Button>
   </form>
 );
 
 interface NameFieldsProps {
   formData: AuthFormData;
-  isSignUp: boolean;
   onChange: (field: keyof AuthFormData, value: string) => void;
 }
 
-const NameFields: React.FC<NameFieldsProps> = ({
-  formData,
-  isSignUp,
-  onChange,
-}) => (
+const NameFields: React.FC<NameFieldsProps> = ({ formData, onChange }) => (
   <div className="grid grid-cols-2 gap-4">
     <div className="space-y-2">
       <Label htmlFor="firstName">First Name</Label>
@@ -147,7 +202,7 @@ const NameFields: React.FC<NameFieldsProps> = ({
           onChange={(event) => onChange("firstName", event.target.value)}
           placeholder="John"
           className="pl-10 transition-all duration-300 focus:shadow-lg focus:shadow-primary/20"
-          required={isSignUp}
+          required
         />
       </div>
     </div>
@@ -161,7 +216,7 @@ const NameFields: React.FC<NameFieldsProps> = ({
         onChange={(event) => onChange("lastName", event.target.value)}
         placeholder="Doe"
         className="transition-all duration-300 focus:shadow-lg focus:shadow-primary/20"
-        required={isSignUp}
+        required
       />
     </div>
   </div>
@@ -263,65 +318,373 @@ const FormFooter = () => (
   </p>
 );
 
-const MarketingPanel: React.FC<{ isSignUp: boolean }> = ({ isSignUp }) => (
-  <div className="hidden flex-col justify-center space-y-8 lg:pr-8 md:flex">
-    <div className="space-y-4">
-      <div className="inline-block rounded-full bg-blue-500/10 px-4 py-1.5 text-sm font-medium text-blue-500">
-        {isSignUp ? "Join Us" : "Welcome Back"}
-      </div>
-      <h1 className="text-balance text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl lg:text-4xl">
-        {isSignUp
-          ? "Start your shopping journey"
-          : "Welcome back to UrbanMart"}
-      </h1>
-      <p className="text-pretty text-lg leading-relaxed text-muted-foreground sm:text-xl">
-        {isSignUp
-          ? "Join thousands of satisfied customers and discover amazing products at unbeatable prices."
-          : "Sign in to access your account, track orders, and enjoy personalized shopping experiences."}
-      </p>
-    </div>
-
-    <div className="space-y-4">
-      {marketingFeatures.map((feature) => (
-        <FeatureItem
-          key={feature.title}
-          title={feature.title}
-          description={feature.description}
-        />
-      ))}
-    </div>
-  </div>
-);
-
-interface FeatureItemProps {
-  title: string;
-  description: string;
+interface SignupStepperProps {
+  current: number;
+  total: number;
 }
 
-const FeatureItem: React.FC<FeatureItemProps> = ({ title, description }) => (
-  <div className="group flex items-start gap-3 rounded-lg p-3 transition-all duration-300 hover:bg-blue-500/5">
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 transition-all duration-300 group-hover:bg-blue-500 group-hover:shadow-lg">
-      <ArrowRight className="h-5 w-5 text-blue-500 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-blue-100" />
-    </div>
-    <div>
-      <h3 className="font-semibold text-foreground">{title}</h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
+const SignupStepper: React.FC<SignupStepperProps> = ({ current, total }) => (
+  <div className="flex items-center justify-between rounded-xl bg-muted/50 p-3 text-sm font-medium text-muted-foreground w-[650px] max-w-full">
+    {Array.from({ length: total }).map((_, idx) => {
+      const stepNumber = idx + 1;
+      const isActive = stepNumber === current;
+      const isDone = stepNumber < current;
+      return (
+        <div
+          key={stepNumber}
+          className="flex flex-1 items-center justify-center gap-2"
+        >
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-full border ${
+              isActive
+                ? "border-primary bg-primary/10 text-primary"
+                : isDone
+                ? "border-green-500 bg-green-500/10 text-green-600"
+                : "border-border"
+            }`}
+          >
+            {stepNumber}
+          </div>
+          {isActive && (
+            <span className="text-foreground font-semibold">
+              {stepLabels[stepNumber - 1]}
+            </span>
+          )}
+        </div>
+      );
+    })}
+  </div>
+);
+
+const stepLabels = ["Details", "Contact", "OTP", "Profile"];
+
+interface SignupStepsProps {
+  step: number;
+  formData: AuthFormData;
+  onChange: (field: keyof AuthFormData, value: string) => void;
+  onTogglePassword: () => void;
+  showPassword: boolean;
+  onUseCurrentLocation: () => void;
+  onSendOtp: () => void;
+}
+
+const SignupSteps: React.FC<SignupStepsProps> = ({
+  step,
+  formData,
+  onChange,
+  onTogglePassword,
+  showPassword,
+  onUseCurrentLocation,
+  onSendOtp,
+}) => {
+  if (step === 1) {
+    return (
+      <div className="space-y-4">
+        <NameFields formData={formData} onChange={onChange} />
+        <EmailField
+          value={formData.email}
+          onChange={(value) => onChange("email", value)}
+        />
+        <PasswordField
+          value={formData.password}
+          showPassword={showPassword}
+          onChange={(value) => onChange("password", value)}
+          onTogglePassword={onTogglePassword}
+        />
+      </div>
+    );
+  }
+
+  if (step === 2) {
+    return (
+      <div className="space-y-4">
+        <PhoneFields
+          countryCode={formData.countryCode}
+          phone={formData.phone}
+          onChange={onChange}
+        />
+        <LocationField
+          value={formData.location}
+          onChange={(value) => onChange("location", value)}
+          onUseCurrentLocation={onUseCurrentLocation}
+        />
+      </div>
+    );
+  }
+
+  if (step === 3) {
+    return (
+      <OtpField
+        value={formData.otp}
+        onChange={(value) => onChange("otp", value)}
+        onSendOtp={onSendOtp}
+      />
+    );
+  }
+
+  return (
+    <ProfileImageField
+      value={formData.profileImageUrl}
+      onChange={(value) => onChange("profileImageUrl", value)}
+    />
+  );
+};
+
+const PhoneFields: React.FC<{
+  countryCode: string;
+  phone: string;
+  onChange: (field: keyof AuthFormData, value: string) => void;
+}> = ({ countryCode, phone, onChange }) => (
+  <div className="space-y-2">
+    <Label htmlFor="phone">Phone Number</Label>
+    <div className="grid grid-cols-4 gap-3">
+      <Input
+        id="countryCode"
+        name="countryCode"
+        type="text"
+        value={countryCode}
+        onChange={(event) => onChange("countryCode", event.target.value)}
+        className="col-span-1"
+        placeholder="+1"
+        required
+      />
+      <Input
+        id="phone"
+        name="phone"
+        type="tel"
+        value={phone}
+        onChange={(event) => onChange("phone", event.target.value)}
+        className="col-span-3"
+        placeholder="123 456 7890"
+        required
+      />
     </div>
   </div>
 );
 
-const marketingFeatures: FeatureItemProps[] = [
+const LocationField: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  onUseCurrentLocation: () => void;
+}> = ({ value, onChange, onUseCurrentLocation }) => (
+  <div className="space-y-2">
+    <Label htmlFor="location">Location</Label>
+    <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+      <Input
+        id="location"
+        name="location"
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="City, Address or coordinates"
+        className="flex-1"
+        required
+      />
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={onUseCurrentLocation}
+        className="whitespace-nowrap"
+      >
+        Use current
+      </Button>
+    </div>
+    <p className="text-xs text-muted-foreground">
+      You can allow browser location or enter it manually.
+    </p>
+  </div>
+);
+
+const OtpField: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  onSendOtp: () => void;
+}> = ({ value, onChange, onSendOtp }) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const digits = Array.from({ length: 6 }, (_, index) => value[index] ?? "");
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = event.target.value.replace(/\D/g, "").slice(0, 6);
+    onChange(raw);
+  };
+
+  const handleBoxClick = () => {
+    inputRef.current?.focus();
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Label htmlFor="otp">OTP Code</Label>
+        <Button type="button" variant="outline" size="sm" onClick={onSendOtp}>
+          Send code
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        <div
+          className="grid grid-cols-6 gap-2"
+          role="group"
+          aria-label="Enter 6 digit verification code"
+          onClick={handleBoxClick}
+        >
+          {digits.map((digit, index) => (
+            <div
+              key={index}
+              className="flex h-12 items-center justify-center rounded-lg border bg-muted/50 text-lg font-semibold tracking-widest"
+            >
+              {digit || <span className="text-muted-foreground">-</span>}
+            </div>
+          ))}
+        </div>
+
+        <Input
+          ref={inputRef}
+          id="otp"
+          name="otp"
+          type="text"
+          inputMode="numeric"
+          pattern="\d{6}"
+          maxLength={6}
+          value={value}
+          onChange={handleInputChange}
+          className="sr-only"
+          placeholder="Enter 6-digit code (use 123456)"
+          required
+        />
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        We’re simulating SMS — use code 123456 after tapping “Send code”.
+      </p>
+    </div>
+  );
+};
+
+const ProfileImageField: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+}> = ({ value, onChange }) => (
+  <div className="space-y-3">
+    <Label htmlFor="profileImageUrl">Avatar image URL</Label>
+    <div className="flex items-center gap-4">
+      <div className="relative h-16 w-16 overflow-hidden rounded-full border bg-muted">
+        {value && (
+          <img
+            src={value}
+            alt="Avatar preview"
+            className="h-full w-full object-cover"
+            onError={(event) => {
+              event.currentTarget.style.visibility = "hidden";
+            }}
+          />
+        )}
+        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+          <User className="h-6 w-6" />
+        </div>
+      </div>
+      <div className="flex-1 space-y-2">
+        <Input
+          id="profileImageUrl"
+          name="profileImageUrl"
+          type="url"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="https://example.com/avatar.jpg"
+        />
+        <p className="text-xs text-muted-foreground">
+          Paste a direct link to your avatar image (square works best).
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+const MarketingPanel: React.FC<{ isSignUp: boolean }> = ({ isSignUp }) => {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const totalSlides = marketingSlides.length;
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % totalSlides);
+    }, 4200);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [totalSlides]);
+
+  const currentSlide = marketingSlides[activeIndex];
+
+  return (
+    <div className="hidden flex-col justify-center space-y-6 lg:pr-8 md:flex">
+      <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-card shadow-2xl shadow-primary/10">
+        <div className="relative h-72 w-full sm:h-80">
+          <img
+            src={currentSlide.image}
+            alt={currentSlide.title}
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+          <div className="absolute inset-0 flex flex-col justify-end space-y-2 p-6 text-white">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide backdrop-blur">
+              {isSignUp ? "Join Us" : "Welcome Back"}
+            </span>
+            <h1 className="text-2xl font-bold leading-tight sm:text-3xl">
+              {currentSlide.title}
+            </h1>
+            <p className="text-sm text-white/80 sm:text-base">
+              {currentSlide.description}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between px-5 py-3 backdrop-blur-sm">
+          <div className="flex items-center gap-2">
+            {marketingSlides.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                aria-label={`Show slide ${index + 1}`}
+                onClick={() => setActiveIndex(index)}
+                className={`h-2 w-8 rounded-full transition-all ${
+                  index === activeIndex
+                    ? "bg-primary shadow-[0_0_0_4px] shadow-primary/20"
+                    : "bg-border/80 hover:bg-border"
+                }`}
+              />
+            ))}
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">
+            {String(activeIndex + 1).padStart(2, "0")} /{" "}
+            {String(totalSlides).padStart(2, "0")}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const marketingSlides = [
   {
-    title: "Fast & Secure Checkout",
-    description: "Save your preferences and checkout in seconds",
+    title: "Discover fresh arrivals daily",
+    description: "Curated selections from top brands and local favorites.",
+    image:
+      "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=1600&q=80",
   },
   {
-    title: "Order Tracking",
-    description: "Track your orders in real-time from purchase to delivery",
+    title: "Fast delivery, tracked in real-time",
+    description: "Stay updated from checkout to your doorstep.",
+    image:
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1600&q=80",
   },
   {
-    title: "Exclusive Deals",
-    description: "Get access to member-only discounts and early sales",
+    title: "Member-only deals every week",
+    description: "Unlock exclusive prices and early access to hot drops.",
+    image:
+      "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
   },
 ];
 

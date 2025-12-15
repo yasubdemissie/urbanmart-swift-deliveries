@@ -306,6 +306,9 @@ export interface RegisterData {
   firstName: string;
   lastName: string;
   phone?: string;
+  countryCode?: string;
+  location?: string;
+  avatarUrl?: string;
 }
 export interface AuthResponse {
   user: User;
