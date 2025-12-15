@@ -7,6 +7,7 @@ import {
   requireAdmin,
 } from "../middleware/auth";
 import { formatResponse, formatError } from "../utils/helpers";
+import { OrderStatus, Prisma } from "@prisma/client";
 
 const router = Router();
 
@@ -124,7 +125,7 @@ router.get(
         return formatError(res, "Merchant store not found", 404);
       }
 
-      const where: any = {
+      const where: Prisma.ProductWhereInput = {
         merchantStoreId: store.id,
       };
 
@@ -136,7 +137,7 @@ router.get(
       }
 
       if (category) {
-        where.categoryId = category;
+        where.categoryId = category as string;
       }
 
       const products = await prisma.product.findMany({
@@ -273,11 +274,24 @@ router.get(
       const merchantId = req.user!.id;
       const { page = 1, limit = 10, status } = req.query;
 
-      const where: any = { merchantId };
+      const where: Prisma.OrderWhereInput = { merchantId };
 
       if (status) {
-        where.status = status;
+        where.status = status as OrderStatus;
       }
+
+      // Debug: Check what orders exist in the database
+      const allOrders = await prisma.order.findMany({
+        select: {
+          id: true,
+          merchantId: true,
+          storeId: true,
+          userId: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10, // Get last 10 orders
+      });
 
       const orders = await prisma.order.findMany({
         where,
@@ -375,6 +389,75 @@ router.patch(
   }
 );
 
+// Get single merchant order by ID
+router.get(
+  "/orders/:id",
+  authenticateToken,
+  requireMerchant,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const merchantId = req.user!.id;
+      const { id } = req.params;
+
+      const order = await prisma.order.findFirst({
+        where: {
+          id,
+          merchantId, // Only get orders for this merchant
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                  mainImage: true,
+                  slug: true,
+                  description: true,
+                },
+              },
+            },
+          },
+          shippingAddress: true,
+          billingAddress: true,
+          statusHistory: {
+            orderBy: { timestamp: "desc" },
+            include: {
+              updater: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  role: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!order) {
+        return formatError(res, "Order not found or access denied", 404);
+      }
+
+      return formatResponse(res, order, "Order retrieved successfully");
+    } catch (error) {
+      console.error("Error fetching merchant order:", error);
+      return formatError(res, "Failed to fetch order", 500);
+    }
+  }
+);
+
 // Get merchant customers
 router.get(
   "/customers",
@@ -383,49 +466,53 @@ router.get(
   async (req: AuthRequest, res: Response) => {
     try {
       const merchantId = req.user!.id;
-      const { page = 1, limit = 10 } = req.query;
+      const { page = 1, limit = 10, search } = req.query;
 
-      // Get customers who have ordered from this merchant
-      const customers = await prisma.user.findMany({
-        where: {
-          orders: {
-            some: {
-              merchantId,
-            },
-          },
-          role: "CUSTOMER",
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          createdAt: true,
-          orders: {
-            where: { merchantId },
-            select: {
-              id: true,
-              total: true,
-              status: true,
-              createdAt: true,
-            },
-          },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (Number(page) - 1) * Number(limit),
-        take: Number(limit),
-      });
+      const where: any = {
+        merchantId,
+        isActive: true,
+      };
 
-      const total = await prisma.user.count({
-        where: {
-          orders: {
-            some: {
-              merchantId,
+      if (search) {
+        where.customer = {
+          OR: [
+            { firstName: { contains: search as string, mode: "insensitive" } },
+            { lastName: { contains: search as string, mode: "insensitive" } },
+            { email: { contains: search as string, mode: "insensitive" } },
+          ],
+        };
+      }
+
+      const [customers, total] = await Promise.all([
+        prisma.customer.findMany({
+          where,
+          include: {
+            customer: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+                avatar: true,
+                createdAt: true,
+              },
             },
+            // store: {
+            //   select: {
+            //     id: true,
+            //     name: true,
+            //   },
+            // },
           },
-          role: "CUSTOMER",
-        },
-      });
+          orderBy: {
+            lastOrderAt: "desc",
+          },
+          skip: (Number(page) - 1) * Number(limit),
+          take: Number(limit),
+        }),
+        prisma.customer.count({ where }),
+      ]);
 
       return formatResponse(
         res,
@@ -443,6 +530,87 @@ router.get(
     } catch (error) {
       console.error("Error fetching merchant customers:", error);
       return formatError(res, "Failed to fetch customers", 500);
+    }
+  }
+);
+
+// Get single customer details
+router.get(
+  "/customers/:customerId",
+  authenticateToken,
+  requireMerchant,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const merchantId = req.user!.id;
+      const { customerId } = req.params;
+
+      const customer = await prisma.customer.findFirst({
+        where: {
+          customerId,
+          merchantId,
+          isActive: true,
+        },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+              avatar: true,
+              createdAt: true,
+            },
+          },
+          store: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      if (!customer) {
+        return formatError(res, "Customer not found", 404);
+      }
+
+      // Get customer's orders from this merchant
+      const orders = await prisma.order.findMany({
+        where: {
+          userId: customerId,
+          merchantId,
+        },
+        include: {
+          orderItems: {
+            include: {
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  mainImage: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10, // Last 10 orders
+      });
+
+      return formatResponse(
+        res,
+        {
+          customer,
+          recentOrders: orders,
+        },
+        "Customer details retrieved successfully"
+      );
+    } catch (error) {
+      console.error("Error fetching customer details:", error);
+      return formatError(res, "Failed to fetch customer details", 500);
     }
   }
 );

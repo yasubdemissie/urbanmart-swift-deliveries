@@ -10,91 +10,112 @@ import bcrypt from "bcryptjs";
 const router = Router();
 
 // Get all users (admin only)
-router.get("/", authenticateToken, requireAdmin, async (req: Request, res: Response) => {
+router.get(
+  "/",
+  authenticateToken,
+  requireAdmin,
+  async (req: Request, res: Response) => {
+    try {
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          avatar: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      });
+      res.json(users);
+    } catch (err) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  }
+);
+
+// Get all merchants (all users)
+router.get("/merchants", async (req: Request, res: Response) => {
   try {
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+    const merchants = await prisma.user.findMany({
+      where: { role: "MERCHANT" },
     });
-    res.json(users);
+    res.json(merchants);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch users" });
+    res.status(500).json({ error: "Failed to fetch merchants" });
   }
 });
 
 // Get a user by ID (admin or self)
-router.get("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  if (req.user?.id !== id && req.user?.role !== "ADMIN") {
-    return res.status(403).json({ error: "Forbidden" });
-  }
-  try {
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        updatedAt: true,
-        orders: {
-          select: {
-            id: true,
-            total: true,
-            status: true,
-            createdAt: true,
-            orderItems: {
-              select: {
-                id: true,
-                quantity: true,
-                price: true,
-                product: {
-                  select: {
-                    id: true,
-                    name: true,
+router.get(
+  "/:id",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    if (req.user?.id !== id && req.user?.role !== "ADMIN") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          avatar: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+          orders: {
+            select: {
+              id: true,
+              total: true,
+              status: true,
+              createdAt: true,
+              orderItems: {
+                select: {
+                  id: true,
+                  quantity: true,
+                  price: true,
+                  product: {
+                    select: {
+                      id: true,
+                      name: true,
+                    },
                   },
                 },
               },
             },
           },
-        },
-        reviews: {
-          select: {
-            id: true,
-            rating: true,
-            comment: true,
-            createdAt: true,
-            product: {
-              select: {
-                id: true,
-                name: true,
+          reviews: {
+            select: {
+              id: true,
+              rating: true,
+              comment: true,
+              createdAt: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
         },
-      },
-    });
-    if (!user) return res.status(404).json({ error: "User not found" });
-    return res.json(user);
-  } catch (err) {
-    return res.status(500).json({ error: "Failed to fetch user" });
+      });
+      if (!user) return res.status(404).json({ error: "User not found" });
+      return res.json(user);
+    } catch (err) {
+      return res.status(500).json({ error: "Failed to fetch user" });
+    }
   }
-});
+);
 
 // Create a user (public, for registration)
 router.post("/", async (req: Request, res: Response) => {
@@ -122,22 +143,26 @@ router.post("/", async (req: Request, res: Response) => {
 });
 
 // Update a user (admin or self)
-router.put("/:id", authenticateToken, async (req: AuthRequest, res: Response) => {
-  const { id } = req.params;
-  if (req.user?.id !== id && req.user?.role !== "ADMIN") {
-    return res.status(403).json({ error: "Forbidden" });
+router.put(
+  "/:id",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    if (req.user?.id !== id && req.user?.role !== "ADMIN") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
+    const { firstName, lastName, phone, avatar, isActive } = req.body;
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { firstName, lastName, phone, avatar, isActive },
+      });
+      return res.json({ id: updatedUser.id, email: updatedUser.email });
+    } catch (err) {
+      return res.status(500).json({ error: "Failed to update user" });
+    }
   }
-  const { firstName, lastName, phone, avatar, isActive } = req.body;
-  try {
-    const updatedUser = await prisma.user.update({
-      where: { id: req.user!.id },
-      data: { firstName, lastName, phone, avatar, isActive },
-    });
-    return res.json({ id: updatedUser.id, email: updatedUser.email });
-  } catch (err) {
-    return res.status(500).json({ error: "Failed to update user" });
-  }
-});
+);
 
 // Delete a user (admin or self)
 router.delete(

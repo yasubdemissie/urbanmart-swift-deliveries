@@ -1,4 +1,5 @@
 import { Pagination } from "@/components/ui/pagination";
+import { DeliveryOrder, DeliveryPayment } from "@/hooks/useDelivery";
 
 // API Client for UrbanMart Swift Deliveries
 const API_BASE_URL =
@@ -12,7 +13,7 @@ export interface User {
   lastName: string;
   phone?: string;
   avatar?: string;
-  role: "SUPER_ADMIN" | "ADMIN" | "MERCHANT" | "CUSTOMER";
+  role: "SUPER_ADMIN" | "ADMIN" | "MERCHANT" | "CUSTOMER" | "DELIVERY";
   isActive?: boolean;
   createdAt: string;
   updatedAt: string;
@@ -37,6 +38,27 @@ export interface MerchantStore {
   merchant?: User;
   products?: Product[];
   orders?: Order[];
+}
+
+export interface MerchantCustomer {
+  id: string;
+  customerId: string;
+  merchantId: string;
+  storeId: string | null;
+  firstOrderAt: string | null;
+  lastOrderAt: string | null;
+  totalOrders: number;
+  totalSpent: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  customer: User;
+  store?: MerchantStore;
+}
+
+export interface CustomersWithPagination {
+  customers: MerchantCustomer[];
+  pagination: Pagination;
 }
 
 export interface Report {
@@ -259,11 +281,18 @@ export interface WishlistItem {
 }
 
 // API Response Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T> {
   success: boolean;
-  data?: T;
+  data?: {
+    [key: string]: T;
+  };
   message?: string;
   error?: string;
+}
+
+export interface OrderResponse {
+  orders: Order[];
+  pagination: Pagination;
 }
 
 export interface LoginCredentials {
@@ -429,7 +458,7 @@ export const apiClient = {
     return response.json();
   },
 
-  async getProduct(id: string): Promise<Product> {
+  async getProduct(id: string): Promise<ApiResponse<Product>> {
     const response = await fetch(`${API_BASE_URL}/products/${id}`);
 
     if (!response.ok) {
@@ -437,7 +466,8 @@ export const apiClient = {
       throw new Error(errorData.error || "Failed to fetch product");
     }
 
-    return response.json();
+    const data = await response.json();
+    return data;
   },
 
   async getProductReviews(productId: string): Promise<Review[]> {
@@ -453,8 +483,28 @@ export const apiClient = {
     return response.json();
   },
 
+  async createProductReview(data: {
+    productId: string;
+    rating: number;
+    comment: string;
+  }): Promise<ApiResponse<Review>> {
+    const response = await fetch(`${API_BASE_URL}/reviews`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to create review");
+    }
+
+    const reviews = await response.json();
+    return reviews;
+  },
+
   // Categories
-  async getCategories(): Promise<Category[]> {
+  async getCategories(): Promise<ApiResponse<Category[]>> {
     const response = await fetch(`${API_BASE_URL}/categories`);
 
     if (!response.ok) {
@@ -462,7 +512,8 @@ export const apiClient = {
       throw new Error(errorData.error || "Failed to fetch categories");
     }
 
-    return response.json();
+    const data = await response.json();
+    return data;
   },
 
   // Cart
@@ -533,12 +584,41 @@ export const apiClient = {
     }
   },
 
+  // Addresses
+  async addAddress(addressData: {
+    type: "SHIPPING" | "BILLING";
+    firstName: string;
+    lastName: string;
+    company?: string;
+    address1: string;
+    address2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    phone: string;
+    isDefault?: boolean;
+  }): Promise<ApiResponse<Address>> {
+    const response = await fetch(`${API_BASE_URL}/users/addresses`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(addressData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to add address");
+    }
+
+    return response.json();
+  },
+
   // Orders
   async getOrders(params?: {
     page?: number;
     limit?: number;
     status?: string;
-  }): Promise<{ orders: Order[]; pagination: Pagination }> {
+  }): Promise<ApiResponse<{ orders: Order[]; pagination: Pagination }>> {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
@@ -556,8 +636,8 @@ export const apiClient = {
     return response.json();
   },
 
-  async getOrder(id: string): Promise<Order> {
-    const response = await fetch(`${API_BASE_URL}/orders/${id}`, {
+  async getOrder(id: string): Promise<ApiResponse<Order>> {
+    const response = await fetch(`${API_BASE_URL}/merchant/orders/${id}`, {
       headers: getAuthHeaders(),
     });
 
@@ -566,10 +646,12 @@ export const apiClient = {
       throw new Error(errorData.error || "Failed to fetch order");
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log("data from the api ", data);
+    return data;
   },
 
-  async createOrder(orderData: any): Promise<Order> {
+  async createOrder(orderData: Partial<Order>): Promise<ApiResponse<Order>> {
     const response = await fetch(`${API_BASE_URL}/orders`, {
       method: "POST",
       headers: getAuthHeaders(),
@@ -584,7 +666,10 @@ export const apiClient = {
     return response.json();
   },
 
-  async updateOrderStatus(id: string, status: Order["status"]): Promise<Order> {
+  async updateOrderStatus(
+    id: string,
+    status: Order["status"]
+  ): Promise<ApiResponse<Order>> {
     const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
       method: "PATCH",
       headers: getAuthHeaders(),
@@ -655,6 +740,19 @@ export const apiClient = {
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Failed to fetch users");
+    }
+
+    return response.json();
+  },
+
+  async getMerchants(): Promise<User[]> {
+    const response = await fetch(`${API_BASE_URL}/users/merchants`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchants");
     }
 
     return response.json();
@@ -859,7 +957,7 @@ export const apiClient = {
     limit?: number;
     search?: string;
     category?: string;
-  }): Promise<{ products: Product[]; pagination: Pagination }> {
+  }): Promise<ApiResponse<{ products: Product[]; pagination: Pagination }>> {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
@@ -921,7 +1019,7 @@ export const apiClient = {
     page?: number;
     limit?: number;
     status?: string;
-  }): Promise<{ orders: Order[]; pagination: Pagination }> {
+  }): Promise<ApiResponse<OrderResponse>> {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
@@ -939,12 +1037,14 @@ export const apiClient = {
       throw new Error(errorData.error || "Failed to fetch merchant orders");
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log("Data from getMerchantOrders:", data);
+    return data;
   },
 
   async updateMerchantOrderStatus(
     orderId: string,
-    status: Order["status"],
+    status: string,
     notes?: string
   ): Promise<Order> {
     const response = await fetch(
@@ -961,16 +1061,20 @@ export const apiClient = {
       throw new Error(errorData.error || "Failed to update order status");
     }
 
-    return response.json();
+    const data = await response.json();
+    return data.data;
   },
 
+  // Get merchant customers
   async getMerchantCustomers(params?: {
     page?: number;
     limit?: number;
-  }): Promise<{ customers: User[]; pagination: Pagination }> {
+    search?: string;
+  }): Promise<ApiResponse<MerchantCustomer[]>> {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.search) searchParams.append("search", params.search);
 
     const response = await fetch(
       `${API_BASE_URL}/merchant/customers?${searchParams}`,
@@ -984,7 +1088,27 @@ export const apiClient = {
       throw new Error(errorData.error || "Failed to fetch merchant customers");
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log("Data from getMerchantCustomers:", data);
+    return data;
+  },
+
+  // Get single customer details
+  async getMerchantCustomer(customerId: string): Promise<ApiResponse<User>> {
+    const response = await fetch(
+      `${API_BASE_URL}/merchant/customers/${customerId}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch customer details");
+    }
+
+    const data = await response.json();
+    return data;
   },
 
   async updateMerchantStore(
@@ -1048,6 +1172,153 @@ export const apiClient = {
     }
 
     return response.json();
+  },
+
+  // Get single merchant store
+  async getMerchantStore(storeId: string): Promise<ApiResponse<MerchantStore>> {
+    const response = await fetch(`${API_BASE_URL}/merchant-stores/${storeId}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to fetch merchant store");
+    }
+    return data;
+  },
+
+  // Get single merchant order
+  async getMerchantOrder(orderId: string): Promise<ApiResponse<Order>> {
+    const response = await fetch(`${API_BASE_URL}/merchant/orders/${orderId}`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchant order");
+    }
+
+    const responseData = await response.json();
+    return responseData;
+  },
+
+  // Get delivery orders
+  async getDeliveryOrders(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }): Promise<ApiResponse<DeliveryOrder[]>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+    if (params?.status) searchParams.append("status", params.status);
+
+    const response = await fetch(
+      `${API_BASE_URL}/delivery/orders?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch delivery orders");
+    }
+
+    const data = await response.json();
+    return data;
+  },
+
+  // Update delivery assignment status
+  async updateDeliveryStatus(
+    assignmentId: string,
+    status: string,
+    instructions?: string
+  ): Promise<ApiResponse<DeliveryOrder>> {
+    const response = await fetch(
+      `${API_BASE_URL}/delivery/orders/${assignmentId}/status`,
+      {
+        method: "PATCH",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ status, instructions }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to update delivery status");
+    }
+
+    const data = await response.json();
+    return data;
+  },
+
+  // Get delivery payments
+  async getDeliveryPayments(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<DeliveryPayment[]>> {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.append("page", params.page.toString());
+    if (params?.limit) searchParams.append("limit", params.limit.toString());
+
+    const response = await fetch(
+      `${API_BASE_URL}/delivery/payments?${searchParams}`,
+      {
+        headers: getAuthHeaders(),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch delivery payments");
+    }
+
+    const responseData = await response.json();
+    return responseData;
+  },
+
+  // Get available delivery persons
+  async getAvailableDeliveryPersons(): Promise<ApiResponse<User[]>> {
+    const response = await fetch(`${API_BASE_URL}/delivery/available`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch delivery persons");
+    }
+
+    const responseData = await response.json();
+    return responseData;
+  },
+
+  // Assign delivery to order
+  async assignDelivery(data: {
+    orderId: string;
+    deliveryUserId: string;
+    deliveryFee: number;
+    paymentType: "SALARY" | "PER_DELIVERY";
+    estimatedTime?: number;
+    instructions?: string;
+  }): Promise<ApiResponse<DeliveryOrder>> {
+    const response = await fetch(`${API_BASE_URL}/delivery/assign`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to assign delivery");
+    }
+
+    const responseData = await response.json();
+    return responseData;
   },
 };
 

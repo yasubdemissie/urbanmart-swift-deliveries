@@ -1,0 +1,5 @@
+export const requireDelivery = requireRole([
+  "DELIVERY",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);

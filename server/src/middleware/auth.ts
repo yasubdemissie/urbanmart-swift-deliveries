@@ -82,6 +82,11 @@ export const requireCustomer = requireRole([
   "ADMIN",
   "SUPER_ADMIN",
 ]);
+export const requireDelivery = requireRole([
+  "DELIVERY",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);
 
 // Legacy support
 export const requireVendor = requireRole(["VENDOR", "ADMIN", "SUPER_ADMIN"]);
@@ -96,3 +101,25 @@ export const canManageProducts = requireRole([
 ]);
 export const canViewReports = requireRole(["ADMIN", "SUPER_ADMIN"]);
 export const canManageTransactions = requireRole(["ADMIN", "SUPER_ADMIN"]);
+export const canViewOrders = requireRole([
+  "DELIVERY",
+  "MERCHANT",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);
+export const canUpdateOrderStatus = requireRole([
+  "DELIVERY",
+  "MERCHANT",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);
+export const canAssignDelivery = requireRole([
+  "MERCHANT",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);
+export const canManageDeliveryPayments = requireRole([
+  "MERCHANT",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);

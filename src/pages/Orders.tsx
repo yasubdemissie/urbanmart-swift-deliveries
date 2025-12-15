@@ -34,14 +34,14 @@ const OrdersPage = () => {
             </Button>
           </div>
           <div className="mb-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
+            {/* <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-1">
                 My Orders
               </h1>
               <p className="text-gray-600">
                 View your order history and track your purchases.
               </p>
-            </div>
+            </div> */}
             <Button
               onClick={() => navigate("/shop")}
               className="flex items-center gap-2"

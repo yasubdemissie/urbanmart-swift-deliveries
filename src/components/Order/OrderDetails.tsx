@@ -102,10 +102,10 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onClose }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 pb-2">
       <div className="container mx-auto px-4 max-w-6xl">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center gap-4 mb-4">
             <Button variant="ghost" size="sm" onClick={onClose}>
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -113,14 +113,14 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onClose }) => {
             </Button>
           </div>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
+            {/* <div>
               <h1 className="text-3xl font-bold text-gray-900">
                 Order #{order?.id.slice(-8)}
               </h1>
               <p className="text-gray-600 mt-1">
                 Placed on {formatDate(order.createdAt)}
               </p>
-            </div>
+            </div> */}
             <div className="flex gap-3">
               <Button variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />

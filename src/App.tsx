@@ -17,11 +17,15 @@ import Admin from "./pages/Admin";
 import ProductDetail from "./pages/ProductDetail";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
-import { CartProvider } from "./context/cartContext";
+import { CartProvider } from "./context/cartContext.tsx";
 import UserDetails from "./components/admin/userDetails";
 // import AdminOrderDetailsPage from "./pages/AdminOrderDetailsPage";
 import OrdersPage from "./pages/Orders";
 import MerchantDashboard from "./pages/MerchantDashboard";
+import AddProductPage from "./pages/AddProductPage";
+import Delivery from "./pages/Delivery.tsx";
+import MerchantPage from "./components/Merchant/MerchantPage.tsx";
+import Merchants from "./pages/Merchants.tsx";
 
 const queryClient = new QueryClient();
 
@@ -36,11 +40,14 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/shop" element={<Shop />} />
+              <Route path="/delivery" element={<Delivery />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/track" element={<TrackOrder />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/merchants" element={<Merchants />} />
+              <Route path="/merchant/:id" element={<MerchantPage />} />
 
               {/* Merchant Routes - Nested routing */}
               <Route
@@ -48,11 +55,14 @@ const App = () => (
                 element={<MerchantDashboard />}
               />
 
+              {/* Merchant Product Routes */}
+              <Route path="/merchant/products/new" element={<AddProductPage />} />
+
               {/* Customer Routes */}
               <Route path="/signin" element={<SignIn />} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<Admin />} />
+              {/* Admin Routes - Nested routing */}
+              <Route path="/admin/*" element={<Admin />} />
               <Route path="/admin/users/:id" element={<UserDetails />} />
               {/* <Route
                 path="/admin/orders/:id"
@@ -71,10 +81,3 @@ const App = () => (
 );
 
 export default App;
-
-{
-  /* <Route path="/categories" element={<Categories />} /> */
-}
-{
-  /* <Route path="/deals" element={<Deals />} /> */
-}

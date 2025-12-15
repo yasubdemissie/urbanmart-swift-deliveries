@@ -1,0 +1,12 @@
+export const canViewOrders = requireRole([
+  "DELIVERY",
+  "MERCHANT",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);
+export const canUpdateOrderStatus = requireRole([
+  "DELIVERY",
+  "MERCHANT",
+  "ADMIN",
+  "SUPER_ADMIN",
+]);

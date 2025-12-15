@@ -13,6 +13,10 @@ import {
   Heart,
   Settings,
   Shield,
+  Truck,
+  Home,
+  Store,
+  Mail,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,38 +36,34 @@ export const profileImages = [
   "https://banner2.cleanpng.com/lnd/20240503/jko/ava0kkhv2.webp",
 ];
 
+const IconColor = [
+  "text-sky-600",
+  "text-orange-400",
+  "text-purple-600",
+  "text-pink-600",
+  "text-indigo-600",
+];
+
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [profileImageNumber, setProfileImageNumber] = useState(
-    Math.floor(Math.random() * 6)
-  );
+  const [profileImageNumber] = useState(Math.floor(Math.random() * 6));
   const location = useLocation();
-
   const randomProfileImage = profileImages[profileImageNumber];
 
-  // Get real authentication data
-  const {
-    user,
-    isAuthenticated,
-    isLoading: authLoading,
-  } = useIsAuthenticated();
-
-  // Get real cart data
+  const { user, isAuthenticated } = useIsAuthenticated();
   const { state: cartState } = useCart();
   const cartItemCount = cartState?.items?.length || 0;
-
-  // Get user orders data for badge
   const { data: ordersData } = useOrders();
   const orderCount = ordersData?.orders?.length || 0;
-
-  // Get logout function
   const logout = useLogout();
 
   const navigationItems = [
-    { path: "/", label: "Home" },
-    { path: "/shop", label: "Shop" },
-    { path: "/contact", label: "Contact" },
+    { path: "/", label: "Home", icon: Home },
+    { path: "/shop", label: "Shop", icon: Store },
+    { path: "/merchants", label: "Merchants", icon: User },
+    { path: "/delivery", label: "Delivery", icon: Truck },
+    { path: "/contact", label: "Contact", icon: Mail },
   ];
 
   const handleLogout = () => {
@@ -72,7 +72,6 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
-  // Helper function to check if a path is active
   const isActivePath = (path: string) => {
     if (path === "/") {
       return location.pathname === "/";
@@ -81,275 +80,80 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white/95 backdrop-blur-md sticky top-0 z-50 shadow-sm border-b border-gray-100">
+    <header className="sticky -top-16 z-50 bg-white border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4">
         {/* Main Header */}
-        <div className="flex items-center justify-between py-3">
-          {/* Logo Section */}
-          <div className="flex items-center">
-            <Link
-              to="/"
-              className="flex items-center space-x-2 group transition-transform duration-300 hover:scale-105"
-            >
-              <div className="relative">
-                <div className="w-9 h-9 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-md group-hover:shadow-lg transition-all duration-300 flex items-center justify-center">
-                  <span className="text-white font-bold text-lg">U</span>
-                </div>
-              </div>
-              <div>
-                <h1 className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  UrbanMart
-                </h1>
-                <p className="text-gray-500 text-xs">Swift Deliveries</p>
-              </div>
-            </Link>
-          </div>
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link
+            to="/"
+            className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">U</span>
+            </div>
+            <div>
+              <h1 className="font-bold text-xl text-gray-900">UrbanMart</h1>
+              <p className="text-xs text-gray-500">Swift Deliveries</p>
+            </div>
+          </Link>
 
           {/* Search Bar - Desktop */}
-          <div className="hidden lg:flex flex-1 max-w-xl mx-6">
+          <div className="hidden lg:flex flex-1 max-w-xl mx-8">
             <SearchComponent />
           </div>
 
-          {/* Right Section */}
+          {/* Action Buttons */}
           <div className="flex items-center space-x-2">
-            {/* Track Order with Badge */}
+            {/* Track Order */}
             {isAuthenticated && (
               <Link to="/track">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className={`relative transition-all duration-300 rounded-xl group p-2.5 ${
+                  className={`relative ${
                     isActivePath("/track")
-                      ? "bg-blue-50 text-blue-600 border border-blue-200"
-                      : "hover:bg-blue-50 hover:text-blue-600"
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-100"
                   }`}
                 >
-                  <Package className="group-hover:scale-105 transition-transform duration-300 h-5 w-5" />
-                  <span className="hidden md:inline ml-1">Track Order</span>
+                  <Package className="h-5 w-5" />
+                  <span className="hidden md:inline ml-2">Track</span>
                   {orderCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-blue-600 text-white text-xs">
                       {orderCount}
-                    </span>
+                    </Badge>
                   )}
                 </Button>
               </Link>
             )}
 
-            {/* Shopping Cart with Badge */}
+            {/* Cart */}
             <Link to="/cart">
               <Button
                 variant="ghost"
                 size="sm"
-                className={`relative transition-all duration-300 rounded-xl group p-2.5 ${
+                className={`relative ${
                   isActivePath("/cart")
-                    ? "bg-green-50 text-green-600 border border-green-200"
-                    : "hover:bg-green-50 hover:text-green-600"
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-600 hover:bg-gray-100"
                 }`}
               >
-                <ShoppingCart className="group-hover:scale-105 transition-transform duration-300 h-5 w-5" />
-                <span className="hidden md:inline ml-1">Cart</span>
+                <ShoppingCart className="h-5 w-5" />
+                <span className="hidden md:inline ml-2">Cart</span>
                 {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-blue-600 text-white text-xs">
                     {cartItemCount}
-                  </span>
+                  </Badge>
                 )}
               </Button>
             </Link>
-
-            {/* User Authentication Section */}
-            {isAuthenticated && user ? (
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-1.5 hover:bg-gray-100 transition-all duration-300 rounded-xl p-1.5"
-                >
-                  <Avatar className="h-9 w-9 border-2 border-gray-200">
-                    <AvatarImage src={randomProfileImage} />
-                    <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold text-sm">
-                      {user?.firstName?.[0] || user?.email?.[0] || "U"}
-                      {user?.lastName?.[0] || ""}
-                    </AvatarFallback>
-                  </Avatar>
-                  <ChevronDown
-                    className={`transition-transform duration-300 h-4 w-4 ${
-                      isUserMenuOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </Button>
-
-                {/* User Dropdown Menu */}
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50">
-                    {/* User Info Header */}
-                    <div className="px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-purple-50">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10 border-2 border-white shadow-md">
-                          <AvatarImage
-                            src={user?.avatar || "/placeholder.svg"}
-                          />
-                          <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
-                            {user?.firstName?.[0] || user?.email?.[0] || "U"}
-                            {user?.lastName?.[0] || ""}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {user?.firstName && user?.lastName
-                              ? `${user.firstName} ${user.lastName}`
-                              : user?.email || "User"}
-                          </p>
-                          <p className="text-sm text-gray-600">{user?.email}</p>
-                          {user?.role === "ADMIN" && (
-                            <Badge className="mt-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Admin
-                            </Badge>
-                          )}
-                          {user?.role === "MERCHANT" && (
-                            <Badge className="mt-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs">
-                              <Shield className="h-3 w-3 mr-1" />
-                              Merchant
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Menu Items */}
-                    <div className="py-2">
-                      <Link
-                        to="/profile"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
-                          isActivePath("/profile")
-                            ? "bg-blue-50 text-blue-600 font-medium"
-                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                        }`}
-                      >
-                        <User className="h-4 w-4" />
-                        <span>My Profile</span>
-                      </Link>
-                      <Link
-                        to="/track"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
-                          isActivePath("/track")
-                            ? "bg-green-50 text-green-600 font-medium"
-                            : "text-gray-700 hover:bg-green-50 hover:text-green-600"
-                        }`}
-                      >
-                        <Package className="h-4 w-4" />
-                        <span>My Orders</span>
-                        {orderCount > 0 && (
-                          <Badge className="ml-auto bg-blue-500 text-white text-xs">
-                            {orderCount}
-                          </Badge>
-                        )}
-                      </Link>
-                      <Link
-                        to="/cart"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
-                          isActivePath("/cart")
-                            ? "bg-orange-50 text-orange-600 font-medium"
-                            : "text-gray-700 hover:bg-orange-50 hover:text-orange-600"
-                        }`}
-                      >
-                        <ShoppingCart className="h-4 w-4" />
-                        <span>My Cart</span>
-                        {cartItemCount > 0 && (
-                          <Badge className="ml-auto bg-red-500 text-white text-xs">
-                            {cartItemCount}
-                          </Badge>
-                        )}
-                      </Link>
-                      <Link
-                        to="/wishlist"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
-                          isActivePath("/wishlist")
-                            ? "bg-red-50 text-red-600 font-medium"
-                            : "text-gray-700 hover:bg-red-50 hover:text-red-600"
-                        }`}
-                      >
-                        <Heart className="h-4 w-4" />
-                        <span>Wishlist</span>
-                      </Link>
-                      <Link
-                        to="/settings"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
-                          isActivePath("/settings")
-                            ? "bg-gray-50 text-gray-900 font-medium"
-                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Settings</span>
-                      </Link>
-
-                      {user?.role === "ADMIN" && (
-                        <>
-                          <div className="border-t border-gray-100 my-1"></div>
-                          <Link
-                            to="/admin"
-                            onClick={() => setIsUserMenuOpen(false)}
-                            className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
-                              isActivePath("/admin")
-                                ? "bg-purple-50 text-purple-600 font-medium"
-                                : "text-purple-600 hover:bg-purple-50"
-                            }`}
-                          >
-                            <Shield className="h-4 w-4" />
-                            <span>Admin Dashboard</span>
-                          </Link>
-                        </>
-                      )}
-                      {user?.role === "MERCHANT" && (
-                        <>
-                          <div className="border-t border-gray-100 my-1"></div>
-                          <Link
-                            to="/merchant-dashboard"
-                            onClick={() => setIsUserMenuOpen(false)}
-                            className={`flex items-center space-x-3 px-4 py-2.5 transition-all duration-300 ${
-                              isActivePath("/merchant-dashboard")
-                                ? "bg-green-50 text-green-600 font-medium"
-                                : "text-gray-700 hover:bg-green-50 hover:text-green-600"
-                            }`}
-                          >
-                            <Shield className="h-4 w-4" />
-                            <span>Merchant Dashboard</span>
-                          </Link>
-                        </>
-                      )}
-
-                      <div className="border-t border-gray-100 my-1"></div>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-all duration-300 w-full text-left"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        <span>Sign Out</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link to="/signin">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105 shadow-md hover:shadow-lg px-4 py-1.5">
-                  Sign In
-                </Button>
-              </Link>
-            )}
 
             {/* Mobile Menu Toggle */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden hover:bg-gray-50 transition-all duration-300 rounded-xl p-2.5"
+              className="lg:hidden"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               {isMenuOpen ? (
@@ -361,39 +165,233 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Navigation - Desktop */}
-        <nav className="hidden lg:block border-t border-gray-100">
-          <div className="flex items-center justify-between py-3">
-            <div className="flex items-center space-x-6">
-              {navigationItems.map((item) => (
+        {/* Navigation - Desktop - Now Sticky */}
+        <nav className="hidden lg:flex justify-between items-center bg-white border-t border-gray-100 shadow-sm">
+          <div className="flex items-center space-x-1 py-2">
+            {navigationItems.map((item, i) => {
+              const Icon = item.icon;
+              return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-2 py-1.5 px-1 transition-colors duration-300 relative ${
+                  className={`flex items-center font-medium space-x-2 px-4 py-2 rounded-md text-sm transition-colors ${
                     isActivePath(item.path)
-                      ? "text-blue-600 font-medium after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-blue-600 after:rounded-full"
-                      : "text-gray-700 hover:text-blue-600 hover:after:absolute hover:after:bottom-0 hover:after:left-0 hover:after:w-full hover:after:h-0.5 hover:after:bg-blue-600 hover:after:rounded-full"
+                      ? "bg-blue-100 text-blue-600 font-medium"
+                      : `text-black/60 hover:bg-blue-100 hover:text-blue-600`
                   }`}
                 >
+                  <Icon
+                    strokeWidth={2.5}
+                    stroke="currentColor"
+                    strokeOpacity={0.9}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeMiterlimit={10}
+                    className={`h-4 w-4 ${
+                      isActivePath(item.path) ? "text-blue-600" : ""
+                    }`}
+                  />
                   <span>{item.label}</span>
                 </Link>
-              ))}
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex items-center space-x-3 text-sm text-gray-600">
-              <span className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Free Shipping on $50+</span>
-              </span>
-              <span>|</span>
-              <span>24/7 Support</span>
-            </div>
+              );
+            })}
           </div>
+
+          {/* User Menu */}
+          {isAuthenticated && user ? (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center space-x-2 hover:bg-gray-100"
+              >
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={randomProfileImage || "/placeholder.svg"} />
+                  <AvatarFallback className="bg-blue-600 text-white text-sm">
+                    {user.firstName || "Y"}
+                    {user.lastName || "D"}
+                  </AvatarFallback>
+                </Avatar>
+                <ChevronDown
+                  className={`h-4 w-4 text-gray-600 transition-transform ${
+                    isUserMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </Button>
+
+              {/* User Dropdown */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  {/* User Info */}
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={randomProfileImage || "/placeholder.svg"}
+                        />
+                        <AvatarFallback className="bg-blue-600 text-white">
+                          {user?.firstName || "Y"}
+                          {user?.lastName || "D"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-900 truncate">
+                          {user?.firstName && user?.lastName
+                            ? `${user.firstName} ${user.lastName}`
+                            : user?.email || "User"}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user?.email}
+                        </p>
+                        {user?.role && user.role !== "CUSTOMER" && (
+                          <Badge className="mt-1 text-xs" variant="secondary">
+                            {user.role}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="py-1">
+                    <Link
+                      to="/profile"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-2 text-sm ${
+                        isActivePath("/profile")
+                          ? "bg-gray-50 text-gray-900"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <User className="h-4 w-4" />
+                      <span>My Profile</span>
+                    </Link>
+
+                    <Link
+                      to="/track"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className={`flex items-center justify-between px-4 py-2 text-sm ${
+                        isActivePath("/track")
+                          ? "bg-gray-50 text-gray-900"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Package className="h-4 w-4" />
+                        <span>My Orders</span>
+                      </div>
+                      {orderCount > 0 && (
+                        <Badge className="bg-blue-600 text-white text-xs">
+                          {orderCount}
+                        </Badge>
+                      )}
+                    </Link>
+
+                    <Link
+                      to="/wishlist"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-2 text-sm ${
+                        isActivePath("/wishlist")
+                          ? "bg-gray-50 text-gray-900"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Heart className="h-4 w-4" />
+                      <span>Wishlist</span>
+                    </Link>
+
+                    <Link
+                      to="/settings"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-2 text-sm ${
+                        isActivePath("/settings")
+                          ? "bg-gray-50 text-gray-900"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+
+                    {/* Role-based Links */}
+                    {user?.role === "ADMIN" && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-2 text-sm ${
+                            isActivePath("/admin")
+                              ? "bg-gray-50 text-gray-900"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Shield className="h-4 w-4" />
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      </>
+                    )}
+
+                    {user?.role === "MERCHANT" && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <Link
+                          to="/merchant-dashboard"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-2 text-sm ${
+                            isActivePath("/merchant-dashboard")
+                              ? "bg-gray-50 text-gray-900"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Shield className="h-4 w-4" />
+                          <span>Merchant Dashboard</span>
+                        </Link>
+                      </>
+                    )}
+
+                    {user?.role === "DELIVERY" && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <Link
+                          to="/delivery"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-2 text-sm ${
+                            isActivePath("/delivery")
+                              ? "bg-gray-50 text-gray-900"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Truck className="h-4 w-4" />
+                          <span>Delivery Dashboard</span>
+                        </Link>
+                      </>
+                    )}
+
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center space-x-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 w-full text-left"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/signin">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                Sign In
+              </Button>
+            </Link>
+          )}
         </nav>
 
         {/* Mobile Search */}
-        <div className="lg:hidden border-t border-gray-100 py-2.5">
+        <div className="lg:hidden border-t border-gray-100 py-3">
           <SearchComponent />
         </div>
 
@@ -401,165 +399,201 @@ const Header = () => {
         {isMenuOpen && (
           <div className="lg:hidden border-t border-gray-100 py-3">
             <div className="space-y-1">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 ${
-                    isActivePath(item.path)
-                      ? "bg-blue-50 text-blue-600 font-medium"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span>{item.label}</span>
-                </Link>
-              ))}
-
-              {/* Mobile Track Order */}
-              {isAuthenticated && (
-                <Link
-                  to="/track"
-                  className={`flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 ${
-                    isActivePath("/track")
-                      ? "bg-blue-50 text-blue-600 font-medium"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <span className="flex items-center space-x-2">
-                    <Package className="h-4 w-4" />
-                    <span>Track Order</span>
-                  </span>
-                  {orderCount > 0 && (
-                    <Badge className="bg-blue-500 text-white text-xs">
-                      {orderCount}
-                    </Badge>
-                  )}
-                </Link>
+              {isAuthenticated && user && (
+                <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-md">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage
+                      src={randomProfileImage || "/placeholder.svg"}
+                    />
+                    <AvatarFallback className="bg-blue-600 text-white">
+                      {user?.firstName?.[0] || user?.email?.[0] || "U"}
+                      {user?.lastName?.[0] || ""}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-gray-900 truncate">
+                      {user?.firstName && user?.lastName
+                        ? `${user.firstName} ${user.lastName}`
+                        : user?.email || "User"}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
               )}
 
-              {/* Mobile Cart */}
-              <Link
-                to="/cart"
-                className={`flex items-center justify-between py-2.5 px-4 rounded-xl transition-all duration-300 ${
-                  isActivePath("/cart")
-                    ? "bg-green-50 text-green-600 font-medium"
-                    : "text-gray-700 hover:bg-gray-50"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span className="flex items-center space-x-2">
-                  <ShoppingCart className="h-4 w-4" />
-                  <span>Cart</span>
-                </span>
-                {cartItemCount > 0 && (
-                  <Badge className="bg-red-500 text-white text-xs">
-                    {cartItemCount}
-                  </Badge>
-                )}
-              </Link>
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                      isActivePath(item.path)
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Icon className="h-5 w-5" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+
+              {isAuthenticated && (
+                <>
+                  <Link
+                    to="/track"
+                    className={`flex items-center justify-between px-4 py-3 rounded-md text-sm ${
+                      isActivePath("/track")
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Package className="h-5 w-5" />
+                      <span>Track Order</span>
+                    </div>
+                    {orderCount > 0 && (
+                      <Badge className="bg-blue-600 text-white text-xs">
+                        {orderCount}
+                      </Badge>
+                    )}
+                  </Link>
+
+                  <Link
+                    to="/cart"
+                    className={`flex items-center justify-between px-4 py-3 rounded-md text-sm ${
+                      isActivePath("/cart")
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <ShoppingCart className="h-5 w-5" />
+                      <span>Cart</span>
+                    </div>
+                    {cartItemCount > 0 && (
+                      <Badge className="bg-blue-600 text-white text-xs">
+                        {cartItemCount}
+                      </Badge>
+                    )}
+                  </Link>
+                </>
+              )}
 
               {/* Mobile User Section */}
-              <div className="pt-3 mt-3 border-t border-gray-200">
-                {isAuthenticated && user ? (
-                  <div className="space-y-1">
-                    <div className="flex items-center space-x-3 px-4 py-2.5 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl">
-                      <Avatar className="h-9 w-9 border-2 border-white shadow-md">
-                        <AvatarImage src={user?.avatar || "/placeholder.svg"} />
-                        <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold">
-                          {user?.firstName?.[0] || user?.email?.[0] || "U"}
-                          {user?.lastName?.[0] || ""}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {user?.firstName && user?.lastName
-                            ? `${user.firstName} ${user.lastName}`
-                            : user?.email || "User"}
-                        </p>
-                        <p className="text-sm text-gray-600">{user?.email}</p>
-                        {user?.role === "ADMIN" && (
-                          <Badge className="mt-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Admin
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
+              {isAuthenticated && user && (
+                <div className="pt-3 mt-3 border-t border-gray-100 space-y-1">
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                      isActivePath("/profile")
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <User className="h-5 w-5" />
+                    <span>My Profile</span>
+                  </Link>
 
-                    <div className="space-y-1">
-                      <Link
-                        to="/profile"
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
-                          isActivePath("/profile")
-                            ? "bg-blue-50 text-blue-600 font-medium"
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        <User className="h-4 w-4" />
-                        <span>My Profile</span>
-                      </Link>
-                      <Link
-                        to="/wishlist"
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
-                          isActivePath("/wishlist")
-                            ? "bg-red-50 text-red-600 font-medium"
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        <Heart className="h-4 w-4" />
-                        <span>Wishlist</span>
-                      </Link>
-                      <Link
-                        to="/settings"
-                        onClick={() => setIsMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
-                          isActivePath("/settings")
-                            ? "bg-gray-50 text-gray-900 font-medium"
-                            : "text-gray-700 hover:bg-gray-50"
-                        }`}
-                      >
-                        <Settings className="h-4 w-4" />
-                        <span>Settings</span>
-                      </Link>
+                  <Link
+                    to="/wishlist"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                      isActivePath("/wishlist")
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Heart className="h-5 w-5" />
+                    <span>Wishlist</span>
+                  </Link>
 
-                      {user?.role === "ADMIN" && (
-                        <Link
-                          to="/admin"
-                          onClick={() => setIsMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
-                            isActivePath("/admin")
-                              ? "bg-purple-50 text-purple-600 font-medium"
-                              : "text-purple-600 hover:bg-gray-50"
-                          }`}
-                        >
-                          <Shield className="h-4 w-4" />
-                          <span>Admin Dashboard</span>
-                        </Link>
-                      )}
+                  <Link
+                    to="/settings"
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                      isActivePath("/settings")
+                        ? "bg-gray-100 text-gray-900 font-medium"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <Settings className="h-5 w-5" />
+                    <span>Details</span>
+                  </Link>
 
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-3 px-4 py-2.5 text-red-600 hover:bg-red-50 transition-all duration-300 w-full text-left rounded-xl"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        <span>Sign Out</span>
-                      </button>
-                    </div>
-                  </div>
-                ) : (
+                  {user?.role === "ADMIN" && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                        isActivePath("/admin")
+                          ? "bg-gray-100 text-gray-900 font-medium"
+                          : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Shield className="h-5 w-5" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  )}
+
+                  {user?.role === "MERCHANT" && (
+                    <Link
+                      to="/merchant-dashboard"
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                        isActivePath("/merchant-dashboard")
+                          ? "bg-gray-100 text-gray-900 font-medium"
+                          : "text-gray-620 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Shield className="h-5 w-5" />
+                      <span>Merchant Dashboard</span>
+                    </Link>
+                  )}
+
+                  {user?.role === "DELIVERY" && (
+                    <Link
+                      to="/delivery"
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                        isActivePath("/delivery")
+                          ? "bg-gray-100 text-gray-900 font-medium"
+                          : "text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      <Truck className="h-5 w-5" />
+                      <span>Delivery Dashboard</span>
+                    </Link>
+                  )}
+
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center space-x-3 px-4 py-3 text-sm text-red-620 hover:bg-red-50 w-full text-left rounded-md"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              )}
+
+              {!isAuthenticated && (
+                <div className="pt-3 mt-3 border-t border-gray-100">
                   <Link
                     to="/signin"
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center justify-center py-2.5 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-medium transition-all duration-300 hover:scale-105"
+                    className="flex items-center justify-center py-3 px-4 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700"
                   >
                     Sign In
                   </Link>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         )}

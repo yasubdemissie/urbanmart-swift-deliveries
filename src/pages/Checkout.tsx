@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -11,13 +11,14 @@ import {
   Shield,
   Truck,
   CheckCircle,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useCart } from "@/context/cartContext";
+import { useCart, MerchantCartGroup } from "@/context/cartContext";
 import { apiClient } from "@/lib/api";
 
 interface ShippingAddress {
@@ -46,8 +47,10 @@ interface PaymentMethod {
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { state, dispatch } = useCart();
-  const cartItems = state.items;
+  const { dispatch } = useCart();
+  const [merchantGroup, setMerchantGroup] = useState<MerchantCartGroup | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [useSameAddress, setUseSameAddress] = useState(true);
   const [shippingAddress, setShippingAddress] = useState<ShippingAddress>({
@@ -68,20 +71,31 @@ const Checkout = () => {
     type: "cash",
   });
 
+  // Load merchant group from localStorage on component mount
+  useEffect(() => {
+    const storedGroup = localStorage.getItem("checkoutMerchantGroup");
+    if (storedGroup) {
+      try {
+        const group = JSON.parse(storedGroup);
+        setMerchantGroup(group);
+      } catch (error) {
+        console.error("Error parsing merchant group:", error);
+        navigate("/cart");
+      }
+    } else {
+      // If no merchant group, redirect to cart
+      navigate("/cart");
+    }
+  }, [navigate]);
+
   // Helper functions
-  const clearCart = () => {
-    dispatch({ type: "CLEAR_CART" });
-  };
-
-  const getTotalPrice = () => {
-    return cartItems.reduce(
-      (total, item) => total + item.product.price * item.quantity,
-      0
-    );
-  };
-
-  const getTotalItems = () => {
-    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  const clearMerchantCart = () => {
+    if (merchantGroup) {
+      dispatch({
+        type: "CLEAR_MERCHANT_CART",
+        merchantStoreId: merchantGroup.merchantStore.id,
+      });
+    }
   };
 
   const handleAddressChange = (field: keyof ShippingAddress, value: string) => {
@@ -135,19 +149,32 @@ const Checkout = () => {
   };
 
   const handlePlaceOrder = async () => {
+    if (!merchantGroup) {
+      toast.error("No items to order");
+      return;
+    }
+
     if (!validateForm()) return;
 
     setIsLoading(true);
     try {
       // Get current user data for address fields
       const currentUser = await apiClient.getCurrentUser();
+
+      // Check if user data is valid
+      if (!currentUser?.data?.user) {
+        toast.error("Authentication failed. Please sign in again.");
+        navigate("/signin");
+        return;
+      }
+
       const userData = currentUser.data.user;
 
       // First, save the shipping address
       const shippingAddressData = await apiClient.addAddress({
         type: "SHIPPING",
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+        firstName: userData.firstName || "",
+        lastName: userData.lastName || "",
         company: "",
         address1: shippingAddress.street,
         address2: "",
@@ -164,8 +191,8 @@ const Checkout = () => {
         ? shippingAddressData
         : await apiClient.addAddress({
             type: "BILLING",
-            firstName: userData.firstName,
-            lastName: userData.lastName,
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
             company: "",
             address1: billingAddress.street,
             address2: "",
@@ -179,30 +206,43 @@ const Checkout = () => {
 
       // Create order with address IDs and payment method
       const orderData = {
-        items:
-          cartItems?.map((item) => ({
-            productId: item.product.id,
-            quantity: item.quantity,
-          })) || [],
         shippingAddressId: shippingAddressData.id,
         billingAddressId: billingAddressData.id,
         paymentMethod:
           paymentMethod.type === "card" ? "CREDIT_CARD" : "CASH_ON_DELIVERY",
-        notes: "",
+        notes: `Order from ${merchantGroup.merchantStore.name}`,
       };
 
+      console.log("Creating order with data:", orderData);
       const order = await apiClient.createOrder(orderData);
 
-      // Clear cart after successful order
-      clearCart();
+      // Clear merchant cart after successful order
+      clearMerchantCart();
 
-      toast.success("Order placed successfully!");
+      // Clear localStorage
+      localStorage.removeItem("checkoutMerchantGroup");
+
+      toast.success(
+        `Order placed successfully with ${merchantGroup.merchantStore.name}!`
+      );
 
       // Navigate to order confirmation or tracking page
       navigate(`/track?orderId=${order.id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Order placement error:", error);
-      toast.error("Failed to place order. Please try again.");
+
+      // Handle authentication errors specifically
+      if (error instanceof Error && error.message.includes("Invalid token")) {
+        toast.error("Your session has expired. Please sign in again.");
+        navigate("/signin");
+        return;
+      }
+
+      toast.error(
+        `Failed to place order: ${
+          error instanceof Error ? error.message : "Please try again."
+        }`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -215,19 +255,19 @@ const Checkout = () => {
     }).format(price);
   };
 
-  if (!cartItems || cartItems.length === 0) {
+  if (!merchantGroup) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center py-12">
             <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Your cart is empty
+              No items to checkout
             </h2>
             <p className="text-gray-600 mb-6">
-              Add some items to your cart before proceeding to checkout.
+              Please select items from a store to proceed with checkout.
             </p>
-            <Button onClick={() => navigate("/shop")}>Continue Shopping</Button>
+            <Button onClick={() => navigate("/cart")}>Back to Cart</Button>
           </div>
         </div>
       </div>
@@ -247,10 +287,21 @@ const Checkout = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Cart
           </Button>
-          <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
-          <p className="text-gray-600 mt-2">
-            Complete your purchase by providing shipping and payment information
+          <div className="flex items-center space-x-3 mb-2">
+            <Store className="h-6 w-6 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">
+              Checkout from {merchantGroup.merchantStore.name}
+            </h1>
+          </div>
+          <p className="text-gray-600">
+            Complete your purchase from {merchantGroup.merchantStore.name} by
+            providing shipping and payment information
           </p>
+          {merchantGroup.merchantStore.isVerified && (
+            <Badge variant="secondary" className="mt-2">
+              Verified Store
+            </Badge>
+          )}
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
@@ -449,9 +500,19 @@ const Checkout = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Store Info */}
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <Store className="h-4 w-4 text-blue-600" />
+                    <span className="font-medium text-blue-900">
+                      {merchantGroup.merchantStore.name}
+                    </span>
+                  </div>
+                </div>
+
                 {/* Items */}
                 <div className="space-y-3">
-                  {cartItems?.map((item) => (
+                  {merchantGroup.items.map((item) => (
                     <div
                       key={item.product.id}
                       className="flex justify-between items-center"
@@ -478,20 +539,24 @@ const Checkout = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal</span>
-                    <span>{formatPrice(getTotalPrice())}</span>
+                    <span>{formatPrice(merchantGroup.subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Shipping</span>
-                    <span className="text-green-600">Free</span>
+                    <span className="text-green-600">
+                      {merchantGroup.shipping === 0
+                        ? "Free"
+                        : formatPrice(merchantGroup.shipping)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Tax</span>
-                    <span>{formatPrice(getTotalPrice() * 0.15)}</span>
+                    <span>{formatPrice(merchantGroup.tax)}</span>
                   </div>
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total</span>
-                    <span>{formatPrice(getTotalPrice() * 1.15)}</span>
+                    <span>{formatPrice(merchantGroup.total)}</span>
                   </div>
                 </div>
 

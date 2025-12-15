@@ -155,9 +155,20 @@ router.post(
       const cartItems = await prisma.cartItem.findMany({
         where: { userId: req.user!.id },
         include: {
-          product: true,
+          product: {
+            include: {
+              merchantStore: {
+                select: {
+                  merchantId: true,
+                  id: true,
+                },
+              },
+            },
+          },
         },
       });
+
+      console.log("Cart items:", cartItems);
 
       if (cartItems.length === 0) {
         return formatError(res, "Cart is empty", 400);
@@ -202,61 +213,124 @@ router.post(
         total: Number(item.product.price) * item.quantity,
       }));
 
+      console.log("Order items:", orderItems);
+
       const totals = calculateOrderTotals(orderItems);
+      console.log("Order totals:", totals);
 
-      // Create order
-      const order = await prisma.order.create({
-        data: {
-          orderNumber: generateOrderNumber(),
-          userId: req.user!.id,
-          subtotal: totals.subtotal,
-          tax: totals.tax,
-          shipping: totals.shipping,
-          total: totals.total,
-          paymentMethod,
-          shippingAddressId,
-          billingAddressId,
-          notes,
-        },
-      });
+      // Get merchant info safely
+      let merchantId = null;
+      let storeId = null;
 
-      // Create order items
-      await Promise.all(
-        orderItems.map((item) =>
-          prisma.orderItem.create({
-            data: {
-              orderId: order.id,
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-              total: item.total,
-            },
-          })
-        )
-      );
+      if (cartItems.length > 0 && cartItems[0].product) {
+        merchantId = cartItems[0].product.merchantStore?.merchantId || null;
+        storeId = cartItems[0].product.merchantStoreId || null;
+      }
 
-      // Update product stock
-      await Promise.all(
-        cartItems.map((item) =>
-          prisma.product.update({
-            where: { id: item.productId },
-            data: {
-              stockQuantity: {
-                decrement: item.quantity,
+      console.log("Merchant info:", { merchantId, storeId });
+
+      // Use transaction to ensure data consistency
+      const result = await prisma.$transaction(async (tx) => {
+        // Create order
+        const order = await tx.order.create({
+          data: {
+            orderNumber: generateOrderNumber(),
+            userId: req.user!.id,
+            merchantId,
+            storeId,
+            subtotal: totals.subtotal,
+            tax: totals.tax,
+            shipping: totals.shipping,
+            total: totals.total,
+            paymentMethod,
+            shippingAddressId,
+            billingAddressId,
+            notes,
+          },
+        });
+
+        console.log("Order created:", order);
+
+        // Create order items
+        await Promise.all(
+          orderItems.map((item) =>
+            tx.orderItem.create({
+              data: {
+                orderId: order.id,
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.price,
+                total: item.total,
               },
-            },
-          })
-        )
-      );
+            })
+          )
+        );
 
-      // Clear cart
-      await prisma.cartItem.deleteMany({
-        where: { userId: req.user!.id },
+        // Update product stock
+        await Promise.all(
+          cartItems.map((item) =>
+            tx.product.update({
+              where: { id: item.productId },
+              data: {
+                stockQuantity: {
+                  decrement: item.quantity,
+                },
+              },
+            })
+          )
+        );
+
+        // Create or update customer relationship
+        if (merchantId) {
+          const existingCustomer = await tx.customer.findFirst({
+            where: {
+              customerId: req.user!.id,
+              merchantId: merchantId,
+              storeId: storeId,
+            },
+          });
+
+          if (existingCustomer) {
+            // Update existing customer relationship
+            await tx.customer.update({
+              where: { id: existingCustomer.id },
+              data: {
+                lastOrderAt: new Date(),
+                totalOrders: {
+                  increment: 1,
+                },
+                totalSpent: {
+                  increment: totals.total,
+                },
+              },
+            });
+          } else {
+            // Create new customer relationship
+            await tx.customer.create({
+              data: {
+                customerId: req.user!.id,
+                merchantId: merchantId,
+                storeId: storeId,
+                firstOrderAt: new Date(),
+                lastOrderAt: new Date(),
+                totalOrders: 1,
+                totalSpent: totals.total,
+              },
+            });
+          }
+        }
+
+        // Clear cart
+        await tx.cartItem.deleteMany({
+          where: { userId: req.user!.id },
+        });
+
+        return order;
       });
 
       // Get complete order with items
       const completeOrder = await prisma.order.findUnique({
-        where: { id: order.id },
+        where: { id: result.id },
         include: {
           orderItems: {
             include: {
@@ -265,6 +339,7 @@ router.post(
                   id: true,
                   name: true,
                   mainImage: true,
+                  price: true,
                   slug: true,
                 },
               },

@@ -19,16 +19,16 @@ import {
 
 const ReportsTab = () => {
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<string>("");
-  const [priority, setPriority] = useState<string>("");
-  const [type, setType] = useState<string>("");
+  const [status, setStatus] = useState<string>("all");
+  const [priority, setPriority] = useState<string>("all");
+  const [type, setType] = useState<string>("all");
 
   const { data: reportsData, isLoading } = useAdminReports({
     page,
     limit: 10,
-    status: status || undefined,
-    priority: priority || undefined,
-    type: type || undefined,
+    status: status === "all" ? undefined : status,
+    priority: priority === "all" ? undefined : priority,
+    type: type === "all" ? undefined : type,
   });
 
   const assignReportMutation = useAssignReport();
@@ -96,7 +96,7 @@ const ReportsTab = () => {
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Status</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="PENDING">Pending</SelectItem>
             <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
             <SelectItem value="RESOLVED">Resolved</SelectItem>
@@ -108,7 +108,7 @@ const ReportsTab = () => {
             <SelectValue placeholder="Filter by priority" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Priority</SelectItem>
+            <SelectItem value="all">All Priority</SelectItem>
             <SelectItem value="HIGH">High</SelectItem>
             <SelectItem value="MEDIUM">Medium</SelectItem>
             <SelectItem value="LOW">Low</SelectItem>
@@ -120,7 +120,7 @@ const ReportsTab = () => {
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="BUG">Bug</SelectItem>
             <SelectItem value="FEATURE_REQUEST">Feature Request</SelectItem>
             <SelectItem value="COMPLAINT">Complaint</SelectItem>

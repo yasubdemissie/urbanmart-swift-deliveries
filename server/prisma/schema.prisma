@@ -40,8 +40,41 @@ model User {
   reports        Report[] @relation("Reporter")
   assignedReports Report[] @relation("AssignedAdmin")
   transactions   Transaction[]
+  
+  // Customer relations
+  customerRelationships Customer[] @relation("CustomerUser")
+  merchantRelationships Customer[] @relation("MerchantUser")
+  
+  // Delivery relations
+  deliveryAssignments  DeliveryAssignment[] @relation("DeliveryUser")
+  hiredDeliveries      DeliveryAssignment[] @relation("HiredByMerchant")
+  deliveryPaymentHistory DeliveryPayment[] @relation("DeliveryPayer")
+  merchantPaymentHistory DeliveryPayment[] @relation("MerchantPayer")
+  deliveryOrders       Order[] @relation("DeliveryOrders") // Add this line
 
   @@map("users")
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  customerId String   // User ID of the customer
+  merchantId String   // User ID of the merchant
+  storeId    String?  // Optional store ID for specific store relationships
+  firstOrderAt DateTime? // When they first ordered from this merchant
+  lastOrderAt DateTime?  // When they last ordered from this merchant
+  totalOrders Int      @default(0) // Total orders from this merchant
+  totalSpent  Decimal  @default(0) @db.Decimal(10, 2) // Total amount spent
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  customer User @relation("CustomerUser", fields: [customerId], references: [id], onDelete: Cascade)
+  merchant User @relation("MerchantUser", fields: [merchantId], references: [id], onDelete: Cascade)
+  store    MerchantStore? @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, merchantId, storeId])
+  @@map("customers")
 }
 
 model MerchantStore {
@@ -64,6 +97,7 @@ model MerchantStore {
   merchant   User      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
   products   Product[]
   orders     Order[]    @relation("StoreOrders")
+  customers  Customer[]
 
   @@map("merchant_stores")
 }
@@ -195,6 +229,7 @@ model Order {
   userId        String
   merchantId    String?
   storeId       String?
+  deliveryUserId String?      // Add this field
   status        OrderStatus   @default(PENDING)
   subtotal      Decimal       @db.Decimal(10, 2)
   tax           Decimal       @db.Decimal(10, 2)
@@ -215,13 +250,15 @@ model Order {
 
   // Relations
   user            User        @relation(fields: [userId], references: [id])
-  merchant        User?        @relation("MerchantOrders", fields: [merchantId], references: [id])
+  merchant        User?       @relation("MerchantOrders", fields: [merchantId], references: [id])
   store           MerchantStore? @relation("StoreOrders", fields: [storeId], references: [id])
   shippingAddress Address     @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
   billingAddress  Address     @relation("BillingAddress", fields: [billingAddressId], references: [id])
   orderItems      OrderItem[]
   statusHistory   OrderStatusHistory[]
   transactions    Transaction[]
+  deliveryAssignment DeliveryAssignment? // Add this relation
+  deliveryUser    User?       @relation("DeliveryOrders", fields: [deliveryUserId], references: [id])
 
   @@map("orders")
 }
@@ -315,6 +352,7 @@ enum UserRole {
   ADMIN
   MERCHANT
   CUSTOMER
+  DELIVERY
 }
 
 enum AddressType {
@@ -384,4 +422,72 @@ enum TransactionStatus {
   COMPLETED
   FAILED
   CANCELLED
+}
+
+// Add these new models after the existing ones
+
+enum DeliveryPaymentType {
+  SALARY
+  PER_DELIVERY
+}
+
+enum DeliveryStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+  ASSIGNED
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+model DeliveryAssignment {
+  id              String            @id @default(cuid())
+  orderId         String            @unique
+  deliveryUserId  String
+  merchantId      String
+  assignedAt      DateTime          @default(now())
+  pickedUpAt      DateTime?
+  deliveryAddress String
+  deliveryFee     Decimal           @db.Decimal(10, 2)
+  paymentType     DeliveryPaymentType
+  instructions    String?
+  estimatedTime   Int?              // in minutes
+  status          DeliveryStatus    @default(ASSIGNED)
+  completedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  order        Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  deliveryUser User  @relation("DeliveryUser", fields: [deliveryUserId], references: [id])
+  merchant     User  @relation("HiredByMerchant", fields: [merchantId], references: [id])
+  payments     DeliveryPayment[]
+
+  @@map("delivery_assignments")
+}
+
+model DeliveryPayment {
+  id                  String             @id @default(cuid())
+  deliveryAssignmentId String
+  deliveryUserId      String
+  merchantId         String
+  amount            Decimal            @db.Decimal(10, 2)
+  paymentType       DeliveryPaymentType
+  status             PaymentStatus      @default(PENDING)
+  baseAmount        Decimal?           @db.Decimal(10, 2) // For per-delivery calculations
+  distanceBonus     Decimal?           @db.Decimal(10, 2) // Distance-based bonus
+  weightBonus       Decimal?           @db.Decimal(10, 2) // Weight-based bonus
+  timeBonus         Decimal?           @db.Decimal(10, 2) // Time-based bonus
+  processedAt       DateTime?
+  notes             String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations with proper relation names
+  assignment  DeliveryAssignment @relation(fields: [deliveryAssignmentId], references: [id])
+  deliveryUser User              @relation("DeliveryPayer", fields: [deliveryUserId], references: [id])
+  merchant    User              @relation("MerchantPayer", fields: [merchantId], references: [id])
+
+  @@map("delivery_payments")
 }

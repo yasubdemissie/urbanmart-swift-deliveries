@@ -109,15 +109,15 @@ const CustomersTab = ({
   const getRoleColor = (role: string) => {
     switch (role) {
       case "SUPER_ADMIN":
-        return "bg-red-50 text-red-700 border-red-200";
+        return "bg-red-50 text-red-700";
       case "ADMIN":
-        return "bg-purple-50 text-purple-700 border-purple-200";
+        return "bg-purple-50 text-purple-700";
       case "MERCHANT":
-        return "bg-green-50 text-green-700 border-green-200";
+        return "bg-green-50 text-green-700";
       case "CUSTOMER":
-        return "bg-blue-50 text-blue-700 border-blue-200";
+        return "bg-blue-50 text-blue-700";
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
+        return "bg-gray-50 text-gray-7000";
     }
   };
 
@@ -487,7 +487,7 @@ const CustomersTab = ({
                     <Badge
                       className={`${getRoleColor(
                         user.role
-                      )} flex items-center gap-1 px-2 py-1 rounded-full border-no`}
+                      )} flex items-center gap-1 px-2 py-1 rounded-full`}
                     >
                       {getRoleIcon(user.role)}
                       {user.role.replace("_", " ").toLowerCase()}

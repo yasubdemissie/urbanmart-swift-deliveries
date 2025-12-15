@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
-import { useNavigate, Routes, Route, useLocation } from "react-router-dom";
-import { Plus, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useNavigate, Routes, Route } from "react-router-dom";
 import { useIsAuthenticated } from "@/hooks/useAuth";
 import MerchantHeader from "@/components/Merchant/MerchantHeader";
-import Footer from "@/components/Custom/Footer";
 import { OverviewTab } from "@/components/Merchant/OverviewTab";
 import { ProductsTab } from "@/components/Merchant/ProductTab";
 import { OrdersTab } from "@/components/Merchant/OrderTab";
 import { CustomersTab } from "@/components/Merchant/CustomerTab";
 import { AnalyticsTab } from "@/components/Merchant/AnalyticsTab";
 import { SettingsTab } from "@/components/Merchant/SettingsTab";
+import AddProductPage from "./AddProductPage";
+import MerchantOrderDetailsPage from "./MerchantOrderDetailsPage";
 
 const MerchantDashboard = () => {
   const navigate = useNavigate();
@@ -58,36 +57,16 @@ const MerchantDashboard = () => {
       <MerchantHeader />
 
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Merchant Dashboard
-            </h1>
-            <p className="text-gray-600">
-              Manage your products, orders, and customers
-            </p>
-          </div>
-          <div className="flex gap-2 mt-4 sm:mt-0">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/merchant/store")}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Store Settings
-            </Button>
-            <Button onClick={() => navigate("/merchant/products/new")}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-          </div>
-        </div>
-
         {/* Route-based Content */}
         <Routes>
           <Route path="/" element={<OverviewTab />} />
           <Route path="/products" element={<ProductsTab />} />
+          <Route path="/products/new" element={<AddProductPage />} />
           <Route path="/orders" element={<OrdersTab />} />
+          <Route
+            path="/orders/:orderId"
+            element={<MerchantOrderDetailsPage />}
+          />
           <Route path="/customers" element={<CustomersTab />} />
           <Route path="/analytics" element={<AnalyticsTab />} />
           <Route path="/settings" element={<SettingsTab />} />

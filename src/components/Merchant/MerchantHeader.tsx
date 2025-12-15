@@ -190,12 +190,21 @@ const MerchantHeader = () => {
 
           {/* Action Buttons */}
           <div className="flex items-center space-x-2">
-            <Button size="sm" variant="outline" className="hidden sm:flex">
+            <Button
+              onClick={() => navigate("/merchant/products/new")}
+              size="sm"
+              variant="outline"
+              className="hidden sm:flex"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Add Product
             </Button>
 
-            <Button size="sm" variant="outline">
+            <Button
+              onClick={() => navigate("/shop")}
+              size="sm"
+              variant="outline"
+            >
               <Eye className="h-4 w-4 mr-2" />
               View Store
             </Button>
@@ -244,12 +253,22 @@ const MerchantHeader = () => {
 
               {/* Mobile Action Buttons */}
               <div className="pt-2 border-t">
-                <Button size="sm" variant="outline" className="w-full mb-2">
+                <Button
+                  onClick={() => navigate("/merchant/products/new")}
+                  size="sm"
+                  variant="outline"
+                  className="w-full mb-2"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Product
                 </Button>
 
-                <Button size="sm" variant="outline" className="w-full mb-2">
+                <Button
+                  onClick={() => navigate("/shop")}
+                  size="sm"
+                  variant="outline"
+                  className="w-full mb-2"
+                >
                   <Eye className="h-4 w-4 mr-2" />
                   View Store
                 </Button>

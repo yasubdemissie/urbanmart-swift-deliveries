@@ -92,7 +92,13 @@ export const useCategories = () => {
 export const useProduct = (id: string) => {
   return useQuery({
     queryKey: productKeys.detail(id),
-    queryFn: () => apiClient.getProduct(id),
+    queryFn: async () => {
+      const response = await apiClient.getProduct(id);
+      if (response.success) {
+        return response.data?.product;
+      }
+      throw new Error(response.error || "Failed to fetch product");
+    },
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });

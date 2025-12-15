@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Routes, Route, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import AdminHeader from "@/components/admin/AdminHeader";
 import Footer from "@/components/Custom/Footer";
@@ -24,7 +24,6 @@ import {
 const Admin = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useIsAuthenticated();
-  const [activeTab, setActiveTab] = useState("dashboard");
   const [userPage, setUserPage] = useState(1);
   const [userSearch, setUserSearch] = useState("");
 
@@ -82,7 +81,7 @@ const Admin = () => {
   ) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <AdminHeader activeTab={activeTab} onTabChange={setActiveTab} />
+        <AdminHeader />
         <div className="container mx-auto px-4 py-16">
           <div className="text-center max-w-md mx-auto">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
@@ -99,43 +98,9 @@ const Admin = () => {
     );
   }
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "dashboard":
-        return (
-          <DashboardTab stats={dashboardData} statsLoading={dashboardLoading} />
-        );
-      case "users":
-        return (
-          <CustomersTab
-            customersData={usersData}
-            customersLoading={usersLoading}
-            handleExport={handleExportUsers}
-            exportCustomersMutation={{ isPending: false }}
-            onUpdateUserRole={handleUpdateUserRole}
-            onUpdateUserStatus={handleUpdateUserStatus}
-            searchQuery={userSearch}
-            setSearchQuery={setUserSearch}
-            currentPage={userPage}
-            setCurrentPage={setUserPage}
-          />
-        );
-      case "reports":
-        return <ReportsTab />;
-      case "transactions":
-        return <TransactionsTab />;
-      case "merchant-stores":
-        return <MerchantStoresTab />;
-      default:
-        return (
-          <DashboardTab stats={dashboardData} statsLoading={dashboardLoading} />
-        );
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminHeader activeTab={activeTab} onTabChange={setActiveTab} />
+      <AdminHeader />
 
       <div className="container mx-auto px-4 py-8">
         {/* Admin Page Header */}
@@ -145,8 +110,52 @@ const Admin = () => {
           </p>
         </div> */}
 
-        {/* Tab Content */}
-        <div className="space-y-6">{renderTabContent()}</div>
+        {/* Tab Content using Routes */}
+        <div className="space-y-6">
+          <Routes>
+            <Route 
+              path="/" 
+              element={
+                <Navigate to="/admin/dashboard" replace />
+              } 
+            />
+            <Route 
+              path="/dashboard" 
+              element={
+                <DashboardTab stats={dashboardData} statsLoading={dashboardLoading} />
+              } 
+            />
+            <Route 
+              path="/users" 
+              element={
+                <CustomersTab
+                  customersData={usersData}
+                  customersLoading={usersLoading}
+                  handleExport={handleExportUsers}
+                  exportCustomersMutation={{ isPending: false }}
+                  onUpdateUserRole={handleUpdateUserRole}
+                  onUpdateUserStatus={handleUpdateUserStatus}
+                  searchQuery={userSearch}
+                  setSearchQuery={setUserSearch}
+                  currentPage={userPage}
+                  setCurrentPage={setUserPage}
+                />
+              } 
+            />
+            <Route 
+              path="/reports" 
+              element={<ReportsTab />} 
+            />
+            <Route 
+              path="/transactions" 
+              element={<TransactionsTab />} 
+            />
+            <Route 
+              path="/merchant-stores" 
+              element={<MerchantStoresTab />} 
+            />
+          </Routes>
+        </div>
       </div>
 
       {/* <Footer /> */}

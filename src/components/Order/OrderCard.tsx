@@ -16,6 +16,16 @@ import {
 import StatusBadge from "./StatusBadge";
 import PaymentStatusBadge from "./PaymentStatus";
 import { Order } from "@/lib/api";
+import { useNavigate } from "react-router-dom";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useUpdateMerchantOrderStatus } from "@/hooks/useMerchant";
+import { useToast } from "@/hooks/use-toast";
 
 interface OrderCardProps {
   order: Order;
@@ -23,7 +33,25 @@ interface OrderCardProps {
   onEditOrder?: (orderId: string) => void;
   onUpdateStatus?: (orderId: string, status: string) => void;
   isAdmin?: boolean;
+  isMerchant?: boolean;
 }
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "DELIVERED":
+      return "bg-emerald-100 text-emerald-800 hover:bg-emerald-100";
+    case "SHIPPED":
+      return "bg-blue-100 text-blue-800 hover:bg-blue-100";
+    case "CONFIRMED":
+      return "bg-amber-100 text-amber-800 hover:bg-amber-100";
+    case "PROCESSING":
+      return "bg-purple-100 text-purple-800 hover:bg-purple-100";
+    case "CANCELLED":
+      return "bg-red-100 text-red-800 hover:bg-red-100";
+    default:
+      return "bg-gray-100 text-gray-800 hover:bg-gray-100";
+  }
+};
 
 const OrderCard: React.FC<OrderCardProps> = ({
   order,
@@ -31,7 +59,12 @@ const OrderCard: React.FC<OrderCardProps> = ({
   onEditOrder,
   onUpdateStatus,
   isAdmin = false,
+  isMerchant = true,
 }) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const updateStatusMutation = useUpdateMerchantOrderStatus();
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -52,39 +85,72 @@ const OrderCard: React.FC<OrderCardProps> = ({
     return isNaN(numTotal) ? "0.00" : numTotal.toFixed(2);
   };
 
+  const handleStatusUpdate = async (newStatus: string) => {
+    if (isMerchant) {
+      try {
+        await updateStatusMutation.mutateAsync({
+          orderId: order.id,
+          status: newStatus,
+        });
+        toast({
+          title: "Status Updated",
+          description: `Order status updated to ${newStatus}`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update order status",
+          variant: "destructive",
+        });
+      }
+    } else {
+      onUpdateStatus?.(order.id, newStatus);
+    }
+  };
+
   console.log("orders in the Component: ", order);
   return (
     <Card className="hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-lg">
-                Order #{order.id.slice(-8)}
-              </h3>
-              <StatusBadge status={order.status} />
+        <div className="flex items-center justify-between">
+          <div className="space-y-2 w-full mx-1">
+            <div className="flex items-center justify-between gap-2">
+              <PaymentStatusBadge
+                status={order.paymentStatus as "PENDING" | "PAID" | "FAILED"}
+              />
+              {isMerchant && (
+                <Select
+                  value={order.status}
+                  onValueChange={handleStatusUpdate}
+                  disabled={updateStatusMutation.isPending}
+                >
+                  <SelectTrigger
+                    className={`h-6 w-24 border-0 rounded-full text-xs font-semibold ${getStatusColor(
+                      order.status
+                    )}`}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDING">Pending</SelectItem>
+                    <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+                    <SelectItem value="SHIPPED">Shipped</SelectItem>
+                    <SelectItem value="DELIVERED">Delivered</SelectItem>
+                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-            <PaymentStatusBadge status={order.paymentStatus} />
           </div>
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onViewDetails?.(order.id)}
+              onClick={() => navigate(`/merchant-dashboard/orders/${order.id}`)}
               className="opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <Eye className="w-4 h-4" />
             </Button>
-            {isAdmin && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onEditOrder?.(order.id)}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Edit className="w-4 h-4" />
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>
@@ -116,7 +182,8 @@ const OrderCard: React.FC<OrderCardProps> = ({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Package className="w-4 h-4" />
               <span>
-                {order.orderItems.length} item{order.orderItems.length > 1 ? "s" : ""}
+                {order.orderItems.length} item
+                {order.orderItems.length > 1 ? "s" : ""}
               </span>
             </div>
             <div className="space-y-1">

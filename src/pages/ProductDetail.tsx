@@ -46,7 +46,8 @@ const ProductDetail = () => {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeTab, setActiveTab] = useState("description");
 
-  const { data: product, isLoading, error } = useProduct(id || "");
+  const { data: productData, isLoading, error } = useProduct(id || "");
+  const product = productData;
   const addToCartMutation = useAddToCart();
 
   const { state: cartState, dispatch } = useCart();
@@ -288,6 +289,8 @@ const ProductDetail = () => {
       </div>
     );
   }
+
+  console.log("Product data:", product);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">

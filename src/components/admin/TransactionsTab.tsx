@@ -16,14 +16,14 @@ import { Transaction } from "@/lib/api";
 
 const TransactionsTab = () => {
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<string>("");
-  const [type, setType] = useState<string>("");
+  const [status, setStatus] = useState<string>("all");
+  const [type, setType] = useState<string>("all");
 
   const { data: transactionsData, isLoading } = useAdminTransactions({
     page,
     limit: 10,
-    status: status || undefined,
-    type: type || undefined,
+    status: status === "all" ? undefined : status,
+    type: type === "all" ? undefined : type,
   });
 
   const getStatusColor = (status: string) => {
@@ -87,7 +87,7 @@ const TransactionsTab = () => {
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Status</SelectItem>
+            <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="PENDING">Pending</SelectItem>
             <SelectItem value="COMPLETED">Completed</SelectItem>
             <SelectItem value="FAILED">Failed</SelectItem>
@@ -99,7 +99,7 @@ const TransactionsTab = () => {
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="PAYMENT">Payment</SelectItem>
             <SelectItem value="REFUND">Refund</SelectItem>
             <SelectItem value="WITHDRAWAL">Withdrawal</SelectItem>

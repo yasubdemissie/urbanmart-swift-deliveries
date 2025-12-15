@@ -1,5 +1,13 @@
 import { useState, useEffect } from "react";
-import { Package, Truck, CheckCircle, Clock, User, LogIn } from "lucide-react";
+import {
+  Package,
+  Truck,
+  CheckCircle,
+  Clock,
+  User,
+  LogIn,
+  Book,
+} from "lucide-react";
 import Header from "@/components/Custom/Header";
 import Footer from "@/components/Custom/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useOrders } from "@/hooks/useOrders";
 import { apiClient, Order, OrderStatusHistory } from "@/lib/api";
 import { useIsAuthenticated } from "@/hooks/useAuth";
+import LoadingSpinner from "@/components/Custom/LoadingSpinner";
 
 const TrackOrder = () => {
   const {
@@ -23,6 +32,7 @@ const TrackOrder = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [statusHistory, setStatusHistory] = useState<OrderStatusHistory[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [tab, setTab] = useState<"status" | "items">("status");
 
   // Fetch status history when an order is selected
   useEffect(() => {
@@ -100,17 +110,11 @@ const TrackOrder = () => {
           <div className="max-w-md mx-auto text-center">
             <Card>
               <CardContent className="p-8">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Loading
-                </h2>
-                <p className="text-gray-600">Please wait...</p>
+                <LoadingSpinner message="Loading orders..." type="small" />
               </CardContent>
             </Card>
           </div>
         </div>
-
-        <Footer />
       </div>
     );
   }
@@ -139,8 +143,6 @@ const TrackOrder = () => {
             </Card>
           </div>
         </div>
-
-        <Footer />
       </div>
     );
   }
@@ -166,8 +168,6 @@ const TrackOrder = () => {
             </Card>
           </div>
         </div>
-
-        <Footer />
       </div>
     );
   }
@@ -197,11 +197,11 @@ const TrackOrder = () => {
             </Card>
           </div>
         </div>
-
-        <Footer />
       </div>
     );
   }
+
+  console.log(ordersData);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -210,20 +210,17 @@ const TrackOrder = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {/* <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Track Your Orders
-          </h1>
+          </h1> */}
           <p className="text-gray-600">
-            Select an order to view its tracking information
+            Select an your order to view its tracking information
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Orders List */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Your Orders
-            </h2>
             {ordersData.orders.map((order) => (
               <Card
                 key={order.id}
@@ -257,10 +254,6 @@ const TrackOrder = () => {
           <div className="space-y-4">
             {selectedOrder ? (
               <>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                  Order #{selectedOrder.id.slice(-8)} Status
-                </h2>
-
                 {/* Order Summary */}
                 <Card className="mb-6">
                   <CardContent className="p-4">
@@ -283,17 +276,65 @@ const TrackOrder = () => {
                       <div className="text-right">
                         <p className="text-sm text-gray-600">Total</p>
                         <p className="font-semibold text-gray-900">
-                          ${Number(selectedOrder.total).toFixed(2)}
+                          ETB {Number(selectedOrder.total).toFixed(2)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <div className="flex items-center">
-                        <Package className="h-5 w-5 text-blue-600 mr-2" />
-                        <span className="text-blue-800 font-medium">
-                          {selectedOrder.orderItems.length} item(s) ordered
-                        </span>
+                    <div className="flex flex-row items-center gap-1">
+                      <div
+                        onClick={() => setTab("status")}
+                        className={`rounded-lg p-3 cursor-pointer ${
+                          tab === "status"
+                            ? "bg-blue-100"
+                            : "border hover:bg-blue-50/50"
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <Book
+                            className={`h-5 w-5 ${
+                              tab === "status"
+                                ? "text-blue-600"
+                                : "text-gray-800"
+                            } mr-2`}
+                          />
+                          <span
+                            className={`font-medium ${
+                              tab === "status"
+                                ? "text-blue-600"
+                                : "text-gray-800"
+                            }`}
+                          >
+                            {statusHistory.length} Status history
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        onClick={() => setTab("items")}
+                        className={`rounded-lg p-3 cursor-pointer ${
+                          tab === "items"
+                            ? "bg-blue-100"
+                            : "border hover:bg-blue-50/50"
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <Package
+                            className={`h-5 w-5 ${
+                              tab === "items"
+                                ? "text-blue-600"
+                                : "text-gray-800"
+                            } mr-2`}
+                          />
+                          <span
+                            className={`font-medium ${
+                              tab === "items"
+                                ? "text-blue-600"
+                                : "text-gray-800"
+                            }`}
+                          >
+                            {selectedOrder.orderItems.length} item(s) ordered
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -301,81 +342,117 @@ const TrackOrder = () => {
 
                 {/* Status History Timeline */}
                 <Card>
-                  <CardContent className="p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                      Status History
-                    </h3>
+                  {tab === "status" && (
+                    <CardContent className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Status History
+                      </h3>
 
-                    {isLoadingHistory ? (
-                      <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                        <span className="ml-2 text-gray-600">
-                          Loading history...
-                        </span>
-                      </div>
-                    ) : statusHistory.length > 0 ? (
-                      <div className="space-y-4">
-                        {statusHistory.map((history, index) => {
-                          const isCompleted =
-                            index === 0 ||
-                            statusHistory[index - 1]?.status !== history.status;
-                          const isCurrent = index === 0;
+                      {isLoadingHistory ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          <span className="ml-2 text-gray-600">
+                            Loading history...
+                          </span>
+                        </div>
+                      ) : statusHistory.length > 0 ? (
+                        <div className="space-y-4">
+                          {statusHistory.map((history, index) => {
+                            const isCompleted =
+                              index === 0 ||
+                              statusHistory[index - 1]?.status !==
+                                history.status;
+                            const isCurrent = index === 0;
 
-                          return (
-                            <div key={history.id} className="flex items-start">
+                            return (
                               <div
-                                className={`flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center ${getStatusColor(
-                                  isCompleted,
-                                  isCurrent
-                                )}`}
+                                key={history.id}
+                                className="flex items-start"
                               >
-                                {getStatusIcon(
-                                  history.status,
-                                  isCompleted,
-                                  isCurrent
-                                )}
-                              </div>
-
-                              <div className="ml-4 flex-1">
-                                <div className="flex items-center justify-between">
-                                  <h4
-                                    className={`font-medium ${
-                                      isCurrent
-                                        ? "text-blue-600"
-                                        : isCompleted
-                                        ? "text-green-600"
-                                        : "text-gray-400"
-                                    }`}
-                                  >
-                                    {history.status.replace("_", " ")}
-                                  </h4>
-                                  <span className="text-sm text-gray-500">
-                                    {formatDate(history.timestamp)}
-                                  </span>
+                                <div
+                                  className={`flex-shrink-0 w-10 h-10 rounded-full border-2 flex items-center justify-center ${getStatusColor(
+                                    isCompleted,
+                                    isCurrent
+                                  )}`}
+                                >
+                                  {getStatusIcon(
+                                    history.status,
+                                    isCompleted,
+                                    isCurrent
+                                  )}
                                 </div>
-                                {history.notes && (
-                                  <p className="text-gray-600 text-sm mt-1">
-                                    {history.notes}
-                                  </p>
-                                )}
-                                {history.updater && (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Updated by: {history.updater.firstName}{" "}
-                                    {history.updater.lastName}
-                                  </p>
-                                )}
+
+                                <div className="ml-4 flex-1">
+                                  <div className="flex items-center justify-between">
+                                    <h4
+                                      className={`font-medium ${
+                                        isCurrent
+                                          ? "text-blue-600"
+                                          : isCompleted
+                                          ? "text-green-600"
+                                          : "text-gray-400"
+                                      }`}
+                                    >
+                                      {history.status.replace("_", " ")}
+                                    </h4>
+                                    <span className="text-sm text-gray-500">
+                                      {formatDate(history.timestamp)}
+                                    </span>
+                                  </div>
+                                  {history.notes && (
+                                    <p className="text-gray-600 text-sm mt-1">
+                                      {history.notes}
+                                    </p>
+                                  )}
+                                  {history.updater && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      Updated by: {history.updater.firstName}{" "}
+                                      {history.updater.lastName}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Clock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
+                          <p>No status history available for this order.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  )}
+                  {tab === "items" && (
+                    <CardContent className="p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                        Order Items
+                      </h3>
+                      <div className="space-y-4">
+                        {selectedOrder.orderItems.map((item) => (
+                          <div key={item.id}>
+                            <div className="flex items-center justify-between bg-gray-100/50 rounded-md p-2">
+                              <div className="flex items-center">
+                                <img
+                                  src={item.product.mainImage}
+                                  alt={item.product.name}
+                                  className="w-14 h-14 rounded-md"
+                                />
+                                <div className="ml-2">
+                                  <div className="font-medium">
+                                    {item.product.name}
+                                  </div>
+                                  <div className="text-sm text-gray-600">
+                                    ETB {Number(item.price) * item.quantity}
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          );
-                        })}
+                          </div>
+                        ))}
                       </div>
-                    ) : (
-                      <div className="text-center py-8 text-gray-500">
-                        <Clock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-                        <p>No status history available for this order.</p>
-                      </div>
-                    )}
-                  </CardContent>
+                    </CardContent>
+                  )}
                 </Card>
               </>
             ) : (
@@ -412,8 +489,6 @@ const TrackOrder = () => {
           </div>
         )}
       </div>
-
-      <Footer />
     </div>
   );
 };

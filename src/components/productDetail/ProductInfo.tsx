@@ -34,6 +34,9 @@ const ProductInfo = ({ product, images, mainImage }: ProductInfoProps) => {
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const { toast } = useToast();
   const addToCartMutation = useAddToCart();
   const { isAuthenticated } = useIsAuthenticated();
@@ -48,9 +51,15 @@ const ProductInfo = ({ product, images, mainImage }: ProductInfoProps) => {
   // Fetch reviews when component mounts
   useEffect(() => {
     const fetchReviews = async () => {
+      // Only fetch reviews if product.id exists
+      if (!product.id) {
+        return;
+      }
+
       setIsLoadingReviews(true);
       try {
         const reviews = await apiClient.getProductReviews(product.id);
+        console.log("Reviews:", reviews);
         setReviews(reviews);
       } catch (error) {
         console.error("Error fetching reviews:", error);
@@ -140,6 +149,57 @@ const ProductInfo = ({ product, images, mainImage }: ProductInfoProps) => {
       handlePreviousImage();
     } else if (e.key === "ArrowRight") {
       handleNextImage();
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to submit a review",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!rating || !reviewText.trim()) {
+      toast({
+        title: "Incomplete Review",
+        description: "Please select a rating and write a review.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      await apiClient.createProductReview({
+        productId: product.id,
+        rating: rating,
+        comment: reviewText,
+      });
+
+      toast({
+        title: "Review Submitted! 🎉",
+        description: "Thank you for your review!",
+      });
+
+      // Refresh reviews after submission
+      setIsLoadingReviews(true);
+      const updatedReviews = await apiClient.getProductReviews(product.id);
+      setReviews(updatedReviews);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to submit review";
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingReview(false);
+      setRating(0);
+      setReviewText("");
     }
   };
 
@@ -401,6 +461,141 @@ const ProductInfo = ({ product, images, mainImage }: ProductInfoProps) => {
         <h3 className="text-lg font-semibold">Description</h3>
         <div className="prose prose-sm text-muted-foreground">
           <p className="leading-relaxed">{product.description}</p>
+        </div>
+      </div>
+
+      {/* Reviews and Rating Section */}
+      <div className="space-y-6 border-t pt-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Customer Reviews</h3>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-4 w-4 ${
+                    i < Math.floor(averageRating)
+                      ? "fill-current text-amber-400"
+                      : "text-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-sm text-muted-foreground">
+              {averageRating.toFixed(1)} out of 5
+            </span>
+          </div>
+        </div>
+
+        {/* Review Form */}
+        {isAuthenticated && (
+          <div className="bg-muted/30 rounded-lg p-6 space-y-4">
+            <h4 className="font-medium">Write a Review</h4>
+            <div className="space-y-4">
+              {/* Rating Input */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your Rating</label>
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setRating(i + 1)}
+                      className="text-2xl hover:scale-110 transition-transform"
+                      title={`Rate ${i + 1} star${i !== 0 ? "s" : ""}`}
+                      aria-label={`Rate ${i + 1} star${i !== 0 ? "s" : ""}`}
+                    >
+                      <Star
+                        className={`h-6 w-6 ${
+                          i < rating
+                            ? "fill-current text-amber-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    {rating > 0
+                      ? `${rating} star${rating !== 1 ? "s" : ""}`
+                      : "Select rating"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Review Text */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your Review</label>
+                <textarea
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="Share your experience with this product..."
+                  className="w-full min-h-[100px] p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={500}
+                />
+                <div className="text-xs text-muted-foreground text-right">
+                  {reviewText.length}/500 characters
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <Button
+                onClick={handleSubmitReview}
+                disabled={!rating || !reviewText.trim() || isSubmittingReview}
+                className="w-full"
+              >
+                {isSubmittingReview ? "Submitting..." : "Submit Review"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Reviews List */}
+        <div className="space-y-4">
+          {isLoadingReviews ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading reviews...</p>
+            </div>
+          ) : reviews.length > 0 ? (
+            reviews.map((review) => (
+              <div key={review.id} className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                      {review.user?.firstName?.charAt(0) || "U"}
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {review.user?.firstName} {review.user?.lastName}
+                      </p>
+                      <div className="flex items-center gap-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`h-3 w-3 ${
+                              i < review.rating
+                                ? "fill-current text-amber-400"
+                                : "text-gray-300"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {new Date(review.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <p className="text-muted-foreground leading-relaxed">
+                  {review.comment}
+                </p>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <Star className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <p>No reviews yet. Be the first to review this product!</p>
+            </div>
+          )}
         </div>
       </div>
 

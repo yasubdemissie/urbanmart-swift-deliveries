@@ -21,13 +21,13 @@ import { MerchantStore } from "@/lib/api";
 const MerchantStoresTab = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [isVerified, setIsVerified] = useState<string>("");
+  const [isVerified, setIsVerified] = useState<string>("all");
 
   const { data: storesData, isLoading } = useAdminMerchantStores({
     page,
     limit: 10,
     search: search || undefined,
-    isVerified: isVerified !== "" ? isVerified === "true" : undefined,
+    isVerified: isVerified === "all" ? undefined : isVerified === "true",
   });
 
   const verifyStoreMutation = useVerifyMerchantStore();
@@ -67,7 +67,7 @@ const MerchantStoresTab = () => {
             <SelectValue placeholder="Filter by verification" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Stores</SelectItem>
+            <SelectItem value="all">All Stores</SelectItem>
             <SelectItem value="true">Verified</SelectItem>
             <SelectItem value="false">Unverified</SelectItem>
           </SelectContent>
