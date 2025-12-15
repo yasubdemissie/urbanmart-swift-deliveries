@@ -26,6 +26,7 @@
     "express-rate-limit": "^7.1.5"
   },
   "devDependencies": {
+    "@prisma/config": "^5.22.0",
     "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
     "@types/bcryptjs": "^2.4.6",
