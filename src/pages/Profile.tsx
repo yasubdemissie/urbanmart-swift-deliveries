@@ -27,7 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import type { User } from "@/lib/api";
-import { useCurrentUser, useUpdateProfile } from "@/hooks/useAuth";
+import { useCurrentUser, useUpdateProfile, useRequestRoleChange } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import BackButton from "@/components/Custom/BackButon";
 
@@ -39,6 +39,7 @@ const ProfilePage = () => {
     error: userError,
   } = useCurrentUser();
   const updateProfileMutation = useUpdateProfile();
+  const requestRoleChangeMutation = useRequestRoleChange();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -144,10 +145,23 @@ const ProfilePage = () => {
         return;
       }
     }
-    await simulatePayment();
-    toast.success(
-      `Role change request submitted as ${roleChoice}. (Simulated only)`
-    );
+
+    try {
+      await simulatePayment();
+
+      await requestRoleChangeMutation.mutateAsync({
+        role: roleChoice,
+        merchantData: roleChoice === "MERCHANT" ? merchantForm : undefined,
+        deliveryData: roleChoice === "DELIVERY" ? deliveryForm : undefined,
+      });
+
+      toast.success(
+        `Role change request submitted and approved as ${roleChoice}.`
+      );
+    } catch (error) {
+      console.error("Role change error:", error);
+      toast.error("Failed to change role. Please try again.");
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -631,8 +645,8 @@ const ProfilePage = () => {
                       {roleChoice === "MERCHANT" ? "1500 birr" : "600 birr"}
                     </span>
                   </div>
-                  <Button type="submit" disabled={isPaying}>
-                    {isPaying ? "Processing..." : "Submit & Pay"}
+                  <Button type="submit" disabled={isPaying || requestRoleChangeMutation.isPending}>
+                    {isPaying || requestRoleChangeMutation.isPending ? "Processing..." : "Submit & Pay"}
                   </Button>
                 </div>
               </form>

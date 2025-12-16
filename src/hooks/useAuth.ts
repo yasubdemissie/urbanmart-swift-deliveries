@@ -93,6 +93,28 @@ export const useUpdateProfile = () => {
   });
 };
 
+// Request role change mutation
+export const useRequestRoleChange = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      role: "MERCHANT" | "DELIVERY";
+      merchantData?: { shopName: string; businessType: string; description?: string };
+      deliveryData?: any;
+    }) => apiClient.requestRoleChange(data),
+    onSuccess: (response) => {
+      // Update user data in cache with the new user object returned
+      if (response.success && response.user) {
+        queryClient.setQueryData(authKeys.user(), response.user);
+      } else {
+        // Fallback: invalidate cache to refetch fresh user data
+        queryClient.invalidateQueries({ queryKey: authKeys.user() });
+      }
+    },
+  });
+};
+
 // Change password mutation
 // export const useChangePassword = () => {
 //   return useMutation({

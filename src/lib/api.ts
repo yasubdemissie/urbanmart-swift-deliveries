@@ -434,6 +434,26 @@ export const apiClient = {
     return response.json();
   },
 
+  // Role Request
+  async requestRoleChange(data: {
+    role: "MERCHANT" | "DELIVERY";
+    merchantData?: { shopName: string; businessType: string; description?: string };
+    deliveryData?: any;
+  }): Promise<{ success: true; user: User }> {
+    const response = await fetch(`${API_BASE_URL}/users/role`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to submit role change request");
+    }
+
+    return response.json();
+  },
+
   // Products
   async getProducts(params?: {
     page?: number;

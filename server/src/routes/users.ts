@@ -167,7 +167,7 @@ router.put(
     const { firstName, lastName, phone, countryCode, location, avatarUrl, isActive } = req.body;
     try {
       const updatedUser = await prisma.user.update({
-        where: { id: req.user!.id },
+        where: { id },
         data: {
           firstName,
           lastName,
@@ -178,9 +178,83 @@ router.put(
           isActive,
         },
       });
-      return res.json({ id: updatedUser.id, email: updatedUser.email });
+      return res.json(updatedUser);
     } catch (err) {
       return res.status(500).json({ error: "Failed to update user" });
+    }
+  }
+);
+
+// Request Role Change (Self)
+router.patch(
+  "/role",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { role, merchantData, deliveryData } = req.body;
+
+      if (!["MERCHANT", "DELIVERY"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role requested" });
+      }
+
+      // Start transaction to update usage and optional store creation
+      const result = await prisma.$transaction(async (tx) => {
+        // 1. Update user role
+        const updatedUser = await tx.user.update({
+          where: { id: userId },
+          data: { role },
+        });
+
+        // 2. If Merchant, create store
+        if (role === "MERCHANT") {
+          if (!merchantData?.shopName || !merchantData?.businessType) {
+            throw new Error("Missing merchant details");
+          }
+
+          // Check if store already exists for this user
+          const existingStore = await tx.merchantStore.findUnique({
+            where: { merchantId: userId },
+          });
+
+          if (!existingStore) {
+            await tx.merchantStore.create({
+              data: {
+                merchantId: userId,
+                name: merchantData.shopName,
+                description: merchantData.description || "",
+                // Store businessType in description or separate logic if schema permits.
+                // Schema has name, description, logo, banner, address, etc.
+                // We'll append business type to description for now or just ignore if strict.
+              },
+            });
+          } else {
+             // Optional: Update existing store? For now, we just ensure it exists.
+             await tx.merchantStore.update({
+               where: { merchantId: userId },
+               data: {
+                  name: merchantData.shopName,
+                  description: merchantData.description,
+               }
+             })
+          }
+        }
+
+        // 3. If Delivery, we just update role (per plan/schema limits)
+        if (role === "DELIVERY") {
+           // No dedicated delivery profile table exists yet.
+           // Future: create DeliveryProfile record with deliveryData
+        }
+
+        return updatedUser;
+      });
+
+      return res.json({ success: true, user: result });
+
+    } catch (err: any) {
+      console.error("Role update error: ", err);
+      // Prisma transaction error or custom error
+      return res.status(400).json({ error: err.message || "Failed to update role" });
     }
   }
 );
