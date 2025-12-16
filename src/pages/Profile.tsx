@@ -16,7 +16,13 @@ import {
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -40,7 +46,24 @@ const ProfilePage = () => {
     phone: "",
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarUrlInput, setAvatarUrlInput] = useState("");
+  const [roleChoice, setRoleChoice] = useState<"MERCHANT" | "DELIVERY">(
+    "MERCHANT"
+  );
+  const [merchantForm, setMerchantForm] = useState({
+    shopName: "",
+    businessType: "",
+    description: "",
+  });
+  const [deliveryForm, setDeliveryForm] = useState({
+    fullName: "",
+    capacity: "",
+    capacityUnit: "per hour",
+    vehicleType: "",
+    vehicleValue: "",
+    notes: "",
+  });
+  const [isPaying, setIsPaying] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -49,6 +72,8 @@ const ProfilePage = () => {
         lastName: user.lastName,
         phone: user.phone || "",
       });
+      setAvatarUrlInput(user.avatar || "");
+      setSelectedImage(user.avatar || null);
     }
   }, [user]);
 
@@ -60,11 +85,11 @@ const ProfilePage = () => {
       if (formData.firstName) payload.firstName = formData.firstName;
       if (formData.lastName) payload.lastName = formData.lastName;
       if (formData.phone) payload.phone = formData.phone;
-      if (selectedImage) payload.avatar = selectedImage;
+      if (avatarUrlInput) payload.avatar = avatarUrlInput;
 
       await updateProfileMutation.mutateAsync(payload);
       setIsEditing(false);
-      setSelectedImage(null); // Clear selected image after successful update
+      setSelectedImage(avatarUrlInput || null);
       toast.success("Profile updated successfully!");
     } catch (error) {
       // Log the error for debugging
@@ -87,39 +112,42 @@ const ProfilePage = () => {
         lastName: user.lastName,
         phone: user.phone || "",
       });
+      setAvatarUrlInput(user.avatar || "");
+      setSelectedImage(user.avatar || null);
     }
-    setSelectedImage(null); // Clear selected image when canceling
     setIsEditing(false);
   };
 
-  const handleImageClick = () => {
-    fileInputRef.current?.click();
+  const simulatePayment = async () => {
+    setIsPaying(true);
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    setIsPaying(false);
+    toast.success(
+      `${roleChoice === "MERCHANT" ? "1500" : "600"} birr payment simulated`
+    );
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.startsWith("image/")) {
-        toast.error("Please select a valid image file");
+  const handleRoleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (roleChoice === "MERCHANT") {
+      if (!merchantForm.shopName || !merchantForm.businessType) {
+        toast.error("Please fill shop name and business type");
         return;
       }
-
-      // Validate file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image size should be less than 5MB");
+    } else {
+      if (
+        !deliveryForm.fullName ||
+        !deliveryForm.capacity ||
+        !deliveryForm.vehicleType
+      ) {
+        toast.error("Please fill name, capacity, and vehicle type");
         return;
       }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target?.result as string;
-        setSelectedImage(imageUrl);
-        setIsEditing(true); // Automatically enable editing mode
-        toast.success("Image selected! You can now save your changes.");
-      };
-      reader.readAsDataURL(file);
     }
+    await simulatePayment();
+    toast.success(
+      `Role change request submitted as ${roleChoice}. (Simulated only)`
+    );
   };
 
   const formatDate = (dateString: string) => {
@@ -217,23 +245,6 @@ const ProfilePage = () => {
                     {getInitials(user.firstName, user.lastName)}
                   </AvatarFallback>
                 </Avatar>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0 bg-white hover:bg-gray-50"
-                  onClick={handleImageClick}
-                  type="button"
-                >
-                  <Camera className="w-4 h-4" />
-                </Button>
-                <input
-                  ref={fileInputRef}
-                  placeholder="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
               </div>
               <CardTitle className="mt-4">
                 {user.firstName} {user.lastName}
@@ -286,16 +297,6 @@ const ProfilePage = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* User ID (Read-only) */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    User ID
-                  </label>
-                  <div className="relative">
-                    <Input value={user.id} disabled className="bg-gray-50" />
-                  </div>
-                </div>
-
                 {/* Email (Read-only) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -377,38 +378,38 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-                {/* Image Preview */}
-                {selectedImage && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      New Profile Picture Preview
-                    </label>
-                    <div className="flex items-center gap-4">
+                {/* Avatar URL input */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Profile picture URL
+                  </label>
+                  <Input
+                    type="url"
+                    name="avatarUrl"
+                    placeholder="https://example.com/avatar.jpg"
+                    value={avatarUrlInput}
+                    onChange={(e) => {
+                      setAvatarUrlInput(e.target.value);
+                      setSelectedImage(e.target.value || null);
+                      setIsEditing(true);
+                    }}
+                    disabled={!isEditing}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Paste a direct image link (we don’t store files).
+                  </p>
+                  {isEditing && selectedImage && (
+                    <div className="flex items-center gap-4 pt-2">
                       <Avatar className="w-16 h-16">
-                        <AvatarImage
-                          src={selectedImage || "/placeholder.svg"}
-                          alt="Preview"
-                        />
+                        <AvatarImage src={selectedImage} alt="Preview" />
                         <AvatarFallback>Preview</AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-600">
-                          New profile picture selected. Save changes to update
-                          your profile.
-                        </p>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedImage(null)}
-                          className="text-red-600 hover:text-red-700 p-0 h-auto"
-                        >
-                          Remove selected image
-                        </Button>
+                      <div className="flex-1 text-sm text-gray-600">
+                        Preview of the image URL you entered.
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Action Buttons */}
                 {isEditing && (
@@ -432,6 +433,208 @@ const ProfilePage = () => {
                     </Button>
                   </div>
                 )}
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Role change request */}
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Request Role Change</CardTitle>
+              <CardDescription>
+                Switch to Merchant or Delivery. Payments are simulated for now.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={handleRoleSubmit}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant={roleChoice === "MERCHANT" ? "default" : "outline"}
+                    onClick={() => setRoleChoice("MERCHANT")}
+                  >
+                    Merchant (1500 birr)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={roleChoice === "DELIVERY" ? "default" : "outline"}
+                    onClick={() => setRoleChoice("DELIVERY")}
+                  >
+                    Delivery (600 birr)
+                  </Button>
+                </div>
+
+                {roleChoice === "MERCHANT" ? (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Shop name
+                      </label>
+                      <Input
+                        value={merchantForm.shopName}
+                        onChange={(e) =>
+                          setMerchantForm((prev) => ({
+                            ...prev,
+                            shopName: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. UrbanMart Store"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Business type
+                      </label>
+                      <Input
+                        value={merchantForm.businessType}
+                        onChange={(e) =>
+                          setMerchantForm((prev) => ({
+                            ...prev,
+                            businessType: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. Groceries, Electronics"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description (optional)
+                      </label>
+                      <Input
+                        value={merchantForm.description}
+                        onChange={(e) =>
+                          setMerchantForm((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
+                        }
+                        placeholder="Short store overview"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Full name
+                      </label>
+                      <Input
+                        value={deliveryForm.fullName}
+                        onChange={(e) =>
+                          setDeliveryForm((prev) => ({
+                            ...prev,
+                            fullName: e.target.value,
+                          }))
+                        }
+                        placeholder="Your full name"
+                        required
+                      />
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Capacity you can deliver
+                        </label>
+                        <Input
+                          type="number"
+                          min="1"
+                          value={deliveryForm.capacity}
+                          onChange={(e) =>
+                            setDeliveryForm((prev) => ({
+                              ...prev,
+                              capacity: e.target.value,
+                            }))
+                          }
+                          placeholder="e.g. 20"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Per
+                        </label>
+                        <select
+                          aria-label="Capacity unit"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          value={deliveryForm.capacityUnit}
+                          onChange={(e) =>
+                            setDeliveryForm((prev) => ({
+                              ...prev,
+                              capacityUnit: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="per hour">Per hour</option>
+                          <option value="per day">Per day</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Vehicle type
+                      </label>
+                      <Input
+                        value={deliveryForm.vehicleType}
+                        onChange={(e) =>
+                          setDeliveryForm((prev) => ({
+                            ...prev,
+                            vehicleType: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. Bike, Scooter, Car"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Vehicle value (birr)
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={deliveryForm.vehicleValue}
+                        onChange={(e) =>
+                          setDeliveryForm((prev) => ({
+                            ...prev,
+                            vehicleValue: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. 30000"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Notes (optional)
+                      </label>
+                      <Input
+                        value={deliveryForm.notes}
+                        onChange={(e) =>
+                          setDeliveryForm((prev) => ({
+                            ...prev,
+                            notes: e.target.value,
+                          }))
+                        }
+                        placeholder="Extra details about your delivery preferences"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-2">
+                  <div className="text-sm text-gray-600">
+                    Payment (simulated):{" "}
+                    <span className="font-semibold">
+                      {roleChoice === "MERCHANT" ? "1500 birr" : "600 birr"}
+                    </span>
+                  </div>
+                  <Button type="submit" disabled={isPaying}>
+                    {isPaying ? "Processing..." : "Submit & Pay"}
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
