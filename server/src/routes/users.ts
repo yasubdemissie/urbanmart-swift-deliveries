@@ -240,10 +240,41 @@ router.patch(
           }
         }
 
-        // 3. If Delivery, we just update role (per plan/schema limits)
+        // 3. If Delivery, update or create profile
         if (role === "DELIVERY") {
-           // No dedicated delivery profile table exists yet.
-           // Future: create DeliveryProfile record with deliveryData
+           if (!deliveryData?.fullName || !deliveryData?.vehicleType || !deliveryData?.capacity) {
+             throw new Error("Missing delivery details");
+           }
+           
+           const existingProfile = await tx.deliveryProfile.findUnique({
+             where: { userId: userId },
+           });
+
+           if (!existingProfile) {
+             await tx.deliveryProfile.create({
+               data: {
+                 userId: userId,
+                 fullName: deliveryData.fullName,
+                 vehicleType: deliveryData.vehicleType,
+                 vehicleValue: deliveryData.vehicleValue ? parseFloat(deliveryData.vehicleValue) : null,
+                 capacity: deliveryData.capacity,
+                 capacityUnit: deliveryData.capacityUnit || "per hour",
+                 notes: deliveryData.notes,
+               }
+             });
+           } else {
+             await tx.deliveryProfile.update({
+               where: { userId: userId },
+               data: {
+                 fullName: deliveryData.fullName,
+                 vehicleType: deliveryData.vehicleType,
+                 vehicleValue: deliveryData.vehicleValue ? parseFloat(deliveryData.vehicleValue) : null,
+                 capacity: deliveryData.capacity,
+                 capacityUnit: deliveryData.capacityUnit,
+                 notes: deliveryData.notes,
+               }
+             });
+           }
         }
 
         return updatedUser;
