@@ -61,7 +61,6 @@ const ProfilePage = () => {
     capacity: "",
     capacityUnit: "per hour",
     vehicleType: "",
-    vehicleValue: "",
     notes: "",
   });
   const [isPaying, setIsPaying] = useState(false);
@@ -603,23 +602,7 @@ const ProfilePage = () => {
                         required
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Vehicle value (birr)
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={deliveryForm.vehicleValue}
-                        onChange={(e) =>
-                          setDeliveryForm((prev) => ({
-                            ...prev,
-                            vehicleValue: e.target.value,
-                          }))
-                        }
-                        placeholder="e.g. 30000"
-                      />
-                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Notes (optional)

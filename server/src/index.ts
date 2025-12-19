@@ -1,9 +1,8 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import dotenv from "dotenv";
-import { PrismaClient } from "@prisma/client";
 
 // Import routes
 import authRoutes from "./routes/auth";
@@ -18,11 +17,13 @@ import merchantRoutes from "./routes/merchant";
 import reportRoutes from "./routes/reports";
 import wishlistRoutes from "./routes/wishlist";
 
+import prisma from "./lib/prisma";
+
 // Load environment variables
-dotenv.config();
+// dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
+// const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
 // Rate limiting
@@ -105,7 +106,7 @@ app.use(
       }
     }
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Internal Server Error",
       message:
         process.env.NODE_ENV === "development"

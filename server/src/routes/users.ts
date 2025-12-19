@@ -255,10 +255,10 @@ router.patch(
                data: {
                  userId: userId,
                  fullName: deliveryData.fullName,
-                 vehicleType: deliveryData.vehicleType,
-                 vehicleValue: deliveryData.vehicleValue ? parseFloat(deliveryData.vehicleValue) : null,
-                 capacity: deliveryData.capacity,
-                 capacityUnit: deliveryData.capacityUnit || "per hour",
+                //  vehicleType: deliveryData.vehicleType,
+                //  vehicleValue: deliveryData.vehicleValue ? parseFloat(deliveryData.vehicleValue) : null,
+                //  capacity: deliveryData.capacity,
+                //  capacityUnit: deliveryData.capacityUnit || "per hour",
                  notes: deliveryData.notes,
                }
              });
@@ -267,10 +267,10 @@ router.patch(
                where: { userId: userId },
                data: {
                  fullName: deliveryData.fullName,
-                 vehicleType: deliveryData.vehicleType,
-                 vehicleValue: deliveryData.vehicleValue ? parseFloat(deliveryData.vehicleValue) : null,
-                 capacity: deliveryData.capacity,
-                 capacityUnit: deliveryData.capacityUnit,
+                //  vehicleType: deliveryData.vehicleType,
+                //  vehicleValue: deliveryData.vehicleValue ? parseFloat(deliveryData.vehicleValue) : null,
+                //  capacity: deliveryData.capacity,
+                //  capacityUnit: deliveryData.capacityUnit,
                  notes: deliveryData.notes,
                }
              });

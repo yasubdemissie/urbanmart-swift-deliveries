@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output = "../src/lib"
 }
 
 datasource db {
@@ -498,10 +499,7 @@ model DeliveryProfile {
   id            String   @id @default(cuid())
   userId        String   @unique
   fullName      String
-  vehicleType   String
-  vehicleValue  Decimal? @db.Decimal(10, 2)
-  capacity      String
-  capacityUnit  String   @default("per hour") // "per hour" or "per day"
+  vehicleDetail VehicleDetail[]
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -509,4 +507,21 @@ model DeliveryProfile {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("delivery_profiles")
+}
+
+model VehicleDetail {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  vehicleType   String
+  vehicleCapacity Int? 
+  perHourCapacityUnit  String   @default("per hour") // "per hour" or "per day"
+  perDayCapacityUnit  String   @default("per day") // "per hour" or "per day"
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  deliveryProfileId String
+  deliveryProfile DeliveryProfile @relation(fields: [deliveryProfileId], references: [id])
+
+  @@map("vehicle_details")
 }

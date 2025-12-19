@@ -462,7 +462,7 @@ export const apiClient = {
     category?: string;
     sortBy?: string;
     sortOrder?: "asc" | "desc";
-  }): Promise<{ products: Product[]; pagination: Pagination }> {
+  }): Promise<ApiResponse<{ products: Product[]; pagination: Pagination }>> {
     const searchParams = new URLSearchParams();
     if (params?.page) searchParams.append("page", params.page.toString());
     if (params?.limit) searchParams.append("limit", params.limit.toString());
@@ -478,7 +478,9 @@ export const apiClient = {
       throw new Error(errorData.error || "Failed to fetch products");
     }
 
-    return response.json();
+    const data = await response.json();
+    console.log("The data from the api", data);
+    return data;
   },
 
   async getProduct(id: string): Promise<ApiResponse<Product>> {

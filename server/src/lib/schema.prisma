@@ -1,0 +1,527 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/lib"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String?
+  lastName    String?
+  phone       String?
+  countryCode String?
+  location    String?
+  avatar      String?
+  role        UserRole @default(CUSTOMER)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  addresses     Address[]
+  orders        Order[]
+  cartItems     CartItem[]
+  reviews       Review[]
+  wishlist      WishlistItem[]
+  statusUpdates OrderStatusHistory[]
+
+  // Merchant-specific relations
+  merchantStore   MerchantStore?
+  merchantOrders  Order[]        @relation("MerchantOrders")
+  reports         Report[]       @relation("Reporter")
+  assignedReports Report[]       @relation("AssignedAdmin")
+  transactions    Transaction[]
+
+  // Customer relations
+  customerRelationships Customer[] @relation("CustomerUser")
+  merchantRelationships Customer[] @relation("MerchantUser")
+
+  // Delivery relations
+  deliveryAssignments    DeliveryAssignment[] @relation("DeliveryUser")
+  hiredDeliveries        DeliveryAssignment[] @relation("HiredByMerchant")
+  deliveryPaymentHistory DeliveryPayment[]    @relation("DeliveryPayer")
+  merchantPaymentHistory DeliveryPayment[]    @relation("MerchantPayer")
+  deliveryOrders         Order[]              @relation("DeliveryOrders")
+  deliveryProfile        DeliveryProfile?
+
+  @@map("users")
+}
+
+model Customer {
+  id           String    @id @default(cuid())
+  customerId   String // User ID of the customer
+  merchantId   String // User ID of the merchant
+  storeId      String? // Optional store ID for specific store relationships
+  firstOrderAt DateTime? // When they first ordered from this merchant
+  lastOrderAt  DateTime? // When they last ordered from this merchant
+  totalOrders  Int       @default(0) // Total orders from this merchant
+  totalSpent   Decimal   @default(0) @db.Decimal(10, 2) // Total amount spent
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  customer User           @relation("CustomerUser", fields: [customerId], references: [id], onDelete: Cascade)
+  merchant User           @relation("MerchantUser", fields: [merchantId], references: [id], onDelete: Cascade)
+  store    MerchantStore? @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, merchantId, storeId])
+  @@map("customers")
+}
+
+model MerchantStore {
+  id          String   @id @default(cuid())
+  merchantId  String   @unique
+  name        String
+  description String?
+  logo        String?
+  banner      String?
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  merchant  User       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  products  Product[]
+  orders    Order[]    @relation("StoreOrders")
+  customers Customer[]
+
+  @@map("merchant_stores")
+}
+
+model Report {
+  id              String         @id @default(cuid())
+  reporterId      String
+  assignedAdminId String?
+  type            ReportType
+  title           String
+  description     String
+  status          ReportStatus   @default(OPEN)
+  priority        ReportPriority @default(MEDIUM)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  // Relations
+  reporter      User  @relation("Reporter", fields: [reporterId], references: [id])
+  assignedAdmin User? @relation("AssignedAdmin", fields: [assignedAdminId], references: [id])
+
+  @@map("reports")
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  orderId       String
+  merchantId    String?
+  amount        Decimal           @db.Decimal(10, 2)
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  paymentMethod PaymentMethod
+  reference     String?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  // Relations
+  order    Order @relation(fields: [orderId], references: [id])
+  merchant User? @relation(fields: [merchantId], references: [id])
+
+  @@map("transactions")
+}
+
+model Address {
+  id         String      @id @default(cuid())
+  userId     String
+  type       AddressType
+  firstName  String
+  lastName   String
+  company    String?
+  address1   String
+  address2   String?
+  city       String
+  state      String
+  postalCode String
+  country    String
+  phone      String
+  isDefault  Boolean     @default(false)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  // Relations
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shippingOrders Order[] @relation("ShippingAddress")
+  billingOrders  Order[] @relation("BillingAddress")
+
+  @@map("addresses")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  image       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String
+  shortDescription String?
+  price            Decimal  @db.Decimal(10, 2)
+  originalPrice    Decimal? @db.Decimal(10, 2)
+  costPrice        Decimal? @db.Decimal(10, 2)
+  sku              String?  @unique
+  barcode          String?
+  weight           Decimal? @db.Decimal(8, 2)
+  dimensions       String?
+  stockQuantity    Int      @default(0)
+  minStockLevel    Int      @default(5)
+  isActive         Boolean  @default(true)
+  isFeatured       Boolean  @default(false)
+  isOnSale         Boolean  @default(false)
+  salePercentage   Int?
+  categoryId       String
+  merchantStoreId  String?
+  brand            String?
+  tags             String[]
+  images           String[]
+  mainImage        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  category      Category       @relation(fields: [categoryId], references: [id])
+  merchantStore MerchantStore? @relation(fields: [merchantStoreId], references: [id])
+  orderItems    OrderItem[]
+  cartItems     CartItem[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id                String        @id @default(cuid())
+  orderNumber       String        @unique
+  userId            String
+  merchantId        String?
+  storeId           String?
+  deliveryUserId    String? // Add this field
+  status            OrderStatus   @default(PENDING)
+  subtotal          Decimal       @db.Decimal(10, 2)
+  tax               Decimal       @db.Decimal(10, 2)
+  shipping          Decimal       @db.Decimal(10, 2)
+  discount          Decimal?      @db.Decimal(10, 2)
+  total             Decimal       @db.Decimal(10, 2)
+  currency          String        @default("USD")
+  paymentMethod     PaymentMethod
+  paymentStatus     PaymentStatus @default(PENDING)
+  shippingAddressId String
+  billingAddressId  String
+  notes             String?
+  trackingNumber    String?
+  shippedAt         DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  user               User                 @relation(fields: [userId], references: [id])
+  merchant           User?                @relation("MerchantOrders", fields: [merchantId], references: [id])
+  store              MerchantStore?       @relation("StoreOrders", fields: [storeId], references: [id])
+  shippingAddress    Address              @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  billingAddress     Address              @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  orderItems         OrderItem[]
+  statusHistory      OrderStatusHistory[]
+  transactions       Transaction[]
+  deliveryAssignment DeliveryAssignment? // Add this relation
+  deliveryUser       User?                @relation("DeliveryOrders", fields: [deliveryUserId], references: [id])
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+  total     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  // Relations
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  notes     String?
+  updatedBy String? // User ID who made the change (optional)
+  timestamp DateTime    @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  updater User? @relation(fields: [updatedBy], references: [id])
+
+  @@map("order_status_history")
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("cart_items")
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
+  rating     Int
+  title      String?
+  comment    String?
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("reviews")
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@map("wishlist_items")
+}
+
+// Enums
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  MERCHANT
+  CUSTOMER
+  DELIVERY
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+  BOTH
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PAYPAL
+  BANK_TRANSFER
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum ReportType {
+  TECHNICAL_ISSUE
+  PAYMENT_PROBLEM
+  PRODUCT_COMPLAINT
+  MERCHANT_COMPLAINT
+  GENERAL_INQUIRY
+  ACCOUNT_ISSUE
+}
+
+enum ReportStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ReportPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TransactionType {
+  PAYMENT
+  REFUND
+  COMMISSION
+  WITHDRAWAL
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// Add these new models after the existing ones
+
+enum DeliveryPaymentType {
+  SALARY
+  PER_DELIVERY
+}
+
+enum DeliveryStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+  ASSIGNED
+  IN_TRANSIT
+  COMPLETED
+  CANCELLED
+}
+
+model DeliveryAssignment {
+  id              String              @id @default(cuid())
+  orderId         String              @unique
+  deliveryUserId  String
+  merchantId      String
+  assignedAt      DateTime            @default(now())
+  pickedUpAt      DateTime?
+  deliveryAddress String
+  deliveryFee     Decimal             @db.Decimal(10, 2)
+  paymentType     DeliveryPaymentType
+  instructions    String?
+  estimatedTime   Int? // in minutes
+  status          DeliveryStatus      @default(ASSIGNED)
+  completedAt     DateTime?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  // Relations
+  order        Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  deliveryUser User              @relation("DeliveryUser", fields: [deliveryUserId], references: [id])
+  merchant     User              @relation("HiredByMerchant", fields: [merchantId], references: [id])
+  payments     DeliveryPayment[]
+
+  @@map("delivery_assignments")
+}
+
+model DeliveryPayment {
+  id                   String              @id @default(cuid())
+  deliveryAssignmentId String
+  deliveryUserId       String
+  merchantId           String
+  amount               Decimal             @db.Decimal(10, 2)
+  paymentType          DeliveryPaymentType
+  status               PaymentStatus       @default(PENDING)
+  baseAmount           Decimal?            @db.Decimal(10, 2) // For per-delivery calculations
+  distanceBonus        Decimal?            @db.Decimal(10, 2) // Distance-based bonus
+  weightBonus          Decimal?            @db.Decimal(10, 2) // Weight-based bonus
+  timeBonus            Decimal?            @db.Decimal(10, 2) // Time-based bonus
+  processedAt          DateTime?
+  notes                String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  // Relations with proper relation names
+  assignment   DeliveryAssignment @relation(fields: [deliveryAssignmentId], references: [id])
+  deliveryUser User               @relation("DeliveryPayer", fields: [deliveryUserId], references: [id])
+  merchant     User               @relation("MerchantPayer", fields: [merchantId], references: [id])
+
+  @@map("delivery_payments")
+}
+
+model DeliveryProfile {
+  id            String          @id @default(cuid())
+  userId        String          @unique
+  fullName      String
+  vehicleDetail VehicleDetail[]
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_profiles")
+}
+
+model VehicleDetail {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  vehicleType         String
+  vehicleCapacity     Int?
+  perHourCapacityUnit String   @default("per hour") // "per hour" or "per day"
+  perDayCapacityUnit  String   @default("per day") // "per hour" or "per day"
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  deliveryProfileId String
+  deliveryProfile   DeliveryProfile @relation(fields: [deliveryProfileId], references: [id])
+
+  @@map("vehicle_details")
+}
