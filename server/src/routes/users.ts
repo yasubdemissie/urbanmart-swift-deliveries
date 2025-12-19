@@ -155,6 +155,37 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
+// Update own profile (Self)
+router.patch(
+  "/profile",
+  authenticateToken,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      // Frontend sends 'avatar' or 'avatarUrl', schema uses 'avatar'.
+      const { firstName, lastName, phone, countryCode, location, avatarUrl, avatar } = req.body;
+      
+      const finalAvatar = avatar || avatarUrl;
+
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          firstName,
+          lastName,
+          phone,
+          countryCode,
+          location,
+          avatar: finalAvatar,
+        },
+      });
+      return res.json(updatedUser);
+    } catch (err) {
+      console.error("Profile update error:", err);
+      return res.status(500).json({ error: "Failed to update profile" });
+    }
+  }
+);
+
 // Update a user (admin or self)
 router.put(
   "/:id",
@@ -164,7 +195,13 @@ router.put(
     if (req.user?.id !== id && req.user?.role !== "ADMIN") {
       return res.status(403).json({ error: "Forbidden" });
     }
-    const { firstName, lastName, phone, countryCode, location, avatarUrl, isActive } = req.body;
+    // Frontend sends 'avatar' or 'avatarUrl', schema uses 'avatar'.
+    // We'll normalize to 'avatar'
+    const { firstName, lastName, phone, countryCode, location, avatarUrl, avatar, isActive } = req.body;
+    
+    // Choose specific avatar field
+    const finalAvatar = avatar || avatarUrl;
+
     try {
       const updatedUser = await prisma.user.update({
         where: { id },
@@ -174,7 +211,7 @@ router.put(
           phone,
           countryCode,
           location,
-          avatar: avatarUrl,
+          avatar: finalAvatar,
           isActive,
         },
       });
@@ -185,7 +222,6 @@ router.put(
   }
 );
 
-// Request Role Change (Self)
 router.patch(
   "/role",
   authenticateToken,
@@ -194,7 +230,7 @@ router.patch(
       const userId = req.user!.id;
       const { role, merchantData, deliveryData } = req.body;
 
-      if (!["MERCHANT", "DELIVERY"].includes(role)) {
+      if (!["MERCHANT", "DELIVERY", "CUSTOMER"].includes(role)) {
         return res.status(400).json({ error: "Invalid role requested" });
       }
 
@@ -206,13 +242,21 @@ router.patch(
           data: { role },
         });
 
-        // 2. If Merchant, create store
+        // 2. If Merchant, create/update store
         if (role === "MERCHANT") {
           if (!merchantData?.shopName || !merchantData?.businessType) {
             throw new Error("Missing merchant details");
           }
 
-          // Check if store already exists for this user
+          const storeData = {
+            name: merchantData.shopName,
+            description: merchantData.description || `Business Type: ${merchantData.businessType}`,
+            logo: merchantData.logo,
+            address: merchantData.address,
+            // Assuming businessType goes into description for now as per previous logic, or just ignored if no field.
+            // Schema has 'description', 'logo', 'address'.
+          };
+
           const existingStore = await tx.merchantStore.findUnique({
             where: { merchantId: userId },
           });
@@ -221,59 +265,94 @@ router.patch(
             await tx.merchantStore.create({
               data: {
                 merchantId: userId,
-                name: merchantData.shopName,
-                description: merchantData.description || "",
-                // Store businessType in description or separate logic if schema permits.
-                // Schema has name, description, logo, banner, address, etc.
-                // We'll append business type to description for now or just ignore if strict.
+                ...storeData
               },
             });
           } else {
-             // Optional: Update existing store? For now, we just ensure it exists.
              await tx.merchantStore.update({
                where: { merchantId: userId },
-               data: {
-                  name: merchantData.shopName,
-                  description: merchantData.description,
-               }
+               data: storeData
              })
           }
         }
 
-        // 3. If Delivery, update or create profile
+        // 3. If Delivery, create/update profile and vehicle details
         if (role === "DELIVERY") {
+           // We expect fullName, vehicleType, capacity, capacityUnit, notes
            if (!deliveryData?.fullName || !deliveryData?.vehicleType || !deliveryData?.capacity) {
              throw new Error("Missing delivery details");
            }
            
-           const existingProfile = await tx.deliveryProfile.findUnique({
+           // Helper to process VehicleDetail
+           // Since VehicleDetail has a UNIQUE constraint on userId (from schema: userId String @unique),
+           // we can effectively treat it 1-to-1 for this user's profile context,
+           // OR we link it to deliveryProfileId.
+           // Schema: VehicleDetail -> deliveryProfileId (DeliveryProfile)
+           // VehicleDetail ALSO has userId @unique.
+           
+           const profileData = {
+             fullName: deliveryData.fullName,
+             notes: deliveryData.notes,
+           };
+
+           // Handle DeliveryProfile
+           let profile = await tx.deliveryProfile.findUnique({
              where: { userId: userId },
            });
 
-           if (!existingProfile) {
-             await tx.deliveryProfile.create({
+           if (!profile) {
+             profile = await tx.deliveryProfile.create({
                data: {
                  userId: userId,
                  fullName: deliveryData.fullName,
-                //  vehicleType: deliveryData.vehicleType,
-                //  vehicleValue: deliveryData.vehicleValue ? parseFloat(deliveryData.vehicleValue) : null,
-                //  capacity: deliveryData.capacity,
-                //  capacityUnit: deliveryData.capacityUnit || "per hour",
                  notes: deliveryData.notes,
                }
              });
            } else {
-             await tx.deliveryProfile.update({
+             profile = await tx.deliveryProfile.update({
+               where: { userId: userId },
+               data: profileData
+             });
+           }
+
+           // Handle VehicleDetail
+           // We need to upsert. Since userId is unique in VehicleDetail, we can use that for upsert logic.
+           // Note: schema allows multiple vehicles per profile (VehicleDetail[]), BUT userId is @unique on VehicleDetail? 
+           // schema.prisma: userId String @unique inside VehicleDetail. This implies 1 vehicle per user? 
+           // That seems contradictory to VehicleDetail[] on DeliveryProfile but consistent with "One active vehicle" maybe.
+           // Let's assume 1 vehicle per user for now based on that unique constraint.
+           
+           const capacityInt = parseInt(deliveryData.capacity, 10) || 0;
+
+           const existingVehicle = await tx.vehicleDetail.findUnique({
+             where: { userId: userId }
+           });
+
+           if (existingVehicle) {
+             await tx.vehicleDetail.update({
                where: { userId: userId },
                data: {
-                 fullName: deliveryData.fullName,
-                //  vehicleType: deliveryData.vehicleType,
-                //  vehicleValue: deliveryData.vehicleValue ? parseFloat(deliveryData.vehicleValue) : null,
-                //  capacity: deliveryData.capacity,
-                //  capacityUnit: deliveryData.capacityUnit,
-                 notes: deliveryData.notes,
+                  vehicleType: deliveryData.vehicleType,
+                  vehicleCapacity: capacityInt,
+                  // capacityUnit logic: schema has perHourCapacityUnit and perDayCapacityUnit default string
+                  // We'll map the incoming `capacityUnit` to ONE of them or assume a generic one?
+                  // Providing valid defaults.
+                  perHourCapacityUnit: deliveryData.capacityUnit === 'per hour' ? 'per hour' : 'per hour', 
+                  perDayCapacityUnit: deliveryData.capacityUnit === 'per day' ? 'per day' : 'per day',
+                  // Ideally we store the unit used. Schema is a bit specific. 
+                  // Let's just update vehicleType etc.
                }
              });
+           } else {
+             await tx.vehicleDetail.create({
+               data: {
+                 userId: userId,
+                 deliveryProfileId: profile.id,
+                 vehicleType: deliveryData.vehicleType,
+                 vehicleCapacity: capacityInt,
+                 perHourCapacityUnit: deliveryData.capacityUnit === 'per hour' ? 'per hour' : 'per hour',
+               }
+             })
            }
         }
 
@@ -284,7 +363,6 @@ router.patch(
 
     } catch (err: any) {
       console.error("Role update error: ", err);
-      // Prisma transaction error or custom error
       return res.status(400).json({ error: err.message || "Failed to update role" });
     }
   }

@@ -48,13 +48,15 @@ const ProfilePage = () => {
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [avatarUrlInput, setAvatarUrlInput] = useState("");
-  const [roleChoice, setRoleChoice] = useState<"MERCHANT" | "DELIVERY">(
+  const [roleChoice, setRoleChoice] = useState<"MERCHANT" | "DELIVERY" | "CUSTOMER">(
     "MERCHANT"
   );
   const [merchantForm, setMerchantForm] = useState({
     shopName: "",
     businessType: "",
     description: "",
+    logo: "",
+    address: "",
   });
   const [deliveryForm, setDeliveryForm] = useState({
     fullName: "",
@@ -74,6 +76,11 @@ const ProfilePage = () => {
       });
       setAvatarUrlInput(user.avatar || "");
       setSelectedImage(user.avatar || null);
+
+      // Default to "CUSTOMER" if already a merchant/delivery to show a valid option initially
+      if (user.role === "MERCHANT" || user.role === "DELIVERY") {
+        setRoleChoice("CUSTOMER");
+      }
     }
   }, [user]);
 
@@ -95,6 +102,7 @@ const ProfilePage = () => {
       // Log the error for debugging
       console.error("Profile update error:", error);
       toast.error("Failed to update profile");
+      console.log(error);
     }
   };
 
@@ -130,11 +138,11 @@ const ProfilePage = () => {
   const handleRoleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (roleChoice === "MERCHANT") {
-      if (!merchantForm.shopName || !merchantForm.businessType) {
-        toast.error("Please fill shop name and business type");
+      if (!merchantForm.shopName || !merchantForm.businessType || !merchantForm.address) {
+        toast.error("Please fill shop name, business type, and address");
         return;
       }
-    } else {
+    } else if (roleChoice === "DELIVERY") {
       if (
         !deliveryForm.fullName ||
         !deliveryForm.capacity ||
@@ -146,7 +154,9 @@ const ProfilePage = () => {
     }
 
     try {
-      await simulatePayment();
+      if (roleChoice !== "CUSTOMER") {
+        await simulatePayment();
+      }
 
       await requestRoleChangeMutation.mutateAsync({
         role: roleChoice,
@@ -455,31 +465,51 @@ const ProfilePage = () => {
         <div className="mt-8">
           <Card>
             <CardHeader>
-              <CardTitle>Request Role Change</CardTitle>
+              <CardTitle>Role Management</CardTitle>
               <CardDescription>
-                Switch to Merchant or Delivery. Payments are simulated for now.
+                {user.role === "CUSTOMER"
+                  ? "Switch to Merchant or Delivery. Payments are simulated for now."
+                  : "You can switch back to being a Customer at any time."}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form className="space-y-4" onSubmit={handleRoleSubmit}>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <Button
-                    type="button"
-                    variant={roleChoice === "MERCHANT" ? "default" : "outline"}
-                    onClick={() => setRoleChoice("MERCHANT")}
-                  >
-                    Merchant (1500 birr)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={roleChoice === "DELIVERY" ? "default" : "outline"}
-                    onClick={() => setRoleChoice("DELIVERY")}
-                  >
-                    Delivery (600 birr)
-                  </Button>
+                <div className="flex gap-3 flex-wrap">
+                  {/* If user is NOT a Merchant, show Merchant Option */}
+                  {user.role !== "MERCHANT" && (
+                     <Button
+                       type="button"
+                       variant={roleChoice === "MERCHANT" ? "default" : "outline"}
+                       onClick={() => setRoleChoice("MERCHANT")}
+                     >
+                       Be a Merchant (1500 birr)
+                     </Button>
+                  )}
+
+                  {/* If user is NOT Delivery, show Delivery Option */}
+                  {user.role !== "DELIVERY" && (
+                    <Button
+                      type="button"
+                      variant={roleChoice === "DELIVERY" ? "default" : "outline"}
+                      onClick={() => setRoleChoice("DELIVERY")}
+                    >
+                      Be a Delivery (600 birr)
+                    </Button>
+                  )}
+
+                  {/* If user IS Merchant or Delivery, show Customer option */}
+                  {(user.role === "MERCHANT" || user.role === "DELIVERY") && (
+                     <Button
+                       type="button"
+                       variant={roleChoice === "CUSTOMER" ? "default" : "outline"}
+                       onClick={() => setRoleChoice("CUSTOMER")}
+                     >
+                       Be a Customer
+                     </Button>
+                  )}
                 </div>
 
-                {roleChoice === "MERCHANT" ? (
+                {roleChoice === "MERCHANT" && user.role !== "MERCHANT" && (
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -528,8 +558,42 @@ const ProfilePage = () => {
                         placeholder="Short store overview"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Logo URL (optional)
+                      </label>
+                      <Input
+                        type="url"
+                        value={merchantForm.logo}
+                        onChange={(e) =>
+                          setMerchantForm((prev) => ({
+                            ...prev,
+                            logo: e.target.value,
+                          }))
+                        }
+                        placeholder="https://example.com/logo.png"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Address (Main)
+                      </label>
+                      <Input
+                        value={merchantForm.address}
+                        onChange={(e) =>
+                          setMerchantForm((prev) => ({
+                            ...prev,
+                            address: e.target.value,
+                          }))
+                        }
+                        placeholder="e.g. 123 Main St, Addis Ababa"
+                        required
+                      />
+                    </div>
                   </div>
-                ) : (
+                )}
+
+                {roleChoice === "DELIVERY" && user.role !== "DELIVERY" && (
                   <div className="space-y-3">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -621,17 +685,43 @@ const ProfilePage = () => {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between pt-2">
-                  <div className="text-sm text-gray-600">
-                    Payment (simulated):{" "}
-                    <span className="font-semibold">
-                      {roleChoice === "MERCHANT" ? "1500 birr" : "600 birr"}
-                    </span>
+                {roleChoice === "CUSTOMER" && (
+                    <div className="p-4 bg-gray-50 rounded-md text-sm text-gray-700">
+                      <p className="mb-2 font-medium">Are you sure you want to revert to a Customer?</p>
+                      <p>You will lose your merchant dashboard access, but your existing data will be preserved if you decide to come back.</p>
+                    </div>
+                )}
+
+                {roleChoice !== user.role && (
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="text-sm text-gray-600">
+                      {roleChoice !== "CUSTOMER" ? (
+                        <>
+                          Payment (simulated):{" "}
+                          <span className="font-semibold">
+                            {roleChoice === "MERCHANT"
+                              ? "1500 birr"
+                              : "600 birr"}
+                          </span>
+                        </>
+                      ) : (
+                        <span>No fee to revert to Customer</span>
+                      )}
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={
+                        isPaying || requestRoleChangeMutation.isPending
+                      }
+                    >
+                      {isPaying || requestRoleChangeMutation.isPending
+                        ? "Processing..."
+                        : roleChoice === "CUSTOMER"
+                        ? "Switch to Customer"
+                        : "Submit & Pay"}
+                    </Button>
                   </div>
-                  <Button type="submit" disabled={isPaying || requestRoleChangeMutation.isPending}>
-                    {isPaying || requestRoleChangeMutation.isPending ? "Processing..." : "Submit & Pay"}
-                  </Button>
-                </div>
+                )}
               </form>
             </CardContent>
           </Card>

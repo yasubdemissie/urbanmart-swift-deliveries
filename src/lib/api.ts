@@ -436,7 +436,7 @@ export const apiClient = {
 
   // Role Request
   async requestRoleChange(data: {
-    role: "MERCHANT" | "DELIVERY";
+    role: "MERCHANT" | "DELIVERY" | "CUSTOMER";
     merchantData?: { shopName: string; businessType: string; description?: string };
     deliveryData?: any;
   }): Promise<{ success: true; user: User }> {
