@@ -21,10 +21,18 @@ router.get(
     try {
       const deliveryUserId = req.user!.id;
       const { status, page = 1, limit = 10 } = req.query;
+      const user = await prisma.user.findUnique({
+        where: { id: deliveryUserId },
+        include: { ownedDeliveryOrg: true },
+      });
 
-      const where: { deliveryUserId: string; status?: DeliveryStatus } = {
-        deliveryUserId,
+      const where: any = {
+        OR: [{ deliveryUserId }],
       };
+
+      if (user?.ownedDeliveryOrg) {
+        where.OR.push({ deliveryOrganizationId: user.ownedDeliveryOrg.id });
+      }
 
       if (status) {
         where.status = status as DeliveryStatus;
@@ -120,6 +128,11 @@ router.patch(
 
       if (status === "IN_TRANSIT" && !assignment.pickedUpAt) {
         updateData.pickedUpAt = new Date();
+        // Update order status to SHIPPED
+        await prisma.order.update({
+          where: { id: assignment.orderId },
+          data: { status: "SHIPPED", shippedAt: new Date() },
+        });
       }
 
       if (status === "COMPLETED") {
@@ -145,7 +158,11 @@ router.patch(
         data: {
           orderId: assignment.orderId,
           status:
-            status === "COMPLETED" ? "DELIVERED" : assignment.order.status,
+            status === "COMPLETED"
+              ? "DELIVERED"
+              : status === "IN_TRANSIT"
+              ? "SHIPPED"
+              : assignment.order.status,
           notes: instructions || `Status updated by delivery person`,
           updatedBy: deliveryUserId,
         },
@@ -240,10 +257,21 @@ router.post(
         },
       });
 
-      // Update order with delivery person
+      // Update order with delivery person and set status to CONFIRMED
       await prisma.order.update({
         where: { id: orderId },
-        data: { deliveryUserId },
+        data: { deliveryUserId, status: "CONFIRMED" },
+      });
+
+      // Create status history entry
+      await prisma.orderStatusHistory.create({
+        data: {
+          orderId,
+          status: "CONFIRMED",
+          notes:
+            instructions || `Order confirmed and assigned to delivery person`,
+          updatedBy: merchantId,
+        },
       });
 
       return formatResponse(
@@ -255,6 +283,61 @@ router.post(
     } catch (error) {
       console.error("Error assigning delivery:", error);
       return formatError(res, "Failed to assign delivery", 500);
+    }
+  }
+);
+
+// Get delivery statistics
+router.get(
+  "/stats",
+  authenticateToken,
+  requireDelivery,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: { ownedDeliveryOrg: true },
+      });
+
+      const baseWhere: any = {
+        OR: [{ deliveryUserId: userId }],
+      };
+
+      if (user?.ownedDeliveryOrg) {
+        baseWhere.OR.push({ deliveryOrganizationId: user.ownedDeliveryOrg.id });
+      }
+
+      const [total, inTransit, completed, pending, requested] =
+        await Promise.all([
+          prisma.deliveryAssignment.count({
+            where: baseWhere,
+          }),
+          prisma.deliveryAssignment.count({
+            where: { ...baseWhere, status: "IN_TRANSIT" },
+          }),
+          prisma.deliveryAssignment.count({
+            where: { ...baseWhere, status: "COMPLETED" },
+          }),
+          prisma.deliveryAssignment.count({
+            where: { ...baseWhere, status: "ASSIGNED" },
+          }),
+          prisma.deliveryAssignment.count({
+            where: { ...baseWhere, status: "REQUESTED" },
+          }),
+        ]);
+
+      const stats = {
+        total,
+        inTransit,
+        completed,
+        pending: pending + requested, // Both are pending action
+      };
+
+      return formatResponse(res, stats, "Statistics retrieved successfully");
+    } catch (error) {
+      console.error("Error fetching delivery stats:", error);
+      return formatError(res, "Failed to fetch statistics", 500);
     }
   }
 );

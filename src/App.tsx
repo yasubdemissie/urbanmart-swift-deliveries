@@ -23,9 +23,10 @@ import UserDetails from "./components/admin/userDetails";
 import OrdersPage from "./pages/Orders";
 import MerchantDashboard from "./pages/MerchantDashboard";
 import AddProductPage from "./pages/AddProductPage";
-import Delivery from "./pages/Delivery.tsx";
 import MerchantPage from "./components/Merchant/MerchantPage.tsx";
 import Merchants from "./pages/Merchants.tsx";
+import DeliveryOrgDashboard from "./pages/DeliveryOrgDashboard.tsx";
+import DeliveryDashboard from "./pages/DeliveryDashboard.tsx";
 
 const queryClient = new QueryClient();
 
@@ -40,7 +41,11 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/shop" element={<Shop />} />
-              <Route path="/delivery" element={<Delivery />} />
+              <Route
+                path="/delivery-dashboard"
+                element={<DeliveryDashboard />}
+              />
+              <Route path="/delivery-org" element={<DeliveryOrgDashboard />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/track" element={<TrackOrder />} />
@@ -56,7 +61,10 @@ const App = () => (
               />
 
               {/* Merchant Product Routes */}
-              <Route path="/merchant/products/new" element={<AddProductPage />} />
+              <Route
+                path="/merchant/products/new"
+                element={<AddProductPage />}
+              />
 
               {/* Customer Routes */}
               <Route path="/signin" element={<SignIn />} />

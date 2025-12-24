@@ -107,6 +107,23 @@ router.get(
   }
 );
 
+router.get('/logo', authenticateToken, requireMerchant, async(req: AuthRequest, res: Response) => {
+  try {
+    const merchantId = req.user!.id;
+    const store = await prisma.merchantStore.findUnique({
+      where: { merchantId },
+      select: { logo: true },
+    });
+    if (!store) {
+      return formatError(res, "Merchant store not found", 404);
+    }
+    return formatResponse(res, store, "Merchant store retrieved successfully");
+  } catch (error) {
+    console.error("Error fetching merchant store:", error);
+    return formatError(res, "Failed to fetch merchant store", 500);
+  }
+});
+
 // Get merchant products
 router.get(
   "/products",
@@ -361,10 +378,23 @@ router.patch(
         return formatError(res, "Order not found or access denied", 404);
       }
 
+      // Validate status - merchants can only update to CONFIRMED or SHIPPED
+      const allowedStatuses: OrderStatus[] = ["CONFIRMED", "PROCESSING", "SHIPPED"];
+      if (!allowedStatuses.includes(status as OrderStatus)) {
+        return formatError(
+          res,
+          "Invalid status. Merchants can only update to CONFIRMED, PROCESSING, or SHIPPED",
+          400
+        );
+      }
+
       // Update order status
       const updatedOrder = await prisma.order.update({
         where: { id },
-        data: { status },
+        data: { 
+          status,
+          ...(status === "SHIPPED" && { shippedAt: new Date() }),
+        },
       });
 
       // Add status history
@@ -385,6 +415,91 @@ router.patch(
     } catch (error) {
       console.error("Error updating order status:", error);
       return formatError(res, "Failed to update order status", 500);
+    }
+  }
+);
+
+// Request delivery from an organization
+router.post(
+  "/orders/:id/request-delivery",
+  authenticateToken,
+  requireMerchant,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const merchantId = req.user!.id;
+      const { id } = req.params;
+      const { organizationId, deliveryFee, instructions } = req.body;
+
+      console.log("organizationId", organizationId);
+      console.log("deliveryFee", deliveryFee);
+      console.log("instructions", instructions);
+
+      // Check if order belongs to this merchant
+      const order = await prisma.order.findFirst({
+        where: {
+          id,
+          merchantId,
+        },
+        include: { shippingAddress: true },
+      });
+
+      if (!order) {
+        return formatError(res, "Order not found or access denied", 404);
+      }
+
+      // Check if assignment already exists
+      const existingAssignment = await prisma.deliveryAssignment.findUnique({
+        where: { orderId: id },
+      });
+
+      if (existingAssignment) {
+        return formatError(res, "Delivery already requested/assigned for this order", 400);
+      }
+
+      if (!order.shippingAddress) {
+        return formatError(res, "Order has no shipping address", 400);
+      }
+
+      // Verify the delivery organization exists
+      const organization = await prisma.deliveryOrganization.findUnique({
+        where: { id: organizationId },
+      });
+
+      if (!organization) {
+        return formatError(res, "Delivery organization not found", 404);
+      }
+
+      // Log all values before creating assignment
+      console.log("Creating delivery assignment with:");
+      console.log("- orderId:", id);
+      console.log("- deliveryOrganizationId:", organizationId);
+      console.log("- merchantId:", merchantId);
+      console.log("- deliveryAddress:", order.shippingAddress.address1);
+      console.log("- deliveryFee:", Number(deliveryFee));
+      console.log("- paymentType:", "PER_DELIVERY");
+      console.log("- status:", "REQUESTED");
+      console.log("- instructions:", instructions || null);
+
+      // Create delivery assignment with status REQUESTED
+      const assignment = await prisma.deliveryAssignment.create({
+        data: {
+          orderId: id,
+          deliveryOrganizationId: organizationId,
+          merchantId,
+          deliveryAddress: order.shippingAddress.address1,
+          deliveryFee: Number(deliveryFee),
+          paymentType: "PER_DELIVERY", // Default
+          status: "REQUESTED",
+          instructions: instructions || null,
+        },
+      });
+
+      return formatResponse(res, assignment, "Delivery requested successfully", 201);
+    } catch (error: any) {
+      console.error("Error requesting delivery:", error);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      return formatError(res, error.message || "Failed to request delivery", 500);
     }
   }
 );

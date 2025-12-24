@@ -135,8 +135,6 @@ router.get("/", validatePagination, async (req: Request, res: Response) => {
       prisma.product.count({ where }),
     ]);
 
-    console.log("products from the serever: " + products);
-
     // Calculate average ratings
     const productsWithRating = products.map((product) => {
       const avgRating =

@@ -27,9 +27,10 @@ import { Order } from "@/lib/api";
 interface OrderDetailsProps {
   order: Order;
   onClose: () => void;
+  actions?: React.ReactNode;
 }
 
-const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onClose }) => {
+const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onClose, actions }) => {
   const getStatusColor = (status: Order["status"]) => {
     switch (status) {
       case "PENDING":
@@ -130,6 +131,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({ order, onClose }) => {
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Contact Support
               </Button>
+              {actions}
             </div>
           </div>
         </div>

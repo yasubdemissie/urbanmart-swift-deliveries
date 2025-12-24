@@ -28,7 +28,7 @@ import {
 import { toast } from "sonner";
 import Header from "@/components/Custom/Header";
 
-const DeliveryDashboard = () => {
+const DeliveryDashboardPage = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const updateStatusMutation = useUpdateDeliveryStatus();
 
@@ -108,9 +108,9 @@ const DeliveryDashboard = () => {
       <Header />
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {/* <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Delivery Dashboard
-          </h1>
+          </h1> */}
           <p className="text-gray-600">
             Manage your delivery assignments and track payments
           </p>
@@ -383,4 +383,4 @@ const DeliveryDashboard = () => {
   );
 };
 
-export default DeliveryDashboard;
+export default DeliveryDashboardPage;

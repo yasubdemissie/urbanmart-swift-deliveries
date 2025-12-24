@@ -175,6 +175,27 @@ export function useAvailableDeliveryPersons() {
   });
 }
 
+// Hook for fetching delivery statistics
+export function useDeliveryStats() {
+  return useQuery({
+    queryKey: ["delivery-stats"],
+    queryFn: async () => {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/delivery/stats", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (data.success) {
+        return data.data;
+      }
+      return null;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
 // Hook for assigning delivery to an order (for merchants)
 export function useAssignDelivery() {
   const queryClient = useQueryClient();

@@ -90,8 +90,8 @@ const Categories = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {categories
-              .filter((cat) => cat.featured)
-              .map((category) => (
+              ?.filter((cat) => cat.featured)
+              ?.map((category) => (
                 <Card
                   key={category.name}
                   className="group cursor-pointer hover:shadow-lg transition-all duration-300"
@@ -124,7 +124,7 @@ const Categories = () => {
             All Categories
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {categories.map((category) => (
+            {categories?.map((category) => (
               <Card
                 key={category.name}
                 className="group cursor-pointer hover:shadow-md transition-all duration-300"

@@ -1,7 +1,7 @@
 "use client";
 
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Store,
   Package,
@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { useIsAuthenticated } from "@/hooks/useAuth";
 import { useLogout } from "@/hooks/useAuth";
 import { useCart } from "@/context/cartContext";
+import apiClient from "@/lib/api";
 
 const MerchantHeader = () => {
   const navigate = useNavigate();
@@ -33,6 +34,17 @@ const MerchantHeader = () => {
   const logout = useLogout();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [merchantLogo, setMerchantLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMerchantLogo = async () => {
+      const logo = await apiClient.getMerchantLogo();
+      if (logo.success) {
+        setMerchantLogo(logo.data.logo);
+      }
+    };
+    fetchMerchantLogo();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -103,7 +115,9 @@ const MerchantHeader = () => {
         <div className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Store className="h-6 w-6" />
+              <Link to="/merchant-dashboard">
+                 {merchantLogo ? <img src={merchantLogo} height={50} width={50} alt="" className="rounded-md" /> : <Store className="h-6 w-6" />}
+              </Link>
               <div>
                 <h1 className="text-lg font-semibold">Merchant Dashboard</h1>
                 <p className="text-sm text-blue-100">

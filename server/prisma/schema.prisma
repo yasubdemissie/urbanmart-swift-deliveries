@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output = "../src/lib"
 }
 
 datasource db {
@@ -14,75 +7,69 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  password  String
-  firstName String?
-  lastName  String?
-  phone     String?
-  countryCode String?
-  location  String?
-  avatar    String?
-  role      UserRole @default(CUSTOMER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  addresses    Address[]
-  orders       Order[]
-  cartItems    CartItem[]
-  reviews      Review[]
-  wishlist     WishlistItem[]
-  statusUpdates OrderStatusHistory[]
-  
-  // Merchant-specific relations
-  merchantStore MerchantStore?
-  merchantOrders Order[] @relation("MerchantOrders")
-  reports        Report[] @relation("Reporter")
-  assignedReports Report[] @relation("AssignedAdmin")
-  transactions   Transaction[]
-  
-  // Customer relations
-  customerRelationships Customer[] @relation("CustomerUser")
-  merchantRelationships Customer[] @relation("MerchantUser")
-  
-  // Delivery relations
-  deliveryAssignments  DeliveryAssignment[] @relation("DeliveryUser")
-  hiredDeliveries      DeliveryAssignment[] @relation("HiredByMerchant")
-  deliveryPaymentHistory DeliveryPayment[] @relation("DeliveryPayer")
-  merchantPaymentHistory DeliveryPayment[] @relation("MerchantPayer")
-  deliveryOrders       Order[] @relation("DeliveryOrders")
-  deliveryProfile      DeliveryProfile?
+  id                     String                @id @default(cuid())
+  email                  String                @unique
+  password               String
+  firstName              String?
+  lastName               String?
+  phone                  String?
+  avatar                 String?
+  role                   UserRole              @default(CUSTOMER)
+  isActive               Boolean               @default(true)
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  countryCode            String?
+  location               String?
+  deliveryOrgId          String?
+  addresses              Address[]
+  cartItems              CartItem[]
+  customerRelationships  Customer[]            @relation("CustomerUser")
+  merchantRelationships  Customer[]            @relation("MerchantUser")
+  deliveryAssignments    DeliveryAssignment[]  @relation("DeliveryUser")
+  hiredDeliveries        DeliveryAssignment[]  @relation("HiredByMerchant")
+  ownedDeliveryOrg       DeliveryOrganization? @relation("OrgOwner")
+  deliveryPaymentHistory DeliveryPayment[]     @relation("DeliveryPayer")
+  merchantPaymentHistory DeliveryPayment[]     @relation("MerchantPayer")
+  deliveryProfile        DeliveryProfile?
+  receivedHiringRequests HiringRequest[]       @relation("HiringRequestReceiver")
+  merchantStore          MerchantStore?
+  statusUpdates          OrderStatusHistory[]
+  deliveryOrders         Order[]               @relation("DeliveryOrders")
+  merchantOrders         Order[]               @relation("MerchantOrders")
+  orders                 Order[]
+  assignedReports        Report[]              @relation("AssignedAdmin")
+  reports                Report[]              @relation("Reporter")
+  reviews                Review[]
+  transactions           Transaction[]
+  deliveryOrg            DeliveryOrganization? @relation("OrgMember", fields: [deliveryOrgId], references: [id])
+  wishlist               WishlistItem[]
 
   @@map("users")
 }
 
 model Customer {
-  id         String   @id @default(cuid())
-  customerId String   // User ID of the customer
-  merchantId String   // User ID of the merchant
-  storeId    String?  // Optional store ID for specific store relationships
-  firstOrderAt DateTime? // When they first ordered from this merchant
-  lastOrderAt DateTime?  // When they last ordered from this merchant
-  totalOrders Int      @default(0) // Total orders from this merchant
-  totalSpent  Decimal  @default(0) @db.Decimal(10, 2) // Total amount spent
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  customer User @relation("CustomerUser", fields: [customerId], references: [id], onDelete: Cascade)
-  merchant User @relation("MerchantUser", fields: [merchantId], references: [id], onDelete: Cascade)
-  store    MerchantStore? @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  id           String         @id @default(cuid())
+  customerId   String
+  merchantId   String
+  storeId      String?
+  firstOrderAt DateTime?
+  lastOrderAt  DateTime?
+  totalOrders  Int            @default(0)
+  totalSpent   Decimal        @default(0) @db.Decimal(10, 2)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  customer     User           @relation("CustomerUser", fields: [customerId], references: [id], onDelete: Cascade)
+  merchant     User           @relation("MerchantUser", fields: [merchantId], references: [id], onDelete: Cascade)
+  store        MerchantStore? @relation(fields: [storeId], references: [id], onDelete: Cascade)
 
   @@unique([customerId, merchantId, storeId])
   @@map("customers")
 }
 
 model MerchantStore {
-  id          String   @id @default(cuid())
-  merchantId  String   @unique
+  id          String     @id @default(cuid())
+  merchantId  String     @unique
   name        String
   description String?
   logo        String?
@@ -91,35 +78,31 @@ model MerchantStore {
   phone       String?
   email       String?
   website     String?
-  isActive    Boolean  @default(true)
-  isVerified  Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  merchant   User      @relation(fields: [merchantId], references: [id], onDelete: Cascade)
-  products   Product[]
-  orders     Order[]    @relation("StoreOrders")
-  customers  Customer[]
+  isActive    Boolean    @default(true)
+  isVerified  Boolean    @default(false)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  customers   Customer[]
+  merchant    User       @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  orders      Order[]    @relation("StoreOrders")
+  products    Product[]
 
   @@map("merchant_stores")
 }
 
 model Report {
-  id          String      @id @default(cuid())
-  reporterId  String
+  id              String         @id @default(cuid())
+  reporterId      String
   assignedAdminId String?
-  type        ReportType
-  title       String
-  description String
-  status      ReportStatus @default(OPEN)
-  priority    ReportPriority @default(MEDIUM)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  // Relations
-  reporter       User   @relation("Reporter", fields: [reporterId], references: [id])
-  assignedAdmin  User?  @relation("AssignedAdmin", fields: [assignedAdminId], references: [id])
+  type            ReportType
+  title           String
+  description     String
+  status          ReportStatus   @default(OPEN)
+  priority        ReportPriority @default(MEDIUM)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  assignedAdmin   User?          @relation("AssignedAdmin", fields: [assignedAdminId], references: [id])
+  reporter        User           @relation("Reporter", fields: [reporterId], references: [id])
 
   @@map("reports")
 }
@@ -136,132 +119,122 @@ model Transaction {
   notes         String?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
-
-  // Relations
-  order     Order @relation(fields: [orderId], references: [id])
-  merchant  User? @relation(fields: [merchantId], references: [id])
+  merchant      User?             @relation(fields: [merchantId], references: [id])
+  order         Order             @relation(fields: [orderId], references: [id])
 
   @@map("transactions")
 }
 
 model Address {
-  id          String   @id @default(cuid())
-  userId      String
-  type        AddressType
-  firstName   String
-  lastName    String
-  company     String?
-  address1    String
-  address2    String?
-  city        String
-  state       String
-  postalCode  String
-  country     String
-  phone       String
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  shippingOrders    Order[] @relation("ShippingAddress")
-  billingOrders     Order[] @relation("BillingAddress")
+  id             String      @id @default(cuid())
+  userId         String
+  type           AddressType
+  firstName      String
+  lastName       String
+  company        String?
+  address1       String
+  address2       String?
+  city           String
+  state          String
+  postalCode     String
+  country        String
+  phone          String
+  isDefault      Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billingOrders  Order[]     @relation("BillingAddress")
+  shippingOrders Order[]     @relation("ShippingAddress")
 
   @@map("addresses")
 }
 
 model Category {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
   description String?
   image       String?
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   products    Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id            String   @id @default(cuid())
-  name          String
-  slug          String   @unique
-  description   String
+  id               String         @id @default(cuid())
+  name             String
+  slug             String         @unique
+  description      String
   shortDescription String?
-  price         Decimal  @db.Decimal(10, 2)
-  originalPrice Decimal? @db.Decimal(10, 2)
-  costPrice     Decimal? @db.Decimal(10, 2)
-  sku           String?  @unique
-  barcode       String?
-  weight        Decimal? @db.Decimal(8, 2)
-  dimensions    String?
-  stockQuantity Int      @default(0)
-  minStockLevel Int      @default(5)
-  isActive      Boolean  @default(true)
-  isFeatured    Boolean  @default(false)
-  isOnSale      Boolean  @default(false)
-  salePercentage Int?
-  categoryId    String
-  merchantStoreId String?
-  brand         String?
-  tags          String[]
-  images        String[]
-  mainImage     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  // Relations
-  category     Category     @relation(fields: [categoryId], references: [id])
-  merchantStore MerchantStore? @relation(fields: [merchantStoreId], references: [id])
-  orderItems   OrderItem[]
-  cartItems    CartItem[]
-  reviews      Review[]
-  wishlistItems WishlistItem[]
+  price            Decimal        @db.Decimal(10, 2)
+  originalPrice    Decimal?       @db.Decimal(10, 2)
+  costPrice        Decimal?       @db.Decimal(10, 2)
+  sku              String?        @unique
+  barcode          String?
+  weight           Decimal?       @db.Decimal(8, 2)
+  dimensions       String?
+  stockQuantity    Int            @default(0)
+  minStockLevel    Int            @default(5)
+  isActive         Boolean        @default(true)
+  isFeatured       Boolean        @default(false)
+  isOnSale         Boolean        @default(false)
+  salePercentage   Int?
+  categoryId       String
+  brand            String?
+  tags             String[]
+  images           String[]
+  mainImage        String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  merchantStoreId  String?
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  category         Category       @relation(fields: [categoryId], references: [id])
+  merchantStore    MerchantStore? @relation(fields: [merchantStoreId], references: [id])
+  reviews          Review[]
+  wishlistItems    WishlistItem[]
 
   @@map("products")
 }
 
 model Order {
-  id            String        @id @default(cuid())
-  orderNumber   String        @unique
-  userId        String
-  merchantId    String?
-  storeId       String?
-  deliveryUserId String?      // Add this field
-  status        OrderStatus   @default(PENDING)
-  subtotal      Decimal       @db.Decimal(10, 2)
-  tax           Decimal       @db.Decimal(10, 2)
-  shipping      Decimal       @db.Decimal(10, 2)
-  discount      Decimal?      @db.Decimal(10, 2)
-  total         Decimal       @db.Decimal(10, 2)
-  currency      String        @default("USD")
-  paymentMethod PaymentMethod
-  paymentStatus PaymentStatus @default(PENDING)
-  shippingAddressId String
-  billingAddressId String
-  notes         String?
-  trackingNumber String?
-  shippedAt     DateTime?
-  deliveredAt   DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  // Relations
-  user            User        @relation(fields: [userId], references: [id])
-  merchant        User?       @relation("MerchantOrders", fields: [merchantId], references: [id])
-  store           MerchantStore? @relation("StoreOrders", fields: [storeId], references: [id])
-  shippingAddress Address     @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
-  billingAddress  Address     @relation("BillingAddress", fields: [billingAddressId], references: [id])
-  orderItems      OrderItem[]
-  statusHistory   OrderStatusHistory[]
-  transactions    Transaction[]
-  deliveryAssignment DeliveryAssignment? // Add this relation
-  deliveryUser    User?       @relation("DeliveryOrders", fields: [deliveryUserId], references: [id])
+  id                 String               @id @default(cuid())
+  orderNumber        String               @unique
+  userId             String
+  status             OrderStatus          @default(PENDING)
+  subtotal           Decimal              @db.Decimal(10, 2)
+  tax                Decimal              @db.Decimal(10, 2)
+  shipping           Decimal              @db.Decimal(10, 2)
+  discount           Decimal?             @db.Decimal(10, 2)
+  total              Decimal              @db.Decimal(10, 2)
+  currency           String               @default("USD")
+  paymentMethod      PaymentMethod
+  paymentStatus      PaymentStatus        @default(PENDING)
+  shippingAddressId  String
+  billingAddressId   String
+  notes              String?
+  trackingNumber     String?
+  shippedAt          DateTime?
+  deliveredAt        DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  merchantId         String?
+  storeId            String?
+  deliveryUserId     String?
+  deliveryAssignment DeliveryAssignment?
+  orderItems         OrderItem[]
+  statusHistory      OrderStatusHistory[]
+  billingAddress     Address              @relation("BillingAddress", fields: [billingAddressId], references: [id])
+  deliveryUser       User?                @relation("DeliveryOrders", fields: [deliveryUserId], references: [id])
+  merchant           User?                @relation("MerchantOrders", fields: [merchantId], references: [id])
+  shippingAddress    Address              @relation("ShippingAddress", fields: [shippingAddressId], references: [id])
+  store              MerchantStore?       @relation("StoreOrders", fields: [storeId], references: [id])
+  user               User                 @relation(fields: [userId], references: [id])
+  transactions       Transaction[]
 
   @@map("orders")
 }
@@ -274,10 +247,8 @@ model OrderItem {
   price     Decimal  @db.Decimal(10, 2)
   total     Decimal  @db.Decimal(10, 2)
   createdAt DateTime @default(now())
-
-  // Relations
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }
@@ -287,15 +258,12 @@ model OrderStatusHistory {
   orderId   String
   status    OrderStatus
   notes     String?
-  updatedBy String?     // User ID who made the change (optional)
+  updatedBy String?
   timestamp DateTime    @default(now())
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  updater User? @relation(fields: [updatedBy], references: [id])
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  updater   User?       @relation(fields: [updatedBy], references: [id])
 
   @@map("order_status_history")
 }
@@ -307,29 +275,25 @@ model CartItem {
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@map("cart_items")
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  userId    String
-  productId String
-  rating    Int
-  title     String?
-  comment   String?
-  isVerified Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  productId  String
+  rating     Int
+  title      String?
+  comment    String?
+  isVerified Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@map("reviews")
@@ -340,16 +304,123 @@ model WishlistItem {
   userId    String
   productId String
   createdAt DateTime @default(now())
-
-  // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@map("wishlist_items")
 }
 
-// Enums
+model DeliveryAssignment {
+  id                     String                @id @default(cuid())
+  orderId                String                @unique
+  deliveryUserId         String?
+  merchantId             String
+  assignedAt             DateTime              @default(now())
+  pickedUpAt             DateTime?
+  deliveryAddress        String
+  deliveryFee            Decimal               @db.Decimal(10, 2)
+  paymentType            DeliveryPaymentType
+  instructions           String?
+  estimatedTime          Int?
+  status                 DeliveryStatus        @default(ASSIGNED)
+  completedAt            DateTime?
+  createdAt              DateTime              @default(now())
+  updatedAt              DateTime              @updatedAt
+  deliveryOrganizationId String?
+  organization           DeliveryOrganization? @relation(fields: [deliveryOrganizationId], references: [id])
+  deliveryUser           User?                 @relation("DeliveryUser", fields: [deliveryUserId], references: [id])
+  merchant               User                  @relation("HiredByMerchant", fields: [merchantId], references: [id])
+  order                  Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  payments               DeliveryPayment[]
+
+  @@map("delivery_assignments")
+}
+
+model DeliveryPayment {
+  id                   String              @id @default(cuid())
+  deliveryAssignmentId String
+  deliveryUserId       String
+  merchantId           String
+  amount               Decimal             @db.Decimal(10, 2)
+  paymentType          DeliveryPaymentType
+  status               PaymentStatus       @default(PENDING)
+  baseAmount           Decimal?            @db.Decimal(10, 2)
+  distanceBonus        Decimal?            @db.Decimal(10, 2)
+  weightBonus          Decimal?            @db.Decimal(10, 2)
+  timeBonus            Decimal?            @db.Decimal(10, 2)
+  processedAt          DateTime?
+  notes                String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  assignment           DeliveryAssignment  @relation(fields: [deliveryAssignmentId], references: [id])
+  deliveryUser         User                @relation("DeliveryPayer", fields: [deliveryUserId], references: [id])
+  merchant             User                @relation("MerchantPayer", fields: [merchantId], references: [id])
+
+  @@map("delivery_payments")
+}
+
+model DeliveryProfile {
+  id            String          @id @default(cuid())
+  userId        String          @unique
+  fullName      String
+  notes         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicleDetail VehicleDetail[]
+
+  @@map("delivery_profiles")
+}
+
+model VehicleDetail {
+  id                  String          @id @default(cuid())
+  userId              String          @unique
+  vehicleType         String
+  vehicleCapacity     Int?
+  perHourCapacityUnit String          @default("per hour")
+  perDayCapacityUnit  String          @default("per day")
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  deliveryProfileId   String
+  deliveryProfile     DeliveryProfile @relation(fields: [deliveryProfileId], references: [id])
+
+  @@map("vehicle_details")
+}
+
+model DeliveryOrganization {
+  id             String               @id @default(cuid())
+  name           String
+  description    String?
+  logo           String?
+  ownerId        String               @unique
+  isActive       Boolean              @default(true)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  assignments    DeliveryAssignment[]
+  owner          User                 @relation("OrgOwner", fields: [ownerId], references: [id])
+  hiringRequests HiringRequest[]
+  members        User[]               @relation("OrgMember")
+
+  @@map("delivery_organizations")
+}
+
+model HiringRequest {
+  id             String               @id @default(cuid())
+  organizationId String
+  receiverId     String
+  status         HiringRequestStatus  @default(PENDING)
+  message        String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  type           HiringRequestType    @default(INVITATION)
+  organization   DeliveryOrganization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  receiver       User                 @relation("HiringRequestReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("hiring_requests")
+}
+
 enum UserRole {
   SUPER_ADMIN
   ADMIN
@@ -427,8 +498,6 @@ enum TransactionStatus {
   CANCELLED
 }
 
-// Add these new models after the existing ones
-
 enum DeliveryPaymentType {
   SALARY
   PER_DELIVERY
@@ -442,86 +511,17 @@ enum DeliveryStatus {
   IN_TRANSIT
   COMPLETED
   CANCELLED
+  REQUESTED
 }
 
-model DeliveryAssignment {
-  id              String            @id @default(cuid())
-  orderId         String            @unique
-  deliveryUserId  String
-  merchantId      String
-  assignedAt      DateTime          @default(now())
-  pickedUpAt      DateTime?
-  deliveryAddress String
-  deliveryFee     Decimal           @db.Decimal(10, 2)
-  paymentType     DeliveryPaymentType
-  instructions    String?
-  estimatedTime   Int?              // in minutes
-  status          DeliveryStatus    @default(ASSIGNED)
-  completedAt     DateTime?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-
-  // Relations
-  order        Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  deliveryUser User  @relation("DeliveryUser", fields: [deliveryUserId], references: [id])
-  merchant     User  @relation("HiredByMerchant", fields: [merchantId], references: [id])
-  payments     DeliveryPayment[]
-
-  @@map("delivery_assignments")
+enum HiringRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
 }
 
-model DeliveryPayment {
-  id                  String             @id @default(cuid())
-  deliveryAssignmentId String
-  deliveryUserId      String
-  merchantId         String
-  amount            Decimal            @db.Decimal(10, 2)
-  paymentType       DeliveryPaymentType
-  status             PaymentStatus      @default(PENDING)
-  baseAmount        Decimal?           @db.Decimal(10, 2) // For per-delivery calculations
-  distanceBonus     Decimal?           @db.Decimal(10, 2) // Distance-based bonus
-  weightBonus       Decimal?           @db.Decimal(10, 2) // Weight-based bonus
-  timeBonus         Decimal?           @db.Decimal(10, 2) // Time-based bonus
-  processedAt       DateTime?
-  notes             String?
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-
-  // Relations with proper relation names
-  assignment  DeliveryAssignment @relation(fields: [deliveryAssignmentId], references: [id])
-  deliveryUser User              @relation("DeliveryPayer", fields: [deliveryUserId], references: [id])
-  merchant    User              @relation("MerchantPayer", fields: [merchantId], references: [id])
-
-  @@map("delivery_payments")
-}
-
-model DeliveryProfile {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  fullName      String
-  vehicleDetail VehicleDetail[]
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("delivery_profiles")
-}
-
-model VehicleDetail {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  vehicleType   String
-  vehicleCapacity Int? 
-  perHourCapacityUnit  String   @default("per hour") // "per hour" or "per day"
-  perDayCapacityUnit  String   @default("per day") // "per hour" or "per day"
-  notes         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  deliveryProfileId String
-  deliveryProfile DeliveryProfile @relation(fields: [deliveryProfileId], references: [id])
-
-  @@map("vehicle_details")
+enum HiringRequestType {
+  INVITATION
+  APPLICATION
 }

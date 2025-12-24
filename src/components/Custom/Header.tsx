@@ -17,6 +17,7 @@ import {
   Home,
   Store,
   Mail,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -62,7 +63,7 @@ const Header = () => {
     { path: "/", label: "Home", icon: Home },
     { path: "/shop", label: "Shop", icon: Store },
     { path: "/merchants", label: "Merchants", icon: User },
-    { path: "/delivery", label: "Delivery", icon: Truck },
+    { path: "/delivery-dashboard", label: "Delivery", icon: Truck },
     { path: "/contact", label: "Contact", icon: Mail },
   ];
 
@@ -207,7 +208,11 @@ const Header = () => {
                 className="flex items-center space-x-2 hover:bg-gray-100"
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={randomProfileImage || "/placeholder.svg"} />
+                  <AvatarImage
+                    src={
+                      user?.avatar || randomProfileImage || "/placeholder.svg"
+                    }
+                  />
                   <AvatarFallback className="bg-blue-600 text-white text-sm">
                     {user.firstName || "Y"}
                     {user.lastName || "D"}
@@ -228,7 +233,11 @@ const Header = () => {
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-10 w-10">
                         <AvatarImage
-                          src={randomProfileImage || "/placeholder.svg"}
+                          src={
+                            user?.avatar ||
+                            randomProfileImage ||
+                            "/placeholder.svg"
+                          }
                         />
                         <AvatarFallback className="bg-blue-600 text-white">
                           {user?.firstName || "Y"}
@@ -355,16 +364,28 @@ const Header = () => {
                       <>
                         <div className="border-t border-gray-100 my-1"></div>
                         <Link
-                          to="/delivery"
+                          to="/delivery-dashboard"
                           onClick={() => setIsUserMenuOpen(false)}
                           className={`flex items-center space-x-3 px-4 py-2 text-sm ${
-                            isActivePath("/delivery")
+                            isActivePath("/delivery-dashboard")
                               ? "bg-gray-50 text-gray-900"
                               : "text-gray-700 hover:bg-gray-50"
                           }`}
                         >
                           <Truck className="h-4 w-4" />
                           <span>Delivery Dashboard</span>
+                        </Link>
+                        <Link
+                          to="/delivery-org"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-2 text-sm ${
+                            isActivePath("/delivery-org")
+                              ? "bg-gray-50 text-gray-900"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <Users className="h-4 w-4" />
+                          <span>My Organization</span>
                         </Link>
                       </>
                     )}
@@ -403,7 +424,9 @@ const Header = () => {
                 <div className="flex items-center space-x-3 px-4 py-3 bg-gray-50 rounded-md">
                   <Avatar className="h-10 w-10">
                     <AvatarImage
-                      src={randomProfileImage || "/placeholder.svg"}
+                      src={
+                        user?.avatar || randomProfileImage || "/placeholder.svg"
+                      }
                     />
                     <AvatarFallback className="bg-blue-600 text-white">
                       {user?.firstName?.[0] || user?.email?.[0] || "U"}
@@ -559,18 +582,32 @@ const Header = () => {
                   )}
 
                   {user?.role === "DELIVERY" && (
-                    <Link
-                      to="/delivery"
-                      onClick={() => setIsMenuOpen(false)}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
-                        isActivePath("/delivery")
-                          ? "bg-gray-100 text-gray-900 font-medium"
-                          : "text-gray-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <Truck className="h-5 w-5" />
-                      <span>Delivery Dashboard</span>
-                    </Link>
+                    <>
+                      <Link
+                        to="/delivery-dashboard"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                          isActivePath("/delivery-dashboard")
+                            ? "bg-gray-100 text-gray-900 font-medium"
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Truck className="h-5 w-5" />
+                        <span>Delivery Dashboard</span>
+                      </Link>
+                      <Link
+                        to="/delivery-org"
+                        onClick={() => setIsMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm ${
+                          isActivePath("/delivery-org")
+                            ? "bg-gray-100 text-gray-900 font-medium"
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        <Users className="h-5 w-5" />
+                        <span>My Organization</span>
+                      </Link>
+                    </>
                   )}
 
                   <button

@@ -3,12 +3,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useOrder } from "@/hooks/useOrders";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Truck } from "lucide-react";
+import { useState } from "react";
+import { DeliveryRequestDialog } from "@/components/Merchant/DeliveryRequestDialog";
 
 const MerchantOrderDetailsPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { data: order, isLoading, error } = useOrder(orderId as string);
+  const [isDeliveryDialogOpen, setIsDeliveryDialogOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -53,10 +56,28 @@ const MerchantOrderDetailsPage = () => {
   }
 
   return (
-    <OrderDetails
-      order={order}
-      onClose={() => navigate("/merchant-dashboard/orders")}
-    />
+    <>
+      <OrderDetails
+        order={order}
+        onClose={() => navigate("/merchant-dashboard/orders")}
+        actions={
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => setIsDeliveryDialogOpen(true)}
+          >
+            <Truck className="w-4 h-4 mr-2" />
+            Request Delivery
+          </Button>
+        }
+      />
+      <DeliveryRequestDialog
+        orderId={order.id}
+        isOpen={isDeliveryDialogOpen}
+        onClose={() => setIsDeliveryDialogOpen(false)}
+      />
+    </>
   );
 };
 

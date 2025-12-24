@@ -16,6 +16,8 @@ import adminRoutes from "./routes/admin";
 import merchantRoutes from "./routes/merchant";
 import reportRoutes from "./routes/reports";
 import wishlistRoutes from "./routes/wishlist";
+import deliveryRoutes from "./routes/delivery";
+import deliveryOrgRoutes from "./routes/delivery-org";
 
 import prisma from "./lib/prisma";
 
@@ -72,6 +74,8 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/merchant", merchantRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/delivery", deliveryRoutes);
+app.use("/api/delivery-org", deliveryOrgRoutes);
 // app.use("/api/wishlist", wishlistRoutes);
 
 // 404 handler

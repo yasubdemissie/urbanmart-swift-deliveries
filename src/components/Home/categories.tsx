@@ -14,7 +14,12 @@ export default function Categories() {
     { color: "from-green-500 to-emerald-500", icon: "🏡" },
     { color: "from-orange-500 to-amber-500", icon: "🏃" },
     { color: "from-purple-500 to-violet-500", icon: "📚" },
-    { color: "from-red-500 to-pink-500", icon: "💄" },
+    { color: "from-purple-500 to-violet-500", icon: "💄" },
+    { color: "from-blue-500 to-pink-500", icon: "👗" },
+    { color: "from-amber-500 to-orange-500", icon: "🏃" },
+    { color: "from-indigo-500 to-blue-500", icon: "📚" },
+    { color: "from-black to-white", icon: "🏃" },
+    // { color: "from-red-500 to-pink-500", icon: "🏃" },
   ];
 
   const categoriesData: CategoryWithIcon[] = categories?.map(

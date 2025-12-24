@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { UserRole } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -162,6 +163,60 @@ async function main() {
       slug: "home-garden",
       description: "Home improvement and garden supplies",
       sortOrder: 3,
+    },
+  });
+
+  const food = await prisma.category.create({
+    data: {
+      name: "Food & Beverage",
+      slug: "food-beverage",
+      description: "Food and beverage is eating and drinking supplies",
+      sortOrder: 4,
+    },
+  });
+
+  const health = await prisma.category.create({
+    data: {
+      name: "Health & Beauty",
+      slug: "health-beauty",
+      description: "Personal care, cosmetics, and health supplements",
+      sortOrder: 5,
+    },
+  });
+
+  const sports = await prisma.category.create({
+    data: {
+      name: "Sports & Outdoors",
+      slug: "sports-outdoors",
+      description: "Sporting goods and outdoor equipment",
+      sortOrder: 6,
+    },
+  });
+
+  const toys = await prisma.category.create({
+    data: {
+      name: "Toys & Games",
+      slug: "toys-games",
+      description: "Games, toys, and entertainment for children",
+      sortOrder: 7,
+    },
+  });
+
+  const books = await prisma.category.create({
+    data: {
+      name: "Books & Media",
+      slug: "books-media",
+      description: "Novels, textbooks, and digital media",
+      sortOrder: 8,
+    },
+  });
+
+  const automotive = await prisma.category.create({
+    data: {
+      name: "Automotive",
+      slug: "automotive",
+      description: "Car parts, accessories, and tools",
+      sortOrder: 9,
     },
   });
 

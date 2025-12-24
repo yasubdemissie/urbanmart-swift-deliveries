@@ -341,3 +341,46 @@ export function useAssignDelivery() {
     },
   });
 }
+
+// Hook for fetching delivery organizations (for merchants)
+export function useDeliveryOrganizations() {
+  return useQuery({
+    queryKey: ["delivery-organizations"],
+    queryFn: async () => {
+      const response = await apiClient.getDeliveryOrganizations();
+      return response.data;
+    },
+    staleTime: 15 * 60 * 1000, // 15 minutes
+  });
+}
+
+// Hook for requesting delivery from an organization (for merchants)
+export function useRequestDelivery() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      data,
+    }: {
+      orderId: string;
+      data: {
+        organizationId: string;
+        deliveryFee: number;
+        instructions?: string;
+      };
+    }) => apiClient.requestDelivery(orderId, data),
+    onSuccess: (_, variables) => {
+      // Invalidate and refetch merchant orders
+      queryClient.invalidateQueries({ queryKey: ["merchant-orders"] });
+      // Invalidate specific order
+      queryClient.invalidateQueries({
+        queryKey: ["merchant-order", variables.orderId],
+      });
+      // Invalidate order if used in useOrder hook
+      queryClient.invalidateQueries({
+        queryKey: ["order", variables.orderId],
+      });
+    },
+  });
+}

@@ -283,9 +283,7 @@ export interface WishlistItem {
 // API Response Types
 export interface ApiResponse<T> {
   success: boolean;
-  data?: {
-    [key: string]: T;
-  };
+  data: T;
   message?: string;
   error?: string;
 }
@@ -977,6 +975,19 @@ export const apiClient = {
     return response.json();
   },
 
+  async getMerchantLogo(): Promise<ApiResponse<{logo: string} | null>> {
+    const response = await fetch(`${API_BASE_URL}/merchant/logo`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchant logo");
+    }
+
+    return response.json();
+  },
+
   async getMerchantProducts(params?: {
     page?: number;
     limit?: number;
@@ -1344,6 +1355,41 @@ export const apiClient = {
 
     const responseData = await response.json();
     return responseData;
+  },
+
+  // Delivery Organizations
+  async getDeliveryOrganizations(): Promise<ApiResponse<any[]>> {
+    const response = await fetch(`${API_BASE_URL}/delivery-org`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch delivery organizations");
+    }
+
+    return response.json();
+  },
+
+  async requestDelivery(
+    orderId: string,
+    data: { organizationId: string; deliveryFee: number; instructions?: string }
+  ): Promise<ApiResponse<any>> {
+    const response = await fetch(
+      `${API_BASE_URL}/merchant/orders/${orderId}/request-delivery`,
+      {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data),
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to request delivery");
+    }
+
+    return response.json();
   },
 };
 
