@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useLogin, useRegister } from "@/hooks/useAuth";
 import type { ApiResponse, AuthResponse } from "@/lib/api";
+import { markAsVisited } from "@/lib/visitTracker";
 
 export type AuthFormMode = "signIn" | "signUp";
 
@@ -204,6 +205,7 @@ export const useAuthFormState = () => {
             location,
             avatarUrl: profileImageUrl || undefined,
           });
+          markAsVisited();
           toast.success("Account created successfully!");
           navigate("/");
           return;
@@ -214,6 +216,7 @@ export const useAuthFormState = () => {
           password: formData.password,
         });
 
+        markAsVisited();
         toast.success("Signed in successfully!");
 
         const apiResult = result as ApiResponse<AuthResponse>;

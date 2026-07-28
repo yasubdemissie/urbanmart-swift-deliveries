@@ -493,6 +493,72 @@ export const apiClient = {
     return data;
   },
 
+  async getFeaturedProducts(): Promise<
+    ApiResponse<{ products: Product[] }>
+  > {
+    const response = await fetch(`${API_BASE_URL}/products/featured`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch featured products");
+    }
+
+    return response.json();
+  },
+
+  async getSaleProducts(): Promise<ApiResponse<{ products: Product[] }>> {
+    const response = await fetch(`${API_BASE_URL}/products/sale/list`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch sale products");
+    }
+
+    return response.json();
+  },
+
+  async getWishlist(): Promise<WishlistItem[]> {
+    const response = await fetch(`${API_BASE_URL}/wishlist`, {
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch wishlist");
+    }
+
+    const data = await response.json();
+    return data.data ?? data;
+  },
+
+  async addToWishlist(productId: string): Promise<WishlistItem> {
+    const response = await fetch(`${API_BASE_URL}/wishlist`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ productId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to add to wishlist");
+    }
+
+    const data = await response.json();
+    return data.data ?? data;
+  },
+
+  async removeFromWishlist(productId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/wishlist/${productId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to remove from wishlist");
+    }
+  },
+
   async getProductReviews(productId: string): Promise<Review[]> {
     const response = await fetch(
       `${API_BASE_URL}/reviews/product/${productId}`
@@ -633,7 +699,8 @@ export const apiClient = {
       throw new Error(errorData.error || "Failed to add address");
     }
 
-    return response.json();
+    const data = await response.json();
+    return { success: true, data };
   },
 
   // Orders

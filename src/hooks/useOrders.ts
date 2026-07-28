@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient, Order, Pagination } from "@/lib/api";
+import { useIsAuthenticated } from "@/hooks/useAuth";
 
 export function useOrders() {
+  const { isAuthenticated } = useIsAuthenticated();
+
   return useQuery<{ orders: Order[]; pagination: Pagination }, Error>({
     queryKey: ["orders", "user"],
     queryFn: async () => {
@@ -13,7 +16,8 @@ export function useOrders() {
         };
       else return {} as { orders: Order[]; pagination: Pagination };
     },
-    staleTime: 0 * 60 * 1000, // 2 minutes
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
   });
 }
 

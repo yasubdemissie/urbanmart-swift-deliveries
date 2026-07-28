@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Filter, X, Sparkles } from "lucide-react";
+import { Grid, List, ChevronDown, X, SlidersHorizontal } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface Category {
   id: string;
@@ -16,6 +17,9 @@ interface ElegantFilterCardProps {
   onSortChange?: (sort: string) => void;
   selectedCategory?: string;
   sortBy?: string;
+  viewMode?: "grid" | "list";
+  onViewModeChange?: (mode: "grid" | "list") => void;
+  totalProducts?: number;
 }
 
 const ElegantFilterCard = ({
@@ -25,203 +29,135 @@ const ElegantFilterCard = ({
   onSortChange = () => {},
   selectedCategory = "all",
   sortBy = "featured",
+  viewMode = "grid",
+  onViewModeChange,
+  totalProducts = 0,
 }: ElegantFilterCardProps) => {
-  const [localSelectedCategory, setLocalSelectedCategory] =
-    useState(selectedCategory);
-  const [localSortBy, setLocalSortBy] = useState(sortBy);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [localCategory, setLocalCategory] = useState(selectedCategory);
+  const [localSort, setLocalSort] = useState(sortBy);
 
   useEffect(() => {
-    setLocalSelectedCategory(selectedCategory);
-    setLocalSortBy(sortBy);
+    setLocalCategory(selectedCategory);
+    setLocalSort(sortBy);
   }, [selectedCategory, sortBy]);
 
-
-  const handleCategoryChange = (value: string) => {
-    setLocalSelectedCategory(value);
-    onCategoryChange(value);
-    // Setting the Params the category value
-    const params = new URLSearchParams();
-    if (value) params.set("category", value);
-    window.history.replaceState({}, "", `?${params.toString()}`);
+  const handleCategorySelect = (slug: string) => {
+    setLocalCategory(slug);
+    onCategoryChange(slug);
   };
 
-  const handleSortChange = (value: string) => {
-    setLocalSortBy(value);
-    onSortChange(value);
-    // Setting the Params the sort value
-    const params = new URLSearchParams();
-    if (value) params.set("sort", value);
-    window.history.replaceState({}, "", `?${params.toString()}`);
+  const handleSortSelect = (sortVal: string) => {
+    setLocalSort(sortVal);
+    onSortChange(sortVal);
   };
 
-  const toggleFilters = () => {
-    console.log("[v0] Filter button clicked, current state:", isFiltersOpen);
-    setIsFiltersOpen(!isFiltersOpen);
-    console.log("[v0] Filter state will be:", !isFiltersOpen);
+  const resetFilters = () => {
+    handleCategorySelect("all");
+    handleSortSelect("featured");
   };
+
+  const isFiltered = localCategory !== "all" || localSort !== "featured";
 
   return (
-    <>
-      <div className="mb-6">
+    <div className="space-y-4 mb-6">
+      {/* Top Header Controls Line */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-slate-800">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white capitalize">
+            {localCategory === "all" ? "Shop All Products" : localCategory.replace(/-/g, " ")}
+          </h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Showing <span className="font-semibold text-slate-800 dark:text-slate-200">{totalProducts}</span> available items
+          </p>
+        </div>
+
+        {/* Right Controls: Sort & View Toggle */}
+        <div className="flex items-center gap-3">
+          {/* Minimalist Sort Dropdown */}
+          <div className="relative">
+            <select
+              value={localSort}
+              onChange={(e) => handleSortSelect(e.target.value)}
+              className="appearance-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-200 rounded-xl pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-xs"
+            >
+              <option value="featured">Sort: Featured</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="price-high">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+            </select>
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+          </div>
+
+          {/* View Toggle */}
+          {onViewModeChange && (
+            <div className="flex items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xs">
+              <button
+                onClick={() => onViewModeChange("grid")}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  viewMode === "grid"
+                    ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold"
+                    : "text-slate-400 hover:text-slate-600"
+                }`}
+                title="Grid View"
+              >
+                <Grid className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => onViewModeChange("list")}
+                className={`p-1.5 rounded-lg transition-colors ${
+                  viewMode === "list"
+                    ? "bg-slate-100 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-bold"
+                    : "text-slate-400 hover:text-slate-600"
+                }`}
+                title="List View"
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Clean Category Tabs Bar */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <button
-          onClick={toggleFilters}
-          className="group flex items-center gap-3 px-6 py-3 bg-white text-black border border-gray-200 rounded-2xl hover:shadow-sm transition-all duration-300 font-semibold hover:bg-gray-50/50 hover:border-gray-300"
+          onClick={() => handleCategorySelect("all")}
+          className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+            localCategory === "all"
+              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-sm"
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+          }`}
         >
-          <Filter className="h-5 w-5 group-hover:rotate-12 transition-transform duration-300" />
-          <span>Filters & Sort</span>
-          <Sparkles className="h-4 w-4 opacity-70" />
+          All Items
         </button>
-      </div>
 
-      {isFiltersOpen && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300"
-          onClick={() => {
-            console.log("[v0] Backdrop clicked, closing filters");
-            setIsFiltersOpen(false);
-          }}
-        />
-      )}
-
-      <div
-        className={`fixed z-50 transition-all duration-500 ease-out
-        
-        /* Mobile: Center modal */
-        top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-        w-[90vw] max-w-sm
-        bg-white rounded-3xl shadow-2xl
-        ${
-          isFiltersOpen
-            ? "opacity-100 scale-100"
-            : "opacity-0 scale-95 pointer-events-none"
-        }
-        
-        /* Desktop: Right slide-in panel */
-        md:top-0 md:left-auto md:right-0 md:translate-x-0 md:translate-y-0
-        md:h-full md:w-full md:max-w-md md:rounded-none md:rounded-l-3xl
-        ${
-          isFiltersOpen
-            ? "md:translate-x-0 md:opacity-100 md:scale-100 md:pointer-events-auto"
-            : "md:translate-x-full md:opacity-0 md:scale-100 md:pointer-events-none"
-        }
-        `}
-      >
-        <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-6 rounded-t-3xl md:rounded-none md:rounded-tl-3xl">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="">
-                <Filter className="h-5 w-5 text-white" />
-              </div>
-              <h3 className="text-xl font-bold text-white">Filter & Sort</h3>
-            </div>
+        {categories.map((cat) => {
+          const active = localCategory === cat.slug;
+          return (
             <button
-              title="Close filters"
-              type="button"
-              onClick={() => {
-                console.log("[v0] Close button clicked");
-                setIsFiltersOpen(false);
-              }}
-              className="p-2 hover:bg-white/20 rounded-xl transition-all duration-200 group"
+              key={cat.id}
+              onClick={() => handleCategorySelect(cat.slug)}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+                active
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+              }`}
             >
-              <X className="h-5 w-5 text-white group-hover:rotate-90 transition-transform duration-200" />
+              {cat.name}
             </button>
-          </div>
-        </div>
+          );
+        })}
 
-        <div className="p-6 space-y-8 max-h-[70vh] md:max-h-none md:h-full overflow-y-auto">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-6 bg-gradient-to-b from-indigo-500 to-purple-600 rounded-full"></div>
-              <label className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-                Category
-              </label>
-            </div>
-            <div className="relative group">
-              <select
-                title="Category"
-                value={localSelectedCategory}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full appearance-none bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-2xl px-5 py-4 text-gray-900 text-base font-medium focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-400 transition-all hover:border-indigo-300 cursor-pointer group-hover:shadow-md"
-                disabled={categoriesLoading}
-              >
-                <option value="all">🌟 All Categories</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.slug}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                <div className="w-6 h-6 bg-gradient-to-r from-black to-black/70 rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-3 h-3 text-white"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full"></div>
-              <label className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-                Sort by
-              </label>
-            </div>
-            <div className="relative group">
-              <select
-                title="Sort by"
-                value={localSortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="w-full appearance-none bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-2xl px-5 py-4 text-gray-900 text-base font-medium focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-400 transition-all hover:border-purple-300 cursor-pointer group-hover:shadow-md"
-              >
-                <option value="featured">✨ Featured</option>
-                <option value="price-low">💰 Price: Low to High</option>
-                <option value="price-high">💎 Price: High to Low</option>
-                <option value="rating">⭐ Highest Rated</option>
-              </select>
-              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none">
-                <div className="w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-                  <svg
-                    className="w-3 h-3 text-white"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* <div className="pt-6 border-t border-gray-100">
-            <button
-              onClick={() => {
-                console.log("[v0] Apply filters clicked");
-                setIsFiltersOpen(false);
-              }}
-              className="w-full bg-gradient-to-r from-gray-800 to-gray-900 text-white py-4 px-6 rounded-2xl font-bold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-2"
-            >
-              <Sparkles className="h-5 w-5" />
-              Apply Filters
-            </button>
-          </div> */}
-        </div>
+        {isFiltered && (
+          <button
+            onClick={resetFilters}
+            className="px-3 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1 ml-auto whitespace-nowrap"
+          >
+            <X className="h-3.5 w-3.5" /> Reset Filters
+          </button>
+        )}
       </div>
-    </>
+    </div>
   );
 };
 

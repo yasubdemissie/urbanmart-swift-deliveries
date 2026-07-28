@@ -76,7 +76,7 @@ app.use("/api/merchant", merchantRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/delivery", deliveryRoutes);
 app.use("/api/delivery-org", deliveryOrgRoutes);
-// app.use("/api/wishlist", wishlistRoutes);
+app.use("/api/wishlist", wishlistRoutes);
 
 // 404 handler
 app.use("*", (req, res) => {

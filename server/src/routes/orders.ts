@@ -150,9 +150,13 @@ router.post(
     try {
       const { shippingAddressId, billingAddressId, paymentMethod, notes } =
         req.body;
+      let storeId = req.body.storeId;
+
+      console.log("[Create Order] Received req.body:", req.body);
+      console.log("[Create Order] Extracted storeId:", storeId);
 
       // Get user's cart items
-      const cartItems = await prisma.cartItem.findMany({
+      let cartItems = await prisma.cartItem.findMany({
         where: { userId: req.user!.id },
         include: {
           product: {
@@ -168,7 +172,13 @@ router.post(
         },
       });
 
-      console.log("Cart items:", cartItems);
+      console.log("Cart items before filtering:", cartItems.length);
+
+      if (storeId) {
+        cartItems = cartItems.filter(item => item.product?.merchantStoreId === storeId);
+      }
+
+      console.log("Cart items after filtering:", cartItems.length);
 
       if (cartItems.length === 0) {
         return formatError(res, "Cart is empty", 400);
@@ -220,11 +230,10 @@ router.post(
 
       // Get merchant info safely
       let merchantId = null;
-      let storeId = null;
 
       if (cartItems.length > 0 && cartItems[0].product) {
         merchantId = cartItems[0].product.merchantStore?.merchantId || null;
-        storeId = cartItems[0].product.merchantStoreId || null;
+        storeId = cartItems[0].product.merchantStoreId || storeId || null;
       }
 
       console.log("Merchant info:", { merchantId, storeId });
@@ -320,9 +329,10 @@ router.post(
           }
         }
 
-        // Clear cart
+        // Clear cart for ordered items
+        const cartItemIds = cartItems.map(item => item.id);
         await tx.cartItem.deleteMany({
-          where: { userId: req.user!.id },
+          where: { id: { in: cartItemIds } },
         });
 
         return order;

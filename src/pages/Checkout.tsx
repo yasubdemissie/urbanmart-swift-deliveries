@@ -204,13 +204,13 @@ const Checkout = () => {
             isDefault: false,
           });
 
-      // Create order with address IDs and payment method
-      const orderData = {
-        shippingAddressId: shippingAddressData.id,
-        billingAddressId: billingAddressData.id,
+      const orderData: any = {
+        shippingAddressId: shippingAddressData.data.id,
+        billingAddressId: billingAddressData.data.id,
         paymentMethod:
           paymentMethod.type === "card" ? "CREDIT_CARD" : "CASH_ON_DELIVERY",
         notes: `Order from ${merchantGroup.merchantStore.name}`,
+        storeId: merchantGroup.merchantStore.id,
       };
 
       console.log("Creating order with data:", orderData);
@@ -227,7 +227,7 @@ const Checkout = () => {
       );
 
       // Navigate to order confirmation or tracking page
-      navigate(`/track?orderId=${order.id}`);
+      navigate(`/track?orderId=${order.data.id}`);
     } catch (error: unknown) {
       console.error("Order placement error:", error);
 

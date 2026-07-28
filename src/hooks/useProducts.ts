@@ -123,7 +123,13 @@ export const useFeaturedProducts = () => {
 export const useSaleProducts = () => {
   return useQuery({
     queryKey: productKeys.sale(),
-    queryFn: () => apiClient.getSaleProducts(),
+    queryFn: () =>
+      apiClient.getSaleProducts().then((res) => {
+        if (res.success) {
+          return res.data.products;
+        }
+        return [];
+      }),
     staleTime: 10 * 60 * 1000, // 10 minutes
   });
 };
