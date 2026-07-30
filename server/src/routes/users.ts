@@ -1,4 +1,5 @@
 import { Router, Response, Request } from "express";
+import { Prisma } from "@prisma/client";
 import prisma from "../lib/prisma";
 import {
   authenticateToken,
@@ -36,36 +37,62 @@ router.get(
     } catch (err) {
       res.status(500).json({ error: "Failed to fetch users" });
     }
-  }
+  },
 );
 
 // Get all merchants (all users - public)
 router.get("/merchants", async (req: Request, res: Response) => {
   try {
-    const { search } = req.query;
+    const { search, verified, sortBy } = req.query;
 
-    const where: any = { role: "MERCHANT" };
+    const filters: any[] = [{ role: "MERCHANT", isActive: true }];
+
     if (search) {
-      where.OR = [
-        { firstName: { contains: search as string, mode: "insensitive" } },
-        { lastName: { contains: search as string, mode: "insensitive" } },
-        { email: { contains: search as string, mode: "insensitive" } },
-        {
-          merchantStore: {
-            name: { contains: search as string, mode: "insensitive" },
+      filters.push({
+        OR: [
+          { firstName: { contains: search as string, mode: "insensitive" } },
+          { lastName: { contains: search as string, mode: "insensitive" } },
+          { email: { contains: search as string, mode: "insensitive" } },
+          { location: { contains: search as string, mode: "insensitive" } },
+          {
+            merchantStore: {
+              name: { contains: search as string, mode: "insensitive" },
+            },
           },
-        },
-      ];
+          {
+            merchantStore: {
+              description: { contains: search as string, mode: "insensitive" },
+            },
+          },
+        ],
+      });
     }
+
+    if (verified === "true" || verified === "verified") {
+      filters.push({ merchantStore: { isVerified: true } });
+    }
+
+    const where = filters.length === 1 ? filters[0] : { AND: filters };
+
+    const orderBy:
+      | Prisma.UserOrderByWithRelationInput
+      | Prisma.UserOrderByWithRelationInput[] =
+      sortBy === "name"
+        ? [{ firstName: "asc" as const }, { lastName: "asc" as const }]
+        : sortBy === "oldest"
+          ? { createdAt: "asc" as const }
+          : { createdAt: "desc" as const };
 
     const merchants = await prisma.user.findMany({
       where,
+      orderBy,
       select: {
         id: true,
         email: true,
         firstName: true,
         lastName: true,
         phone: true,
+        location: true,
         avatar: true,
         role: true,
         isActive: true,
@@ -87,12 +114,12 @@ router.get("/merchants", async (req: Request, res: Response) => {
               select: {
                 products: { where: { isActive: true } },
                 orders: true,
+                customers: true,
               },
             },
           },
         },
       },
-      orderBy: { createdAt: "desc" },
     });
 
     res.json(merchants);
@@ -109,10 +136,7 @@ router.get("/merchants/:id", async (req: Request, res: Response) => {
 
     const merchant = await prisma.user.findFirst({
       where: {
-        OR: [
-          { id: id, role: "MERCHANT" },
-          { merchantStore: { id: id } },
-        ],
+        OR: [{ id: id, role: "MERCHANT" }, { merchantStore: { id: id } }],
       },
       select: {
         id: true,
@@ -230,12 +254,21 @@ router.get(
     } catch (err) {
       return res.status(500).json({ error: "Failed to fetch user" });
     }
-  }
+  },
 );
 
 // Create a user (public, for registration)
 router.post("/", async (req: Request, res: Response) => {
-  const { email, password, firstName, lastName, phone, countryCode, location, avatarUrl } = req.body;
+  const {
+    email,
+    password,
+    firstName,
+    lastName,
+    phone,
+    countryCode,
+    location,
+    avatarUrl,
+  } = req.body;
   if (!email || !password)
     return res.status(400).json({ error: "Email and password required" });
   try {
@@ -275,8 +308,16 @@ router.patch(
     try {
       const userId = req.user!.id;
       // Frontend sends 'avatar' or 'avatarUrl', schema uses 'avatar'.
-      const { firstName, lastName, phone, countryCode, location, avatarUrl, avatar } = req.body;
-      
+      const {
+        firstName,
+        lastName,
+        phone,
+        countryCode,
+        location,
+        avatarUrl,
+        avatar,
+      } = req.body;
+
       const finalAvatar = avatar || avatarUrl;
 
       const updatedUser = await prisma.user.update({
@@ -295,7 +336,7 @@ router.patch(
       console.error("Profile update error:", err);
       return res.status(500).json({ error: "Failed to update profile" });
     }
-  }
+  },
 );
 
 // Update a user (admin or self)
@@ -309,8 +350,17 @@ router.put(
     }
     // Frontend sends 'avatar' or 'avatarUrl', schema uses 'avatar'.
     // We'll normalize to 'avatar'
-    const { firstName, lastName, phone, countryCode, location, avatarUrl, avatar, isActive } = req.body;
-    
+    const {
+      firstName,
+      lastName,
+      phone,
+      countryCode,
+      location,
+      avatarUrl,
+      avatar,
+      isActive,
+    } = req.body;
+
     // Choose specific avatar field
     const finalAvatar = avatar || avatarUrl;
 
@@ -331,7 +381,7 @@ router.put(
     } catch (err) {
       return res.status(500).json({ error: "Failed to update user" });
     }
-  }
+  },
 );
 
 router.patch(
@@ -362,7 +412,9 @@ router.patch(
 
           const storeData = {
             name: merchantData.shopName,
-            description: merchantData.description || `Business Type: ${merchantData.businessType}`,
+            description:
+              merchantData.description ||
+              `Business Type: ${merchantData.businessType}`,
             logo: merchantData.logo,
             address: merchantData.address,
             // Assuming businessType goes into description for now as per previous logic, or just ignored if no field.
@@ -377,107 +429,121 @@ router.patch(
             await tx.merchantStore.create({
               data: {
                 merchantId: userId,
-                ...storeData
+                ...storeData,
               },
             });
           } else {
-             await tx.merchantStore.update({
-               where: { merchantId: userId },
-               data: storeData
-             })
+            await tx.merchantStore.update({
+              where: { merchantId: userId },
+              data: storeData,
+            });
           }
         }
 
         // 3. If Delivery, create/update profile and vehicle details
         if (role === "DELIVERY") {
-           // We expect fullName, vehicleType, capacity, capacityUnit, notes
-           if (!deliveryData?.fullName || !deliveryData?.vehicleType || !deliveryData?.capacity) {
-             throw new Error("Missing delivery details");
-           }
-           
-           // Helper to process VehicleDetail
-           // Since VehicleDetail has a UNIQUE constraint on userId (from schema: userId String @unique),
-           // we can effectively treat it 1-to-1 for this user's profile context,
-           // OR we link it to deliveryProfileId.
-           // Schema: VehicleDetail -> deliveryProfileId (DeliveryProfile)
-           // VehicleDetail ALSO has userId @unique.
-           
-           const profileData = {
-             fullName: deliveryData.fullName,
-             notes: deliveryData.notes,
-           };
+          // We expect fullName, vehicleType, capacity, capacityUnit, notes
+          if (
+            !deliveryData?.fullName ||
+            !deliveryData?.vehicleType ||
+            !deliveryData?.capacity
+          ) {
+            throw new Error("Missing delivery details");
+          }
 
-           // Handle DeliveryProfile
-           let profile = await tx.deliveryProfile.findUnique({
-             where: { userId: userId },
-           });
+          // Helper to process VehicleDetail
+          // Since VehicleDetail has a UNIQUE constraint on userId (from schema: userId String @unique),
+          // we can effectively treat it 1-to-1 for this user's profile context,
+          // OR we link it to deliveryProfileId.
+          // Schema: VehicleDetail -> deliveryProfileId (DeliveryProfile)
+          // VehicleDetail ALSO has userId @unique.
 
-           if (!profile) {
-             profile = await tx.deliveryProfile.create({
-               data: {
-                 userId: userId,
-                 fullName: deliveryData.fullName,
-                 notes: deliveryData.notes,
-               }
-             });
-           } else {
-             profile = await tx.deliveryProfile.update({
-               where: { userId: userId },
-               data: profileData
-             });
-           }
+          const profileData = {
+            fullName: deliveryData.fullName,
+            notes: deliveryData.notes,
+          };
 
-           // Handle VehicleDetail
-           // We need to upsert. Since userId is unique in VehicleDetail, we can use that for upsert logic.
-           // Note: schema allows multiple vehicles per profile (VehicleDetail[]), BUT userId is @unique on VehicleDetail? 
-           // schema.prisma: userId String @unique inside VehicleDetail. This implies 1 vehicle per user? 
-           // That seems contradictory to VehicleDetail[] on DeliveryProfile but consistent with "One active vehicle" maybe.
-           // Let's assume 1 vehicle per user for now based on that unique constraint.
-           
-           const capacityInt = parseInt(deliveryData.capacity, 10) || 0;
+          // Handle DeliveryProfile
+          let profile = await tx.deliveryProfile.findUnique({
+            where: { userId: userId },
+          });
 
-           const existingVehicle = await tx.vehicleDetail.findUnique({
-             where: { userId: userId }
-           });
+          if (!profile) {
+            profile = await tx.deliveryProfile.create({
+              data: {
+                userId: userId,
+                fullName: deliveryData.fullName,
+                notes: deliveryData.notes,
+              },
+            });
+          } else {
+            profile = await tx.deliveryProfile.update({
+              where: { userId: userId },
+              data: profileData,
+            });
+          }
 
-           if (existingVehicle) {
-             await tx.vehicleDetail.update({
-               where: { userId: userId },
-               data: {
-                  vehicleType: deliveryData.vehicleType,
-                  vehicleCapacity: capacityInt,
-                  // capacityUnit logic: schema has perHourCapacityUnit and perDayCapacityUnit default string
-                  // We'll map the incoming `capacityUnit` to ONE of them or assume a generic one?
-                  // Providing valid defaults.
-                  perHourCapacityUnit: deliveryData.capacityUnit === 'per hour' ? 'per hour' : 'per hour', 
-                  perDayCapacityUnit: deliveryData.capacityUnit === 'per day' ? 'per day' : 'per day',
-                  // Ideally we store the unit used. Schema is a bit specific. 
-                  // Let's just update vehicleType etc.
-               }
-             });
-           } else {
-             await tx.vehicleDetail.create({
-               data: {
-                 userId: userId,
-                 deliveryProfileId: profile.id,
-                 vehicleType: deliveryData.vehicleType,
-                 vehicleCapacity: capacityInt,
-                 perHourCapacityUnit: deliveryData.capacityUnit === 'per hour' ? 'per hour' : 'per hour',
-               }
-             })
-           }
+          // Handle VehicleDetail
+          // We need to upsert. Since userId is unique in VehicleDetail, we can use that for upsert logic.
+          // Note: schema allows multiple vehicles per profile (VehicleDetail[]), BUT userId is @unique on VehicleDetail?
+          // schema.prisma: userId String @unique inside VehicleDetail. This implies 1 vehicle per user?
+          // That seems contradictory to VehicleDetail[] on DeliveryProfile but consistent with "One active vehicle" maybe.
+          // Let's assume 1 vehicle per user for now based on that unique constraint.
+
+          const capacityInt = parseInt(deliveryData.capacity, 10) || 0;
+
+          const existingVehicle = await tx.vehicleDetail.findUnique({
+            where: { userId: userId },
+          });
+
+          if (existingVehicle) {
+            await tx.vehicleDetail.update({
+              where: { userId: userId },
+              data: {
+                vehicleType: deliveryData.vehicleType,
+                vehicleCapacity: capacityInt,
+                // capacityUnit logic: schema has perHourCapacityUnit and perDayCapacityUnit default string
+                // We'll map the incoming `capacityUnit` to ONE of them or assume a generic one?
+                // Providing valid defaults.
+                perHourCapacityUnit:
+                  deliveryData.capacityUnit === "per hour"
+                    ? "per hour"
+                    : "per hour",
+                perDayCapacityUnit:
+                  deliveryData.capacityUnit === "per day"
+                    ? "per day"
+                    : "per day",
+                // Ideally we store the unit used. Schema is a bit specific.
+                // Let's just update vehicleType etc.
+              },
+            });
+          } else {
+            await tx.vehicleDetail.create({
+              data: {
+                userId: userId,
+                deliveryProfileId: profile.id,
+                vehicleType: deliveryData.vehicleType,
+                vehicleCapacity: capacityInt,
+                perHourCapacityUnit:
+                  deliveryData.capacityUnit === "per hour"
+                    ? "per hour"
+                    : "per hour",
+              },
+            });
+          }
         }
 
         return updatedUser;
       });
 
       return res.json({ success: true, user: result });
-
     } catch (err: any) {
       console.error("Role update error: ", err);
-      return res.status(400).json({ error: err.message || "Failed to update role" });
+      return res
+        .status(400)
+        .json({ error: err.message || "Failed to update role" });
     }
-  }
+  },
 );
 
 // Delete a user (admin or self)
@@ -495,7 +561,7 @@ router.delete(
     } catch (err) {
       return res.status(500).json({ error: "Failed to delete user" });
     }
-  }
+  },
 );
 
 // Address endpoints
@@ -625,7 +691,7 @@ router.put(
       console.error("Update address error:", err);
       return res.status(500).json({ error: "Failed to update address" });
     }
-  }
+  },
 );
 
 // Delete address
@@ -654,7 +720,7 @@ router.delete(
       console.error("Delete address error:", err);
       return res.status(500).json({ error: "Failed to delete address" });
     }
-  }
+  },
 );
 
 export default router;

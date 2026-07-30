@@ -1,61 +1,121 @@
 import { useState } from "react";
 import Header from "@/components/Custom/Header";
 import MerchantList from "@/components/Home/merchantList";
-import { Search, Store, ShieldCheck, Truck, Star } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Search, ShieldCheck, ArrowUpDown, X } from "lucide-react";
+
+type MerchantSort = "newest" | "oldest" | "name";
 
 export default function Merchants() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortBy, setSortBy] = useState<MerchantSort>("newest");
+
+  const hasActiveFilters =
+    searchQuery.trim().length > 0 || verifiedOnly || sortBy !== "newest";
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_38%,#f8fafc_100%)] text-foreground flex flex-col">
       <Header />
 
-      {/* Hero Header */}
-      <section className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-background border-b border-border/50 py-12 px-4 md:px-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto flex flex-col items-center text-center space-y-6 relative z-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider">
-            <Store className="w-3.5 h-3.5" /> Direct From Sellers
+      <main className="flex-1">
+        <section className="border-b border-border/60 bg-background/80 backdrop-blur-sm">
+          <div className="mx-auto w-full max-w-7xl px-4 py-5 md:px-8 md:py-6">
+            <div className="grid gap-3 rounded-3xl border border-border/70 bg-card/90 p-3 shadow-sm md:grid-cols-[1fr_auto] md:items-center md:p-4">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search merchants"
+                  className="h-11 rounded-2xl border-border/70 bg-background pl-11 pr-4 text-sm shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-product-accent/40"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={!verifiedOnly ? "default" : "outline"}
+                  className={
+                    !verifiedOnly
+                      ? "rounded-full border-0 bg-gradient-to-r from-product-accent to-product-accent/90 px-4 text-product-accent-foreground shadow-sm hover:from-product-accent/90 hover:to-product-accent/80"
+                      : "rounded-full border-product-accent/30 bg-background px-4 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                  }
+                  onClick={() => setVerifiedOnly(false)}
+                >
+                  All
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={verifiedOnly ? "default" : "outline"}
+                  className={
+                    verifiedOnly
+                      ? "rounded-full border-0 bg-gradient-to-r from-product-accent to-product-accent/90 px-4 text-product-accent-foreground shadow-sm hover:from-product-accent/90 hover:to-product-accent/80"
+                      : "rounded-full border-product-accent/30 bg-background px-4 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                  }
+                  onClick={() => setVerifiedOnly(true)}
+                >
+                  <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
+                  Verified
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={sortBy === "newest" ? "default" : "outline"}
+                  className={
+                    sortBy === "newest"
+                      ? "rounded-full border-0 bg-gradient-to-r from-product-accent to-product-accent/90 px-4 text-product-accent-foreground shadow-sm hover:from-product-accent/90 hover:to-product-accent/80"
+                      : "rounded-full border-product-accent/30 bg-background px-4 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                  }
+                  onClick={() => setSortBy("newest")}
+                >
+                  <ArrowUpDown className="mr-1.5 h-3.5 w-3.5" />
+                  Newest
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={sortBy === "name" ? "default" : "outline"}
+                  className={
+                    sortBy === "name"
+                      ? "rounded-full border-0 bg-gradient-to-r from-product-accent to-product-accent/90 px-4 text-product-accent-foreground shadow-sm hover:from-product-accent/90 hover:to-product-accent/80"
+                      : "rounded-full border-product-accent/30 bg-background px-4 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                  }
+                  onClick={() => setSortBy("name")}
+                >
+                  A-Z
+                </Button>
+                {hasActiveFilters ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="rounded-full px-3 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setVerifiedOnly(false);
+                      setSortBy("newest");
+                    }}
+                  >
+                    <X className="mr-1.5 h-3.5 w-3.5" />
+                    Reset
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           </div>
+        </section>
 
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-foreground via-foreground/90 to-muted-foreground bg-clip-text text-transparent">
-            Discover Verified Merchants
-          </h1>
-
-          <p className="max-w-2xl text-muted-foreground text-base md:text-lg">
-            Shop directly from trusted local stores, brands, and boutique sellers with fast & secure delivery.
-          </p>
-
-          {/* Search Box */}
-          <div className="w-full max-w-xl relative mt-2 shadow-lg rounded-xl overflow-hidden">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground h-5 w-5" />
-            <Input
-              type="text"
-              placeholder="Search merchants by store name or seller..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-4 py-6 text-base bg-card border-border/60 focus-visible:ring-primary shadow-inner rounded-xl"
-            />
-          </div>
-
-          {/* Features Badges */}
-          <div className="flex flex-wrap items-center justify-center gap-6 text-xs md:text-sm text-muted-foreground pt-4">
-            <span className="flex items-center gap-1.5 font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" /> Verified Businesses
-            </span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <Truck className="w-4 h-4 text-blue-500" /> Swift Local Delivery
-            </span>
-            <span className="flex items-center gap-1.5 font-medium">
-              <Star className="w-4 h-4 text-amber-500 fill-amber-500" /> Top Rated Stores
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto w-full px-4 md:px-8 py-10 flex-1">
-        <MerchantList searchQuery={searchQuery} />
+        <section className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 md:px-8 md:py-10">
+          <MerchantList
+            searchQuery={searchQuery}
+            verifiedOnly={verifiedOnly}
+            sortBy={sortBy}
+          />
+        </section>
       </main>
     </div>
   );

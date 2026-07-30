@@ -1,10 +1,15 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Store, Star, Package, CheckCircle2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import {
+  Store,
+  Package,
+  CheckCircle2,
+  MapPin,
+  Users,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { User as UserType } from "@/lib/api";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
 
 interface MerchantCardProps {
   merchant: UserType;
@@ -12,101 +17,143 @@ interface MerchantCardProps {
 }
 
 export function MerchantCard({ merchant, index }: MerchantCardProps) {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isFollowing, setIsFollowing] = useState(false);
-
-  const storeName = merchant.merchantStore?.name || `${merchant.firstName || 'Merchant'}'s Store`;
-  const storeDesc = merchant.merchantStore?.description || "Quality products and fast, reliable delivery.";
-  const logoUrl = merchant.merchantStore?.logo || merchant.avatar || `https://api.dicebear.com/7.x/shapes/svg?seed=${merchant.id}`;
-  const productCount = (merchant.merchantStore as any)?._count?.products ?? 0;
-  const isVerified = merchant.merchantStore?.isVerified ?? true;
-
-  const handleFollowToggle = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsFollowing(!isFollowing);
-    toast({
-      title: !isFollowing ? `Following ${storeName}` : `Unfollowed ${storeName}`,
-      description: !isFollowing ? "You will receive updates from this merchant." : undefined,
-    });
-  };
+  const storeName =
+    merchant.merchantStore?.name ||
+    `${merchant.firstName || "Merchant"}'s Store`;
+  const storeDesc =
+    merchant.merchantStore?.description ||
+    "Quality products and fast, reliable delivery.";
+  const logoUrl =
+    merchant.merchantStore?.logo ||
+    merchant.avatar ||
+    `https://api.dicebear.com/7.x/shapes/svg?seed=${merchant.id}`;
+  const productCount = merchant.merchantStore?._count?.products ?? 0;
+  const orderCount = merchant.merchantStore?._count?.orders ?? 0;
+  const customerCount = merchant.merchantStore?._count?.customers ?? 0;
+  const isVerified = merchant.merchantStore?.isVerified ?? false;
+  const storeLocation =
+    merchant.merchantStore?.address ||
+    merchant.location ||
+    "Store details available on request";
+  const storeBanner = merchant.merchantStore?.banner;
+  const isActive = merchant.isActive ?? true;
 
   return (
-    <div className="group flex flex-col items-center gap-4 py-5 px-1 rounded-2xl bg-card border border-border/60 hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-      <Link
-        to={`/merchant/${merchant.id}`}
-        className="flex flex-col items-center gap-4 w-full"
-      >
-        <div className="relative">
-          <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary/10 to-primary/5 p-1 ring-4 ring-background shadow-md group-hover:ring-primary/30 transition-all duration-300 overflow-hidden">
+    <div className="group overflow-hidden rounded-3xl border border-border/70 bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl">
+      <Link to={`/merchant/${merchant.id}`} className="block">
+        <div className="relative h-32 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700">
+          {storeBanner ? (
             <img
-              src={logoUrl}
+              src={storeBanner}
               alt={storeName}
-              className="w-full h-full object-cover rounded-full group-hover:scale-105 transition-transform duration-300"
+              className="absolute inset-0 h-full w-full object-cover opacity-85 transition-transform duration-500 group-hover:scale-105"
               onError={(e) => {
-                (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${merchant.id}`;
+                (e.target as HTMLImageElement).style.display = "none";
               }}
             />
+          ) : null}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+
+          <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+            <div className="flex flex-wrap gap-2">
+              {isVerified ? (
+                <Badge className="rounded-full border-0 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/15">
+                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" />
+                  Verified
+                </Badge>
+              ) : (
+                <Badge
+                  variant="secondary"
+                  className="rounded-full bg-white/10 text-white hover:bg-white/10"
+                >
+                  Not verified
+                </Badge>
+              )}
+              <Badge
+                variant="secondary"
+                className="rounded-full bg-white/10 text-white hover:bg-white/10"
+              >
+                {isActive ? "Open store" : "Inactive"}
+              </Badge>
+            </div>
           </div>
-          <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-2 shadow-lg group-hover:scale-110 transition-transform duration-300">
-            <Store className="h-4 w-4" />
+
+          <div className="absolute -bottom-10 left-4">
+            <div className="rounded-2xl border-4 border-background bg-background p-1 shadow-xl">
+              <img
+                src={logoUrl}
+                alt={storeName}
+                className="h-20 w-20 rounded-xl object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    `https://api.dicebear.com/7.x/identicon/svg?seed=${merchant.id}`;
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col w-full px-5 gap-3 text-center">
-          <div className="flex flex-col items-center gap-1">
-            <div className="flex items-center gap-1.5 justify-center">
-              <h3 className="text-lg font-bold text-foreground truncate max-w-[200px] group-hover:text-primary transition-colors">
-                {storeName}
-              </h3>
-              {isVerified && (
-                <CheckCircle2 className="h-4 w-4 text-blue-500 shrink-0" title="Verified Merchant" />
-              )}
+        <div className="px-4 pb-4 pt-12">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-lg font-semibold tracking-tight text-foreground group-hover:text-primary">
+                  {storeName}
+                </h3>
+                {isVerified ? (
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
+                ) : null}
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {merchant.firstName} {merchant.lastName}
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground font-medium">
-              by {merchant.firstName} {merchant.lastName}
-            </p>
+            <div className="rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground">
+              #{index + 1}
+            </div>
           </div>
 
-          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-h-[32px]">
+          <p className="line-clamp-2 min-h-[40px] text-sm leading-6 text-muted-foreground">
             {storeDesc}
           </p>
 
-          <div className="flex items-center justify-between w-full pt-3 border-t border-border/40 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1 font-medium">
-              <Package className="w-3.5 h-3.5 text-primary" />
-              <span>{productCount} Products</span>
-            </span>
-            <div className="flex items-center gap-1 font-semibold text-foreground bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded border border-amber-200/50">
-              <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              <span>4.8</span>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-3 text-center">
+              <Package className="mx-auto mb-1 h-4 w-4 text-primary" />
+              <div className="text-sm font-semibold text-foreground">
+                {productCount}
+              </div>
+              <div className="text-[11px] text-muted-foreground">Products</div>
             </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-3 text-center">
+              <Users className="mx-auto mb-1 h-4 w-4 text-primary" />
+              <div className="text-sm font-semibold text-foreground">
+                {customerCount}
+              </div>
+              <div className="text-[11px] text-muted-foreground">Customers</div>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-3 text-center">
+              <Store className="mx-auto mb-1 h-4 w-4 text-primary" />
+              <div className="text-sm font-semibold text-foreground">
+                {orderCount}
+              </div>
+              <div className="text-[11px] text-muted-foreground">Orders</div>
+            </div>
+          </div>
+
+          <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">{storeLocation}</span>
           </div>
         </div>
       </Link>
 
-      <div className="flex flex-row items-center justify-between w-full px-5 gap-2.5 pt-1">
-        <Button
-          onClick={handleFollowToggle}
-          className={`flex-1 text-xs gap-1.5 transition-all duration-300 ${
-            isFollowing 
-              ? "bg-muted text-muted-foreground hover:bg-muted/80" 
-              : "hover:bg-primary/10 hover:text-primary"
-          }`}
-          variant={isFollowing ? "secondary" : "outline"}
-          size="sm"
-        >
-          {isFollowing ? "Following" : "Follow"}
-        </Button>
-        <Button
-          onClick={() => navigate(`/merchant/${merchant.id}`)}
-          className="flex-1 text-xs gap-1.5 shadow-sm"
-          variant="default"
-          size="sm"
-        >
-          <Store className="h-3.5 w-3.5" />
-          <span>View Store</span>
+      <div className="px-4 pb-4">
+        <Button asChild className="w-full rounded-2xl gap-2 shadow-sm">
+          <Link to={`/merchant/${merchant.id}`}>
+            View store
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </Button>
       </div>
     </div>

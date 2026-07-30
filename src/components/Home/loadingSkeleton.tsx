@@ -12,56 +12,47 @@ export function MerchantListSkeleton({
 }: MerchantListSkeletonProps) {
   if (variant === "grid") {
     return (
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-10 w-24 rounded-full" />
-        </div>
-
-        {/* Grid Layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {Array.from({ length: count }).map((_, i) => (
-            <Card key={i} className="group">
-              <CardContent className="p-6">
-                <div className="flex flex-col items-center gap-4">
-                  {/* Avatar */}
-                  <div className="relative">
-                    <Skeleton className="w-32 h-32 rounded-full" />
-                    <div className="absolute -bottom-2 -right-2">
-                      <Skeleton className="w-8 h-8 rounded-full" />
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex flex-col w-full space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Skeleton className="h-5 flex-1" />
-                      <Skeleton className="h-4 w-12 ml-auto" />
-                    </div>
-                    <Skeleton className="h-4 w-3/4" />
-
-                    {/* Rating */}
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: 5 }).map((_, j) => (
-                        <Skeleton key={j} className="h-3 w-3" />
-                      ))}
-                      <Skeleton className="h-3 w-8 ml-1" />
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Skeleton className="h-3 w-3" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                  </div>
-
-                  {/* Button */}
-                  <Skeleton className="h-10 w-full rounded-xl" />
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: count }).map((_, index) => (
+          <Card key={index} className="overflow-hidden rounded-3xl border-border/70">
+            <CardContent className="p-0">
+              <div className="relative h-32 overflow-hidden bg-muted">
+                <Skeleton className="h-full w-full rounded-none" />
+                <div className="absolute left-4 top-4 flex gap-2">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-16 rounded-full" />
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                <div className="absolute -bottom-10 left-4">
+                  <Skeleton className="h-20 w-20 rounded-2xl border-4 border-background" />
+                </div>
+              </div>
+
+              <div className="px-4 pb-4 pt-12">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                  <Skeleton className="h-6 w-10 rounded-full" />
+                </div>
+
+                <Skeleton className="mt-4 h-10 w-full" />
+
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  {Array.from({ length: 3 }).map((_, metricIndex) => (
+                    <Skeleton key={metricIndex} className="h-24 rounded-2xl" />
+                  ))}
+                </div>
+
+                <Skeleton className="mt-4 h-4 w-3/4" />
+              </div>
+
+              <div className="px-4 pb-4">
+                <Skeleton className="h-11 w-full rounded-2xl" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
@@ -69,8 +60,7 @@ export function MerchantListSkeleton({
   if (variant === "table") {
     return (
       <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border rounded-lg">
+        <div className="flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center space-x-4">
             <Skeleton className="h-6 w-40" />
             <Skeleton className="h-4 w-16 rounded-full" />
@@ -80,17 +70,13 @@ export function MerchantListSkeleton({
           </div>
         </div>
 
-        {/* Table Body */}
         <div className="space-y-2">
-          {Array.from({ length: count }).map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center space-x-4 p-4 border rounded-lg"
-            >
+          {Array.from({ length: count }).map((_, index) => (
+            <div key={index} className="flex items-center space-x-4 rounded-lg border p-4">
               <Skeleton className="h-12 w-12 rounded-full" />
 
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <div className="space-y-1">
                     <Skeleton className="h-5 w-48" />
                     <Skeleton className="h-3 w-32" />
@@ -100,10 +86,10 @@ export function MerchantListSkeleton({
 
                 <div className="flex items-center space-x-6">
                   <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, j) => (
-                      <Skeleton key={j} className="h-3 w-3" />
+                    {Array.from({ length: 5 }).map((_, ratingIndex) => (
+                      <Skeleton key={ratingIndex} className="h-3 w-3" />
                     ))}
-                    <Skeleton className="h-3 w-8 ml-1" />
+                    <Skeleton className="ml-1 h-3 w-8" />
                   </div>
 
                   <div className="flex items-center gap-1">

@@ -12,12 +12,19 @@ export interface User {
   firstName: string;
   lastName: string;
   phone?: string;
+  location?: string;
   avatar?: string;
   role: "SUPER_ADMIN" | "ADMIN" | "MERCHANT" | "CUSTOMER" | "DELIVERY";
   isActive?: boolean;
   createdAt: string;
   updatedAt: string;
   merchantStore?: MerchantStore;
+}
+
+export interface MerchantStoreCounts {
+  products: number;
+  orders: number;
+  customers: number;
 }
 
 export interface MerchantStore {
@@ -38,6 +45,7 @@ export interface MerchantStore {
   merchant?: User;
   products?: Product[];
   orders?: Order[];
+  _count?: MerchantStoreCounts;
 }
 
 export interface MerchantCustomer {
@@ -350,7 +358,7 @@ const getAuthHeaders = () => {
 export const apiClient = {
   // Auth
   async login(
-    credentials: LoginCredentials
+    credentials: LoginCredentials,
   ): Promise<ApiResponse<AuthResponse>> {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
       method: "POST",
@@ -435,7 +443,11 @@ export const apiClient = {
   // Role Request
   async requestRoleChange(data: {
     role: "MERCHANT" | "DELIVERY" | "CUSTOMER";
-    merchantData?: { shopName: string; businessType: string; description?: string };
+    merchantData?: {
+      shopName: string;
+      businessType: string;
+      description?: string;
+    };
     deliveryData?: any;
   }): Promise<{ success: true; user: User }> {
     const response = await fetch(`${API_BASE_URL}/users/role`, {
@@ -446,7 +458,9 @@ export const apiClient = {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to submit role change request");
+      throw new Error(
+        errorData.error || "Failed to submit role change request",
+      );
     }
 
     return response.json();
@@ -493,9 +507,7 @@ export const apiClient = {
     return data;
   },
 
-  async getFeaturedProducts(): Promise<
-    ApiResponse<{ products: Product[] }>
-  > {
+  async getFeaturedProducts(): Promise<ApiResponse<{ products: Product[] }>> {
     const response = await fetch(`${API_BASE_URL}/products/featured`);
 
     if (!response.ok) {
@@ -561,7 +573,7 @@ export const apiClient = {
 
   async getProductReviews(productId: string): Promise<Review[]> {
     const response = await fetch(
-      `${API_BASE_URL}/reviews/product/${productId}`
+      `${API_BASE_URL}/reviews/product/${productId}`,
     );
 
     if (!response.ok) {
@@ -758,7 +770,7 @@ export const apiClient = {
 
   async updateOrderStatus(
     id: string,
-    status: Order["status"]
+    status: Order["status"],
   ): Promise<ApiResponse<Order>> {
     const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
       method: "PATCH",
@@ -775,19 +787,19 @@ export const apiClient = {
   },
 
   async getOrderStatusHistory(
-    orderId: string
+    orderId: string,
   ): Promise<ApiResponse<OrderStatusHistory[]>> {
     const response = await fetch(
       `${API_BASE_URL}/orders/${orderId}/status-history`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.error || "Failed to fetch order status history"
+        errorData.error || "Failed to fetch order status history",
       );
     }
 
@@ -824,7 +836,7 @@ export const apiClient = {
       `${API_BASE_URL}/admin/users?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -835,9 +847,24 @@ export const apiClient = {
     return response.json();
   },
 
-  async getMerchants(search?: string): Promise<User[]> {
-    const url = search
-      ? `${API_BASE_URL}/users/merchants?search=${encodeURIComponent(search)}`
+  async getMerchants(params?: {
+    search?: string;
+    verified?: "all" | "verified";
+    sortBy?: "newest" | "oldest" | "name";
+  }): Promise<User[]> {
+    const searchParams = new URLSearchParams();
+
+    if (params?.search) searchParams.append("search", params.search);
+    if (params?.verified && params.verified !== "all") {
+      searchParams.append("verified", params.verified);
+    }
+    if (params?.sortBy && params.sortBy !== "newest") {
+      searchParams.append("sortBy", params.sortBy);
+    }
+
+    const queryString = searchParams.toString();
+    const url = queryString
+      ? `${API_BASE_URL}/users/merchants?${queryString}`
       : `${API_BASE_URL}/users/merchants`;
 
     const response = await fetch(url, {
@@ -885,7 +912,7 @@ export const apiClient = {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ isActive }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -914,7 +941,7 @@ export const apiClient = {
       `${API_BASE_URL}/admin/reports?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -927,7 +954,7 @@ export const apiClient = {
 
   async assignReport(
     reportId: string,
-    assignedAdminId: string
+    assignedAdminId: string,
   ): Promise<Report> {
     const response = await fetch(
       `${API_BASE_URL}/admin/reports/${reportId}/assign`,
@@ -935,7 +962,7 @@ export const apiClient = {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ assignedAdminId }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -948,7 +975,7 @@ export const apiClient = {
 
   async updateReportStatus(
     reportId: string,
-    status: Report["status"]
+    status: Report["status"],
   ): Promise<Report> {
     const response = await fetch(
       `${API_BASE_URL}/admin/reports/${reportId}/status`,
@@ -956,7 +983,7 @@ export const apiClient = {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ status }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -983,7 +1010,7 @@ export const apiClient = {
       `${API_BASE_URL}/admin/transactions?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1011,7 +1038,7 @@ export const apiClient = {
       `${API_BASE_URL}/admin/merchant-stores?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1024,7 +1051,7 @@ export const apiClient = {
 
   async verifyMerchantStore(
     storeId: string,
-    isVerified: boolean
+    isVerified: boolean,
   ): Promise<MerchantStore> {
     const response = await fetch(
       `${API_BASE_URL}/admin/merchant-stores/${storeId}/verify`,
@@ -1032,7 +1059,7 @@ export const apiClient = {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ isVerified }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1057,7 +1084,7 @@ export const apiClient = {
     return response.json();
   },
 
-  async getMerchantLogo(): Promise<ApiResponse<{logo: string} | null>> {
+  async getMerchantLogo(): Promise<ApiResponse<{ logo: string } | null>> {
     const response = await fetch(`${API_BASE_URL}/merchant/logo`, {
       headers: getAuthHeaders(),
     });
@@ -1086,7 +1113,7 @@ export const apiClient = {
       `${API_BASE_URL}/merchant/products?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1114,7 +1141,7 @@ export const apiClient = {
 
   async updateMerchantProduct(
     productId: string,
-    productData: Partial<Product>
+    productData: Partial<Product>,
   ): Promise<Product> {
     const response = await fetch(
       `${API_BASE_URL}/merchant/products/${productId}`,
@@ -1122,7 +1149,7 @@ export const apiClient = {
         method: "PUT",
         headers: getAuthHeaders(),
         body: JSON.stringify(productData),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1147,7 +1174,7 @@ export const apiClient = {
       `${API_BASE_URL}/merchant/orders?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1163,7 +1190,7 @@ export const apiClient = {
   async updateMerchantOrderStatus(
     orderId: string,
     status: string,
-    notes?: string
+    notes?: string,
   ): Promise<Order> {
     const response = await fetch(
       `${API_BASE_URL}/merchant/orders/${orderId}/status`,
@@ -1171,7 +1198,7 @@ export const apiClient = {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ status, notes }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1198,7 +1225,7 @@ export const apiClient = {
       `${API_BASE_URL}/merchant/customers?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1217,7 +1244,7 @@ export const apiClient = {
       `${API_BASE_URL}/merchant/customers/${customerId}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1230,7 +1257,7 @@ export const apiClient = {
   },
 
   async updateMerchantStore(
-    storeData: Partial<MerchantStore>
+    storeData: Partial<MerchantStore>,
   ): Promise<MerchantStore> {
     const response = await fetch(`${API_BASE_URL}/merchant/store`, {
       method: "POST",
@@ -1281,7 +1308,7 @@ export const apiClient = {
       `${API_BASE_URL}/reports/my-reports?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1339,7 +1366,7 @@ export const apiClient = {
       `${API_BASE_URL}/delivery/orders?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1355,7 +1382,7 @@ export const apiClient = {
   async updateDeliveryStatus(
     assignmentId: string,
     status: string,
-    instructions?: string
+    instructions?: string,
   ): Promise<ApiResponse<DeliveryOrder>> {
     const response = await fetch(
       `${API_BASE_URL}/delivery/orders/${assignmentId}/status`,
@@ -1363,7 +1390,7 @@ export const apiClient = {
         method: "PATCH",
         headers: getAuthHeaders(),
         body: JSON.stringify({ status, instructions }),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1388,7 +1415,7 @@ export const apiClient = {
       `${API_BASE_URL}/delivery/payments?${searchParams}`,
       {
         headers: getAuthHeaders(),
-      }
+      },
     );
 
     if (!response.ok) {
@@ -1447,7 +1474,9 @@ export const apiClient = {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.error || "Failed to fetch delivery organizations");
+      throw new Error(
+        errorData.error || "Failed to fetch delivery organizations",
+      );
     }
 
     return response.json();
@@ -1455,7 +1484,11 @@ export const apiClient = {
 
   async requestDelivery(
     orderId: string,
-    data: { organizationId: string; deliveryFee: number; instructions?: string }
+    data: {
+      organizationId: string;
+      deliveryFee: number;
+      instructions?: string;
+    },
   ): Promise<ApiResponse<any>> {
     const response = await fetch(
       `${API_BASE_URL}/merchant/orders/${orderId}/request-delivery`,
@@ -1463,7 +1496,7 @@ export const apiClient = {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify(data),
-      }
+      },
     );
 
     if (!response.ok) {
