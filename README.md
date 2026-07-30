@@ -1,73 +1,139 @@
-# Welcome to your Lovable project
+# UrbanMart Swift Deliveries
 
-## Project info
+UrbanMart Swift Deliveries is a full-stack e-commerce and delivery management platform built with React, TypeScript, Vite, Express, and Prisma. It supports customer shopping flows, order tracking, and role-based dashboards for admins, merchants, and delivery teams.
 
-**URL**: https://lovable.dev/projects/715722bd-a149-440e-84cd-e06035bf7058
+## Features
 
-## How can I edit this code?
+- Customer storefront with product browsing, categories, deals, and search
+- Shopping cart and checkout experience
+- Order placement and order tracking
+- User authentication and profile management
+- Admin dashboard for managing users, products, orders, and merchants
+- Merchant dashboard for product and order management
+- Delivery dashboard and delivery organization workflows
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+### Frontend
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/715722bd-a149-440e-84cd-e06035bf7058) and start prompting.
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui
+- React Router
+- TanStack Query
 
-Changes made via Lovable will be committed automatically to this repo.
+### Backend
 
-**Use your preferred IDE**
+- Node.js
+- Express
+- Prisma ORM
+- PostgreSQL
+- JWT authentication
+- CORS and security middleware
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Project Structure
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+```text
+src/                 # Frontend React application
+server/              # Backend Express + Prisma API
+  src/               # Server routes, middleware, and utilities
+  prisma/            # Prisma schema and migrations
+```
 
-Follow these steps:
+## Getting Started
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Prerequisites
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+- Node.js 18+
+- npm
+- PostgreSQL database
 
-# Step 3: Install the necessary dependencies.
-npm i
+### 1. Install dependencies
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+Install the frontend dependencies:
+
+```bash
+npm install
+```
+
+Install the backend dependencies:
+
+```bash
+cd server
+npm install
+```
+
+### 2. Configure environment variables
+
+Create a `.env` file inside the server directory:
+
+```env
+DATABASE_URL="postgresql://username:password@localhost:5432/urbanmart_db"
+JWT_SECRET="your-super-secret-jwt-key"
+JWT_EXPIRES_IN="7d"
+PORT=5000
+NODE_ENV="development"
+```
+
+### 3. Set up the database
+
+From the server folder:
+
+```bash
+npx prisma generate
+npx prisma db push
+npx tsx src/seed.ts
+```
+
+### 4. Start the app
+
+Start the backend:
+
+```bash
+cd server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Start the frontend in a second terminal:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+npm run dev
+```
 
-**Use GitHub Codespaces**
+The frontend should be available at http://localhost:5173 and the backend at http://localhost:5000.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Default Test Accounts
 
-## What technologies are used for this project?
+After seeding, you can sign in with:
 
-This project is built with:
+- Admin: `admin@urbanmart.com` / `admin123`
+- Customer: `customer@example.com` / `customer123`
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Useful Scripts
 
-## How can I deploy this project?
+### Root app
 
-Simply open [Lovable](https://lovable.dev/projects/715722bd-a149-440e-84cd-e06035bf7058) and click on Share -> Publish.
+- `npm run dev` – start the Vite frontend
+- `npm run build` – build the frontend for production
+- `npm run preview` – preview the production build
 
-## Can I connect a custom domain to my Lovable project?
+### Server
 
-Yes, you can!
+- `npm run dev` – start the backend in development mode
+- `npm run build` – compile the TypeScript server
+- `npm run start` – run the compiled server
+- `npm run db:push` – push Prisma schema changes to the database
+- `npm run db:migrate` – run Prisma migrations
+- `npm run db:studio` – open Prisma Studio
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Deployment Notes
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- The frontend can be deployed to Vercel or a similar static hosting provider.
+- The backend should be deployed to a Node.js-compatible host such as Render, Railway, or VPS.
+- Make sure to configure production environment variables and a managed PostgreSQL database.
+
+## License
+
+This project is maintained as a full-stack commerce and delivery application for UrbanMart Swift Deliveries.
