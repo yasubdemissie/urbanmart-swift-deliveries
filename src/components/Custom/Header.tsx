@@ -11,7 +11,6 @@ import {
   ChevronDown,
   LogOut,
   Heart,
-  Settings,
   ShieldCheck,
   Truck,
   Compass,
@@ -20,15 +19,13 @@ import {
   Sparkles,
   Zap,
   Building2,
-  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { SearchComponent } from "./search-component";
-import { useIsAuthenticated } from "@/hooks/useAuth";
+import { useIsAuthenticated, useLogout } from "@/hooks/useAuth";
 import { useCart } from "@/context/cartContext";
-import { useLogout } from "@/hooks/useAuth";
 import { useOrders } from "@/hooks/useOrders";
 
 export const profileImages = [
@@ -54,7 +51,7 @@ const Header = () => {
   const cartItemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cartSubtotal = cartItems.reduce(
     (acc, item) => acc + Number(item.product.price) * item.quantity,
-    0
+    0,
   );
 
   const { data: ordersData } = useOrders();
@@ -75,27 +72,26 @@ const Header = () => {
     setIsMenuOpen(false);
   };
 
-  const isActivePath = (path: string) => {
-    if (path === "/") {
-      return location.pathname === "/";
-    }
-    return location.pathname.startsWith(path);
-  };
+  const isActivePath = (path: string) =>
+    path === "/"
+      ? location.pathname === "/"
+      : location.pathname.startsWith(path);
 
   return (
-    <header className="sticky top-0 z-50 w-full max-w-full overflow-x-clip bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs transition-all duration-300">
+    <header className="sticky top-0 z-50 w-full">
       {/* Top Banner Ticker */}
       {showPromo && (
-        <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white text-[11px] font-semibold py-1.5 px-4 flex items-center justify-between">
-          <div className="container mx-auto max-w-7xl flex items-center justify-center gap-2 text-center truncate">
-            <Zap className="h-3.5 w-3.5 animate-pulse text-amber-300 shrink-0" />
-            <span className="truncate">
-              Express Delivery Available • Get <strong className="underline decoration-amber-300 font-bold">Free Delivery</strong> on orders over $50!
+        <div className="relative flex items-center justify-center gap-3 overflow-hidden bg-[linear-gradient(90deg,theme(colors.slate.900),theme(colors.indigo.900),theme(colors.slate.900))] px-4 py-2 text-[13px] text-slate-100">
+          <div className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(600px_60px_at_50%_0%,theme(colors.indigo.400/.35),transparent)]" />
+          <div className="relative flex items-center gap-2 truncate">
+            <Zap className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+            <span className="truncate font-medium tracking-tight">
+              Express Delivery Available • Get Free Delivery on orders over $50!
             </span>
           </div>
           <button
             onClick={() => setShowPromo(false)}
-            className="text-white/80 hover:text-white p-0.5 rounded-md hover:bg-white/10 transition-colors shrink-0"
+            className="absolute right-3 shrink-0 rounded-md p-1 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
             title="Close announcement"
           >
             <X className="h-3.5 w-3.5" />
@@ -104,323 +100,263 @@ const Header = () => {
       )}
 
       {/* Main Header Bar */}
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="flex items-center justify-between h-16 md:h-20 gap-3 lg:gap-6 min-w-0">
-          {/* Logo Section */}
-          <Link
-            to="/"
-            className="flex items-center gap-2.5 shrink-0 focus:outline-none group"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25 group-hover:scale-105 transition-transform duration-300">
-              <span className="font-extrabold text-xl tracking-tight">U</span>
+      <div className="border-b border-slate-200/70 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:border-slate-800/70 dark:bg-slate-950/70 dark:supports-[backdrop-filter]:bg-slate-950/60">
+        <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+          {/* Logo */}
+          <Link to="/" className="group flex shrink-0 items-center gap-3">
+            <div className="relative grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-fuchsia-500 text-lg font-black text-white shadow-lg shadow-indigo-500/25 transition-transform duration-300 group-hover:scale-105">
+              U
+              <span className="absolute -inset-1 -z-10 rounded-2xl bg-indigo-500/30 opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-100" />
             </div>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-1">
-                <span className="font-extrabold text-lg sm:text-xl tracking-tight text-slate-900 dark:text-white">
-                  Urban<span className="text-blue-600 dark:text-blue-400">Mart</span>
+            <div className="hidden leading-none sm:block">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+                  UrbanMart
                 </span>
-                <span className="hidden sm:inline-block bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md border border-blue-200 dark:border-blue-800">
+                <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold tracking-[0.14em] text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-300">
                   SWIFT
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase hidden sm:block">
+              <span className="mt-1 block text-[11px] font-medium text-slate-500 dark:text-slate-400">
                 Express Delivery
               </span>
             </div>
           </Link>
 
-          {/* Prominent Expanded Search Bar */}
-          <div className="flex-1 max-w-2xl mx-2 hidden md:block min-w-0">
-            <SearchComponent />
+          {/* Search */}
+          <div className="hidden flex-1 justify-center px-2 md:flex">
+            <div className="w-full max-w-2xl">
+              <SearchComponent />
+            </div>
           </div>
 
-          {/* Right Action Icons & User Dropdown */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Track Orders Button */}
+          {/* Right actions */}
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             {isAuthenticated && (
-              <Link to="/track" className="shrink-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`relative rounded-xl h-10 px-3 transition-all ${
-                    isActivePath("/track")
-                      ? "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400 font-semibold"
-                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  <PackageCheck className="h-4 w-4 text-slate-600 dark:text-slate-300" strokeWidth={1.8} />
-                  <span className="hidden lg:inline ml-2 text-xs font-semibold">
-                    Orders
-                  </span>
-                  {orderCount > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-4 min-w-4 px-1 flex items-center justify-center bg-blue-600 text-white text-[10px] font-extrabold rounded-full border-2 border-white dark:border-slate-950">
-                      {orderCount}
-                    </Badge>
-                  )}
-                </Button>
+              <Link
+                to="/track"
+                className="group relative hidden h-10 items-center gap-2 rounded-xl px-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900 lg:flex dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+              >
+                <PackageCheck className="h-[18px] w-[18px]" />
+                <span>Orders</span>
+                {orderCount > 0 && (
+                  <Badge className="ml-0.5 h-5 min-w-5 justify-center rounded-full bg-slate-900 px-1.5 text-[11px] font-semibold text-white dark:bg-white dark:text-slate-900">
+                    {orderCount}
+                  </Badge>
+                )}
               </Link>
             )}
 
-            {/* Cart Button */}
-            <Link to="/cart" className="shrink-0">
-              <Button
-                variant="ghost"
-                size="sm"
-                className={`relative rounded-xl h-10 px-3.5 transition-all ${
-                  isActivePath("/cart")
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20 hover:bg-blue-700"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700"
-                }`}
-              >
-                <div className="relative">
-                  <ShoppingCart className="h-4 w-4" strokeWidth={2} />
-                  {cartItemCount > 0 && (
-                    <span className="absolute -top-2.5 -right-2.5 h-4 min-w-4 px-1 flex items-center justify-center bg-emerald-500 text-white text-[10px] font-extrabold rounded-full border-2 border-white dark:border-slate-950 animate-pulse">
-                      {cartItemCount}
-                    </span>
-                  )}
-                </div>
-                <span className="hidden sm:inline-block ml-2 text-xs font-bold">
+            <Link
+              to="/cart"
+              className="group flex h-10 items-center gap-2.5 rounded-xl px-2.5 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <div className="relative">
+                <ShoppingCart className="h-[19px] w-[19px] text-slate-700 transition-transform duration-200 group-hover:-translate-y-0.5 dark:text-slate-200" />
+                {cartItemCount > 0 && (
+                  <span className="absolute -right-2 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gradient-to-br from-indigo-500 to-fuchsia-500 px-1 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-950">
+                    {cartItemCount}
+                  </span>
+                )}
+              </div>
+              <div className="hidden leading-tight sm:block">
+                <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
                   Cart
                 </span>
                 {cartSubtotal > 0 && (
-                  <span className="hidden lg:inline-block ml-1.5 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-md">
+                  <span className="block text-[11px] font-semibold text-indigo-600 dark:text-indigo-300">
                     ${cartSubtotal.toFixed(2)}
                   </span>
                 )}
-              </Button>
+              </div>
             </Link>
 
-            {/* User Account / Profile Dropdown Button */}
             {isAuthenticated && user ? (
-              <div className="relative shrink-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
+              <div className="relative">
+                <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 h-10 px-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors max-w-[180px] sm:max-w-[200px]"
+                  className="flex h-10 max-w-[180px] items-center gap-2 rounded-xl px-1.5 pr-2 transition-colors hover:bg-slate-100 sm:max-w-[200px] dark:hover:bg-slate-800"
                 >
-                  <Avatar className="h-8 w-8 ring-2 ring-blue-500/30 shrink-0">
-                    <AvatarImage
-                      src={user?.avatar || randomProfileImage || "/placeholder.svg"}
-                    />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-xs">
+                  <Avatar className="h-8 w-8 ring-2 ring-indigo-500/20">
+                    <AvatarImage src={randomProfileImage} alt="" />
+                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-500 text-xs font-semibold text-white">
                       {user.firstName?.[0] || user.email?.[0] || "U"}
                       {user.lastName?.[0] || ""}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden sm:block text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[90px] sm:max-w-[110px] text-left">
-                    {user.firstName ? `${user.firstName}` : user.email?.split("@")[0]}
+                  <span className="hidden truncate text-sm font-medium text-slate-800 sm:block dark:text-slate-100">
+                    {user.firstName
+                      ? `${user.firstName}`
+                      : user.email?.split("@")[0]}
                   </span>
                   <ChevronDown
-                    className={`h-3.5 w-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${
+                    className={`hidden h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 sm:block ${
                       isUserMenuOpen ? "rotate-180" : ""
                     }`}
                   />
-                </Button>
+                </button>
 
-                {/* User Glassmorphism Menu Dropdown */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 z-50 animate-in fade-in-50 zoom-in-95">
-                    {/* Profile Summary Header */}
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl mb-1 border border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-blue-500 shrink-0">
-                          <AvatarImage
-                            src={user?.avatar || randomProfileImage || "/placeholder.svg"}
-                          />
-                          <AvatarFallback className="bg-blue-600 text-white font-bold">
-                            {user?.firstName?.[0] || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
-                            {user?.firstName && user?.lastName
-                              ? `${user.firstName} ${user.lastName}`
-                              : user?.email}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {user?.email}
-                          </p>
-                          {user?.role && (
-                            <Badge
-                              className="mt-1 text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-300"
-                              variant="secondary"
-                            >
-                              {user.role}
-                            </Badge>
-                          )}
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 z-50 mt-2 w-72 origin-top-right overflow-hidden rounded-2xl border border-slate-200/80 bg-white/90 shadow-2xl shadow-slate-900/10 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/90">
+                      {/* Profile summary */}
+                      <div className="border-b border-slate-200/70 bg-gradient-to-br from-indigo-50 to-violet-50 p-4 dark:border-slate-800 dark:from-indigo-950/40 dark:to-violet-950/30">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-11 w-11 ring-2 ring-white dark:ring-slate-900">
+                            <AvatarImage src={randomProfileImage} alt="" />
+                            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-500 font-semibold text-white">
+                              {user?.firstName?.[0] || "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                              {user?.firstName && user?.lastName
+                                ? `${user.firstName} ${user.lastName}`
+                                : user?.email}
+                            </p>
+                            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+                              {user?.email}
+                            </p>
+                            {user?.role && (
+                              <span className="mt-1.5 inline-block rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:bg-slate-800 dark:text-indigo-300">
+                                {user.role}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Menu Items */}
-                    <div className="space-y-0.5 text-xs font-semibold">
-                      <Link
-                        to="/profile"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-colors ${
-                          isActivePath("/profile")
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        <User className="h-4 w-4 text-slate-400" strokeWidth={1.8} />
-                        <span>My Profile</span>
-                      </Link>
+                      {/* Menu items */}
+                      <div className="flex flex-col gap-0.5 p-2 text-sm font-medium">
+                        <Link
+                          to="/profile"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className={`flex items-center gap-3 rounded-xl px-3 py-2 transition-colors ${
+                            isActivePath("/profile")
+                              ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300"
+                              : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                          }`}
+                        >
+                          <User className="h-4 w-4" />
+                          My Profile
+                        </Link>
 
-                      <Link
-                        to="/track"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className={`flex items-center justify-between px-3 py-2 rounded-xl transition-colors ${
-                          isActivePath("/track")
-                            ? "bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-400"
-                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <PackageCheck className="h-4 w-4 text-slate-400" strokeWidth={1.8} />
-                          <span>Track Orders</span>
-                        </div>
-                        {orderCount > 0 && (
-                          <Badge className="bg-blue-600 text-white text-[10px]">
-                            {orderCount}
-                          </Badge>
+                        <Link
+                          to="/track"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className={`flex items-center justify-between rounded-xl px-3 py-2 transition-colors ${
+                            isActivePath("/track")
+                              ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300"
+                              : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                          }`}
+                        >
+                          <span className="flex items-center gap-3">
+                            <PackageCheck className="h-4 w-4" />
+                            Track Orders
+                          </span>
+                          {orderCount > 0 && (
+                            <Badge className="h-5 min-w-5 justify-center rounded-full bg-slate-900 px-1.5 text-[11px] text-white dark:bg-white dark:text-slate-900">
+                              {orderCount}
+                            </Badge>
+                          )}
+                        </Link>
+
+                        <Link
+                          to="/wishlist"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2 text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                          <Heart className="h-4 w-4" />
+                          Saved Items
+                        </Link>
+
+                        {user?.role === "ADMIN" && (
+                          <>
+                            <div className="my-1 h-px bg-slate-200 dark:bg-slate-800" />
+                            <Link
+                              to="/admin"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center gap-3 rounded-xl bg-violet-50 px-3 py-2 text-violet-700 transition-colors hover:bg-violet-100 dark:bg-violet-950/40 dark:text-violet-300"
+                            >
+                              <ShieldCheck className="h-4 w-4" />
+                              Admin Portal
+                            </Link>
+                          </>
                         )}
-                      </Link>
 
-                      <Link
-                        to="/profile?tab=wishlist"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      >
-                        <Heart className="h-4 w-4 text-slate-400" strokeWidth={1.8} />
-                        <span>Saved Items</span>
-                      </Link>
+                        {user?.role === "MERCHANT" && (
+                          <>
+                            <div className="my-1 h-px bg-slate-200 dark:bg-slate-800" />
+                            <Link
+                              to="/merchant-dashboard"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center gap-3 rounded-xl bg-amber-50 px-3 py-2 text-amber-700 transition-colors hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-300"
+                            >
+                              <Store className="h-4 w-4" />
+                              Merchant Dashboard
+                            </Link>
+                          </>
+                        )}
 
-                      {/* Role-based Dashboards */}
-                      {user?.role === "ADMIN" && (
-                        <>
-                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-                          <Link
-                            to="/admin"
-                            onClick={() => setIsUserMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 transition-colors"
-                          >
-                            <ShieldCheck className="h-4 w-4 text-purple-600" strokeWidth={1.8} />
-                            <span>Admin Portal</span>
-                          </Link>
-                        </>
-                      )}
+                        {user?.role === "DELIVERY" && (
+                          <>
+                            <div className="my-1 h-px bg-slate-200 dark:bg-slate-800" />
+                            <Link
+                              to="/delivery-dashboard"
+                              onClick={() => setIsUserMenuOpen(false)}
+                              className="flex items-center gap-3 rounded-xl bg-emerald-50 px-3 py-2 text-emerald-700 transition-colors hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300"
+                            >
+                              <Truck className="h-4 w-4" />
+                              Delivery Hub
+                            </Link>
+                          </>
+                        )}
 
-                      {user?.role === "MERCHANT" && (
-                        <>
-                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-                          <Link
-                            to="/merchant-dashboard"
-                            onClick={() => setIsUserMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 hover:bg-amber-100 transition-colors"
-                          >
-                            <Store className="h-4 w-4 text-amber-600" strokeWidth={1.8} />
-                            <span>Merchant Dashboard</span>
-                          </Link>
-                        </>
-                      )}
-
-                      {user?.role === "DELIVERY" && (
-                        <>
-                          <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-                          <Link
-                            to="/delivery-dashboard"
-                            onClick={() => setIsUserMenuOpen(false)}
-                            className="flex items-center gap-3 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 transition-colors"
-                          >
-                            <Truck className="h-4 w-4 text-emerald-600" strokeWidth={1.8} />
-                            <span>Delivery Hub</span>
-                          </Link>
-                        </>
-                      )}
-
-                      <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-3 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 w-full text-left transition-colors font-bold"
-                      >
-                        <LogOut className="h-4 w-4" strokeWidth={1.8} />
-                        <span>Sign Out</span>
-                      </button>
+                        <div className="my-1 h-px bg-slate-200 dark:bg-slate-800" />
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-3 rounded-xl px-3 py-2 text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
             ) : (
-              <Link to="/signin" className="shrink-0">
-                <Button className="h-10 px-5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold shadow-md shadow-blue-500/20 text-xs">
-                  Sign In
-                </Button>
-              </Link>
+              <Button
+                asChild
+                className="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-semibold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
+              >
+                <Link to="/login">Sign In</Link>
+              </Button>
             )}
 
-            {/* Mobile Menu Toggle Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden h-10 w-10 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+            {/* Mobile toggle */}
+            <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="grid h-10 w-10 place-items-center rounded-xl text-slate-700 transition-colors hover:bg-slate-100 lg:hidden dark:text-slate-200 dark:hover:bg-slate-800"
+              aria-label="Toggle menu"
             >
               {isMenuOpen ? (
-                <X className="h-5 w-5 text-slate-700 dark:text-slate-200" />
+                <X className="h-5 w-5" />
               ) : (
-                <Menu className="h-5 w-5 text-slate-700 dark:text-slate-200" />
+                <Menu className="h-5 w-5" />
               )}
-            </Button>
+            </button>
           </div>
         </div>
 
-        {/* Row 2: Secondary Desktop Horizontal Nav Bar */}
-        <div className="hidden lg:flex items-center justify-between py-2 border-t border-slate-100 dark:border-slate-800/60">
-          <nav className="flex items-center gap-1">
-            {navigationItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActivePath(item.path);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 ${
-                    active
-                      ? "bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-slate-800/80"
-                  }`}
-                >
-                  <Icon
-                    className={`h-4 w-4 ${
-                      active ? "text-blue-600 dark:text-blue-400" : "text-slate-400"
-                    }`}
-                    strokeWidth={1.8}
-                  />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          <div className="flex items-center gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-              <Sparkles className="h-3.5 w-3.5" /> 100% Verified Stores
-            </span>
-          </div>
-        </div>
-
-        {/* Mobile Search Bar (under header) */}
-        <div className="md:hidden py-2.5 border-t border-slate-100 dark:border-slate-800">
-          <SearchComponent />
-        </div>
-
-        {/* Mobile Navigation Drawer */}
-        {isMenuOpen && (
-          <div className="lg:hidden py-4 border-t border-slate-200/80 dark:border-slate-800 space-y-2 animate-in slide-in-from-top-2">
-            <div className="space-y-1">
+        {/* Row 2: desktop nav */}
+        <div className="hidden border-t border-slate-200/70 lg:block dark:border-slate-800/70">
+          <div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <nav className="flex items-center gap-1">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActivePath(item.path);
@@ -428,19 +364,58 @@ const Header = () => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-colors ${
+                    className={`relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors ${
                       active
-                        ? "bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        ? "text-indigo-600 dark:text-indigo-300"
+                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                     }`}
-                    onClick={() => setIsMenuOpen(false)}
                   >
-                    <Icon className="h-5 w-5 text-slate-400" strokeWidth={1.8} />
-                    <span>{item.label}</span>
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                    {active && (
+                      <span className="absolute inset-x-2 -bottom-[7px] h-0.5 rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500" />
+                    )}
                   </Link>
                 );
               })}
+            </nav>
+
+            <div className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400">
+              <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
+              100% Verified Stores
             </div>
+          </div>
+        </div>
+
+        {/* Mobile search */}
+        <div className="border-t border-slate-200/70 px-4 py-2.5 md:hidden dark:border-slate-800/70">
+          <SearchComponent />
+        </div>
+
+        {/* Mobile drawer */}
+        {isMenuOpen && (
+          <div className="border-t border-slate-200/70 bg-white/95 backdrop-blur-xl lg:hidden dark:border-slate-800/70 dark:bg-slate-950/95">
+            <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-3">
+              {navigationItems.map((item) => {
+                const Icon = item.icon;
+                const active = isActivePath(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300"
+                        : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
         )}
       </div>

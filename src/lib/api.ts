@@ -835,14 +835,29 @@ export const apiClient = {
     return response.json();
   },
 
-  async getMerchants(): Promise<User[]> {
-    const response = await fetch(`${API_BASE_URL}/users/merchants`, {
+  async getMerchants(search?: string): Promise<User[]> {
+    const url = search
+      ? `${API_BASE_URL}/users/merchants?search=${encodeURIComponent(search)}`
+      : `${API_BASE_URL}/users/merchants`;
+
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error || "Failed to fetch merchants");
+    }
+
+    return response.json();
+  },
+
+  async getPublicMerchant(id: string): Promise<ApiResponse<User>> {
+    const response = await fetch(`${API_BASE_URL}/users/merchants/${id}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || "Failed to fetch merchant details");
     }
 
     return response.json();

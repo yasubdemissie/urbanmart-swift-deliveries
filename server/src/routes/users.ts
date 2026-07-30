@@ -39,15 +39,127 @@ router.get(
   }
 );
 
-// Get all merchants (all users)
+// Get all merchants (all users - public)
 router.get("/merchants", async (req: Request, res: Response) => {
   try {
+    const { search } = req.query;
+
+    const where: any = { role: "MERCHANT" };
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search as string, mode: "insensitive" } },
+        { lastName: { contains: search as string, mode: "insensitive" } },
+        { email: { contains: search as string, mode: "insensitive" } },
+        {
+          merchantStore: {
+            name: { contains: search as string, mode: "insensitive" },
+          },
+        },
+      ];
+    }
+
     const merchants = await prisma.user.findMany({
-      where: { role: "MERCHANT" },
+      where,
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        avatar: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+        merchantStore: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            logo: true,
+            banner: true,
+            address: true,
+            phone: true,
+            email: true,
+            website: true,
+            isVerified: true,
+            createdAt: true,
+            _count: {
+              select: {
+                products: { where: { isActive: true } },
+                orders: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
     });
+
     res.json(merchants);
   } catch (err) {
+    console.error("Failed to fetch merchants:", err);
     res.status(500).json({ error: "Failed to fetch merchants" });
+  }
+});
+
+// Get a public merchant details and store profile by user ID or store ID
+router.get("/merchants/:id", async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const merchant = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { id: id, role: "MERCHANT" },
+          { merchantStore: { id: id } },
+        ],
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        avatar: true,
+        role: true,
+        createdAt: true,
+        merchantStore: {
+          include: {
+            products: {
+              where: { isActive: true },
+              include: {
+                category: {
+                  select: { id: true, name: true, slug: true },
+                },
+                reviews: {
+                  select: { rating: true },
+                },
+              },
+              orderBy: { createdAt: "desc" },
+            },
+            _count: {
+              select: {
+                products: { where: { isActive: true } },
+                orders: true,
+                customers: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!merchant) {
+      return res.status(404).json({ error: "Merchant not found" });
+    }
+
+    return res.json({
+      success: true,
+      data: merchant,
+    });
+  } catch (err) {
+    console.error("Failed to fetch merchant profile:", err);
+    return res.status(500).json({ error: "Failed to fetch merchant details" });
   }
 });
 
