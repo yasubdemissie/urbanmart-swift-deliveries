@@ -10,7 +10,7 @@ import {
   ShieldCheck,
   Package,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,8 @@ import { type AuthFormData, useAuthFormState } from "@/hooks/useAuthFormState";
 
 const SignIn = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const defaultMode = location.pathname === "/signup" ? "signUp" : "signIn";
   const {
     formData,
     isSignUp,
@@ -32,7 +34,7 @@ const SignIn = () => {
     toggleMode,
     togglePassword,
     handleSubmit,
-  } = useAuthFormState();
+  } = useAuthFormState(defaultMode);
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -53,7 +55,9 @@ const SignIn = () => {
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 backdrop-blur">
               <ShoppingBag className="h-5 w-5" />
             </div>
-            <span className="font-display text-2xl font-semibold">UrbanMart</span>
+            <span className="font-display text-2xl font-semibold">
+              UrbanMart
+            </span>
           </button>
 
           <div className="max-w-md space-y-6">
@@ -99,7 +103,9 @@ const SignIn = () => {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-700 text-white">
               <ShoppingBag className="h-4 w-4" />
             </div>
-            <span className="font-display text-xl font-semibold">UrbanMart</span>
+            <span className="font-display text-xl font-semibold">
+              UrbanMart
+            </span>
           </button>
           <Button variant="ghost" size="sm" onClick={() => navigate("/")}>
             Back
@@ -249,7 +255,9 @@ const AuthForm: React.FC<AuthFormProps> = ({
             />
             Keep me signed in
           </label>
-          <span className="cursor-default text-stone-400">Forgot password?</span>
+          <span className="cursor-default text-stone-400">
+            Forgot password?
+          </span>
         </div>
         <Button
           type="submit"

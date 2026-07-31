@@ -867,9 +867,7 @@ export const apiClient = {
       ? `${API_BASE_URL}/users/merchants?${queryString}`
       : `${API_BASE_URL}/users/merchants`;
 
-    const response = await fetch(url, {
-      headers: getAuthHeaders(),
-    });
+    const response = await fetch(url);
 
     if (!response.ok) {
       const errorData = await response.json();

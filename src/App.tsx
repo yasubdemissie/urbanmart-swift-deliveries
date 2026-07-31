@@ -68,6 +68,7 @@ const App = () => (
 
               {/* Customer Routes */}
               <Route path="/signin" element={<SignIn />} />
+              <Route path="/signup" element={<SignIn />} />
 
               {/* Admin Routes - Nested routing */}
               <Route path="/admin/*" element={<Admin />} />

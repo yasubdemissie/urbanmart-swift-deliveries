@@ -191,8 +191,9 @@ const Landing = ({ onEnter }: LandingProps) => {
               Built for everyday shopping that actually feels easy
             </h2>
             <p className="mt-4 text-stone-600 leading-relaxed">
-              Whether you need groceries tonight or gifts this weekend, UrbanMart
-              connects you with verified merchants and reliable delivery.
+              Whether you need groceries tonight or gifts this weekend,
+              UrbanMart connects you with verified merchants and reliable
+              delivery.
             </p>
             <ul className="mt-10 space-y-8">
               {promises.map((item) => (
@@ -201,7 +202,9 @@ const Landing = ({ onEnter }: LandingProps) => {
                     <item.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-stone-900">{item.title}</h3>
+                    <h3 className="font-semibold text-stone-900">
+                      {item.title}
+                    </h3>
                     <p className="mt-1 text-stone-600">{item.description}</p>
                   </div>
                 </li>
@@ -233,7 +236,7 @@ const Landing = ({ onEnter }: LandingProps) => {
             <Button
               size="lg"
               className="h-12 bg-emerald-600 px-8 text-white hover:bg-emerald-500"
-              onClick={() => handleEnter("/signin")}
+              onClick={() => handleEnter("/signup")}
             >
               Create free account
             </Button>
@@ -253,7 +256,9 @@ const Landing = ({ onEnter }: LandingProps) => {
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 sm:flex-row sm:px-8">
           <div className="flex items-center gap-2">
             <ShoppingBag className="h-4 w-4 text-emerald-700" />
-            <span className="font-display text-lg font-semibold">UrbanMart</span>
+            <span className="font-display text-lg font-semibold">
+              UrbanMart
+            </span>
             <span className="text-sm text-stone-500">
               © {new Date().getFullYear()}
             </span>

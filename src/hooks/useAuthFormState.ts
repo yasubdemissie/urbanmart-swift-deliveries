@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useLogin, useRegister } from "@/hooks/useAuth";
@@ -33,16 +33,24 @@ const INITIAL_FORM_STATE: AuthFormData = {
 };
 
 // Encapsulates Sign In / Sign Up form state and submission side effects.
-export const useAuthFormState = () => {
+export const useAuthFormState = (initialMode: AuthFormMode = "signIn") => {
   const navigate = useNavigate();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
 
-  const [mode, setMode] = useState<AuthFormMode>("signIn");
+  const [mode, setMode] = useState<AuthFormMode>(initialMode);
   const [formData, setFormData] = useState<AuthFormData>(INITIAL_FORM_STATE);
   const [showPassword, setShowPassword] = useState(false);
   const [signupStep, setSignupStep] = useState(1);
   const [sentOtp, setSentOtp] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMode(initialMode);
+    setFormData(INITIAL_FORM_STATE);
+    setSignupStep(1);
+    setShowPassword(false);
+    setSentOtp(null);
+  }, [initialMode]);
 
   const isSignUp = mode === "signUp";
   const isLoading = loginMutation.isPending || registerMutation.isPending;
@@ -55,7 +63,7 @@ export const useAuthFormState = () => {
         [field]: value,
       }));
     },
-    []
+    [],
   );
 
   const toggleMode = useCallback(() => {
@@ -68,7 +76,7 @@ export const useAuthFormState = () => {
 
   const togglePassword = useCallback(
     () => setShowPassword((prev) => !prev),
-    []
+    [],
   );
 
   const reverseGeocode = useCallback(
@@ -110,7 +118,7 @@ export const useAuthFormState = () => {
         return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
       }
     },
-    []
+    [],
   );
 
   const handleUseCurrentLocation = useCallback(() => {
@@ -132,7 +140,7 @@ export const useAuthFormState = () => {
       },
       () => {
         toast.error("Unable to fetch current location");
-      }
+      },
     );
   }, [reverseGeocode]);
 
@@ -164,7 +172,7 @@ export const useAuthFormState = () => {
       }
       return true;
     },
-    [formData, sentOtp]
+    [formData, sentOtp],
   );
 
   const handleSubmit = useCallback(
@@ -250,7 +258,7 @@ export const useAuthFormState = () => {
       signupStep,
       totalSignupSteps,
       validateStep,
-    ]
+    ],
   );
 
   return {
