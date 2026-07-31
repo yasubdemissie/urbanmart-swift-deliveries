@@ -15,6 +15,11 @@ export default function Merchants() {
   const hasActiveFilters =
     searchQuery.trim().length > 0 || verifiedOnly || sortBy !== "newest";
 
+  const activeButtonClass =
+    "rounded-full border-0 bg-gradient-to-r from-blue-600 to-indigo-600 px-4 text-white shadow-sm hover:from-blue-700 hover:to-indigo-700";
+  const inactiveButtonClass =
+    "rounded-full border-blue-200 bg-white px-4 text-blue-700 hover:bg-blue-50 hover:text-blue-800 dark:border-blue-900/40 dark:bg-slate-950 dark:text-blue-300 dark:hover:bg-blue-950/40";
+
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_38%,#f8fafc_100%)] text-foreground flex flex-col">
       <Header />
@@ -39,9 +44,7 @@ export default function Merchants() {
                   size="sm"
                   variant={!verifiedOnly ? "default" : "outline"}
                   className={
-                    !verifiedOnly
-                      ? "rounded-full border-0 bg-gradient-to-r from-product-accent to-product-accent/90 px-4 text-product-accent-foreground shadow-sm hover:from-product-accent/90 hover:to-product-accent/80"
-                      : "rounded-full border-product-accent/30 bg-background px-4 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                    !verifiedOnly ? activeButtonClass : inactiveButtonClass
                   }
                   onClick={() => setVerifiedOnly(false)}
                 >
@@ -52,9 +55,7 @@ export default function Merchants() {
                   size="sm"
                   variant={verifiedOnly ? "default" : "outline"}
                   className={
-                    verifiedOnly
-                      ? "rounded-full border-0 bg-gradient-to-r from-product-accent to-product-accent/90 px-4 text-product-accent-foreground shadow-sm hover:from-product-accent/90 hover:to-product-accent/80"
-                      : "rounded-full border-product-accent/30 bg-background px-4 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                    verifiedOnly ? activeButtonClass : inactiveButtonClass
                   }
                   onClick={() => setVerifiedOnly(true)}
                 >
@@ -67,8 +68,8 @@ export default function Merchants() {
                   variant={sortBy === "newest" ? "default" : "outline"}
                   className={
                     sortBy === "newest"
-                      ? "rounded-full border-0 bg-gradient-to-r from-product-accent to-product-accent/90 px-4 text-product-accent-foreground shadow-sm hover:from-product-accent/90 hover:to-product-accent/80"
-                      : "rounded-full border-product-accent/30 bg-background px-4 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                      ? activeButtonClass
+                      : inactiveButtonClass
                   }
                   onClick={() => setSortBy("newest")}
                 >
@@ -80,9 +81,7 @@ export default function Merchants() {
                   size="sm"
                   variant={sortBy === "name" ? "default" : "outline"}
                   className={
-                    sortBy === "name"
-                      ? "rounded-full border-0 bg-gradient-to-r from-product-accent to-product-accent/90 px-4 text-product-accent-foreground shadow-sm hover:from-product-accent/90 hover:to-product-accent/80"
-                      : "rounded-full border-product-accent/30 bg-background px-4 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                    sortBy === "name" ? activeButtonClass : inactiveButtonClass
                   }
                   onClick={() => setSortBy("name")}
                 >
@@ -93,7 +92,7 @@ export default function Merchants() {
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="rounded-full px-3 text-product-accent hover:bg-product-accent/10 hover:text-product-accent"
+                    className="rounded-full px-3 text-blue-700 hover:bg-blue-50 hover:text-blue-800 dark:text-blue-300 dark:hover:bg-blue-950/40"
                     onClick={() => {
                       setSearchQuery("");
                       setVerifiedOnly(false);

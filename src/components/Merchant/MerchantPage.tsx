@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { apiClient, MerchantStore, Product, User } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import ProductCard from "@/components/Custom/ProductCard";
 import Header from "@/components/Custom/Header";
@@ -28,54 +27,28 @@ type MerchantDetails = User & {
 
 function MerchantPageSkeleton() {
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_30%,#f8fafc_100%)]">
+    <div className="min-h-screen bg-background">
       <Header />
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-10">
-        <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
-          <Skeleton className="h-56 w-full rounded-none" />
-          <div className="px-5 pb-5 pt-16 md:px-8 md:pb-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-3">
-                <Skeleton className="h-10 w-72" />
-                <Skeleton className="h-5 w-56" />
-                <div className="flex flex-wrap gap-2 pt-2">
-                  <Skeleton className="h-8 w-24 rounded-full" />
-                  <Skeleton className="h-8 w-24 rounded-full" />
-                  <Skeleton className="h-8 w-24 rounded-full" />
-                </div>
-              </div>
-              <Skeleton className="h-12 w-full max-w-[220px] rounded-2xl" />
+      <main className="mx-auto w-full max-w-7xl px-3 py-8 sm:px-4 md:px-6 lg:px-8">
+        <Skeleton className="h-8 w-20" />
+        <div className="mt-6 grid gap-10 lg:grid-cols-[300px_1fr]">
+          <div className="space-y-5">
+            <Skeleton className="h-36 w-full rounded-3xl" />
+            <div className="-mt-14 flex flex-col items-center">
+              <Skeleton className="h-28 w-28 rounded-full border-4 border-background" />
+              <Skeleton className="mt-4 h-7 w-40" />
+              <Skeleton className="mt-2 h-4 w-28" />
             </div>
+            <Skeleton className="h-24 w-full rounded-2xl" />
+            <Skeleton className="h-20 w-full rounded-2xl" />
+            <Skeleton className="h-28 w-full rounded-2xl" />
           </div>
-        </div>
-
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-          <div className="space-y-6">
-            <div className="rounded-[1.75rem] border border-border/70 bg-card p-6 shadow-sm">
-              <Skeleton className="h-6 w-44" />
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                {Array.from({ length: 3 }).map((_, index) => (
-                  <Skeleton key={index} className="h-24 rounded-2xl" />
-                ))}
-              </div>
-            </div>
-            <div className="rounded-[1.75rem] border border-border/70 bg-card p-6 shadow-sm">
-              <Skeleton className="h-6 w-36" />
-              <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {Array.from({ length: 6 }).map((_, index) => (
-                  <Skeleton key={index} className="h-96 rounded-3xl" />
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="space-y-6">
-            <div className="rounded-[1.75rem] border border-border/70 bg-card p-6 shadow-sm">
-              <Skeleton className="h-6 w-40" />
-              <div className="mt-4 space-y-3">
-                <Skeleton className="h-12 w-full rounded-2xl" />
-                <Skeleton className="h-12 w-full rounded-2xl" />
-                <Skeleton className="h-12 w-full rounded-2xl" />
-              </div>
+          <div>
+            <Skeleton className="h-6 w-32" />
+            <div className="mt-5 grid gap-5 sm:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-72 rounded-xl" />
+              ))}
             </div>
           </div>
         </div>
@@ -108,34 +81,31 @@ export default function MerchantPage() {
     `${merchant?.firstName ?? "Merchant"} ${merchant?.lastName ?? ""}`.trim();
   const storeName =
     store?.name || `${merchant?.firstName ?? "Merchant"}'s Store`;
-  const bannerUrl =
+  const heroImage =
     store?.banner ||
     store?.logo ||
     merchant?.avatar ||
-    "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=1400&q=80";
-  const logoUrl =
+    `https://api.dicebear.com/7.x/identicon/svg?seed=${merchant?.id ?? id}`;
+  const storeLogo =
     store?.logo ||
     merchant?.avatar ||
-    `https://api.dicebear.com/7.x/identicon/svg?seed=${merchant?.id ?? id}`;
+    `https://api.dicebear.com/7.x/initials/svg?seed=${merchant?.id ?? id}`;
 
   if (isLoading) return <MerchantPageSkeleton />;
 
   if (error || !merchant || !store) {
     return (
-      <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_30%,#f8fafc_100%)]">
+      <div className="min-h-screen bg-background">
         <Header />
-        <main className="mx-auto flex w-full max-w-3xl flex-col items-center px-4 py-20 text-center md:px-8">
-          <Store className="h-14 w-14 text-muted-foreground" />
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight text-foreground">
+        <main className="mx-auto flex w-full max-w-2xl flex-col items-center px-3 py-24 text-center sm:px-4 md:px-6">
+          <Store className="h-8 w-8 text-muted-foreground" />
+          <h1 className="mt-4 font-serif text-2xl text-foreground">
             Merchant not found
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            The store profile you opened is unavailable or has been removed.
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            This store profile is unavailable or has been removed.
           </p>
-          <Button
-            className="mt-6 rounded-2xl"
-            onClick={() => navigate("/merchants")}
-          >
+          <Button className="mt-6" onClick={() => navigate("/merchants")}>
             Back to merchants
           </Button>
         </main>
@@ -144,179 +114,214 @@ export default function MerchantPage() {
   }
 
   const stats = [
-    {
-      label: "Products",
-      value: store._count?.products ?? products.length,
-      icon: Package,
-    },
-    {
-      label: "Orders",
-      value: store._count?.orders ?? 0,
-      icon: ShoppingBag,
-    },
-    {
-      label: "Customers",
-      value: store._count?.customers ?? 0,
-      icon: Users,
-    },
+    { label: "Products", value: store._count?.products ?? products.length },
+    { label: "Orders", value: store._count?.orders ?? 0 },
+    { label: "Customers", value: store._count?.customers ?? 0 },
   ];
 
+  const contactItems = [
+    store.address && { icon: MapPin, label: store.address, href: undefined },
+    store.phone && {
+      icon: Phone,
+      label: store.phone,
+      href: `tel:${store.phone}`,
+    },
+    store.email && {
+      icon: Mail,
+      label: store.email,
+      href: `mailto:${store.email}`,
+    },
+    store.website && {
+      icon: Globe,
+      label: "Visit website",
+      href: store.website,
+    },
+  ].filter(Boolean) as { icon: typeof MapPin; label: string; href?: string }[];
+
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f8fafc_0%,#ffffff_30%,#f8fafc_100%)]">
+    <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-10">
-        <Button
-          variant="ghost"
-          className="mb-4 rounded-full px-3 text-muted-foreground"
+      <main className="mx-auto w-full max-w-7xl px-3 py-8 sm:px-4 md:px-6 lg:px-8">
+        <button
           onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" />
           Back
-        </Button>
+        </button>
 
-        <section className="overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-sm">
-          <div className="relative h-56 overflow-hidden bg-slate-900 md:h-72">
-            <img
-              src={bannerUrl}
-              alt={storeName}
-              className="absolute inset-0 h-full w-full object-cover opacity-75"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-
-            <div className="absolute left-4 right-4 top-4 flex items-center justify-between gap-3 md:left-8 md:right-8">
-              <Badge className="rounded-full border-0 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/15">
-                <ShieldCheck className="mr-1 h-3.5 w-3.5" />
-                {store.isVerified ? "Verified store" : "Store profile"}
-              </Badge>
-              <Badge className="rounded-full border-0 bg-white/10 text-white hover:bg-white/10">
-                {store.isActive ? "Open now" : "Currently inactive"}
-              </Badge>
+        <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10">
+          {/* Products */}
+          <section>
+            <div className="flex items-baseline justify-between border-b border-border/70 pb-4">
+              <h2 className="font-serif text-xl text-foreground">
+                Store products
+              </h2>
+              <span className="text-sm text-muted-foreground">
+                {products.length} items
+              </span>
             </div>
 
-            <div className="absolute -bottom-10 left-4 md:left-8">
-              <div className="rounded-[1.5rem] border-4 border-background bg-background p-1 shadow-2xl">
-                <img
-                  src={logoUrl}
-                  alt={storeName}
-                  className="h-24 w-24 rounded-[1.15rem] object-cover md:h-28 md:w-28"
-                />
+            {products.length > 0 ? (
+              <div
+                className="mt-6 grid gap-x-6 gap-y-10"
+                style={{
+                  gridTemplateColumns: "repeat(auto-fill, minmax(235px, 1fr))",
+                }}
+              >
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
               </div>
-            </div>
-          </div>
+            ) : (
+              <div className="mt-6 flex flex-col items-center justify-center px-6 py-20 text-center">
+                <Package className="h-8 w-8 text-muted-foreground" />
+                <p className="mt-4 text-sm font-medium text-foreground">
+                  No active products yet
+                </p>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                  This store is live, but doesn't have any active products to
+                  display right now.
+                </p>
+                <Button className="mt-6" onClick={() => navigate("/merchants")}>
+                  Explore other merchants
+                </Button>
+              </div>
+            )}
+          </section>
 
-          <div className="px-4 pb-5 pt-16 md:px-8 md:pb-8">
-            <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                  <span>{merchantName}</span>
-                  {store.isVerified ? <span>• Verified merchant</span> : null}
+          {/* Sidebar: store identity, sticky on scroll, compact */}
+          <aside className="lg:sticky lg:top-8 lg:self-start">
+            <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-[0_24px_60px_-30px_rgba(15,23,42,0.35)]">
+              <div className="relative h-36 overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
+                <img
+                  src={heroImage}
+                  alt={storeName}
+                  className="h-full w-full object-cover opacity-60"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                      <Store className="h-3.5 w-3.5" />
+                      Merchant profile
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-semibold backdrop-blur-sm ${
+                        store.isActive
+                          ? "bg-emerald-500/20 text-emerald-100"
+                          : "bg-slate-500/20 text-slate-100"
+                      }`}
+                    >
+                      {store.isActive ? "Open now" : "Inactive"}
+                    </span>
+                    {store.isVerified && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-3 py-1 text-[11px] font-semibold text-blue-100 backdrop-blur-sm">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Verified
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <h1 className="mt-3 text-3xl font-semibold tracking-tight text-foreground md:text-5xl">
-                  {storeName}
-                </h1>
-                <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+
+                <div className="absolute -bottom-14 left-1/2 -translate-x-1/2">
+                  <div className="rounded-full border-4 border-card bg-card p-1.5 shadow-2xl shadow-slate-900/20">
+                    <div className="h-28 w-28 overflow-hidden rounded-full bg-muted">
+                      <img
+                        src={storeLogo}
+                        alt={storeName}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="px-5 pb-5 pt-16">
+                <div className="text-center">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-blue-600">
+                    Merchant details
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                    {storeName}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    by {merchantName}
+                  </p>
+                </div>
+
+                <div className="mt-5 grid grid-cols-3 gap-3">
+                  {stats.map((stat) => (
+                    <div
+                      key={stat.label}
+                      className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-indigo-50 p-3 text-center shadow-sm dark:border-blue-950/40 dark:from-blue-950/30 dark:to-indigo-950/30"
+                    >
+                      <div className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                        {stat.value}
+                      </div>
+                      <div className="mt-0.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                        {stat.label}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="mt-5 text-sm leading-6 text-muted-foreground">
                   {store.description ||
                     "This merchant has not added a description yet."}
                 </p>
-              </div>
 
-              <div className="flex w-full flex-col gap-3 rounded-3xl border border-border/70 bg-background/80 p-4 shadow-sm lg:max-w-xs">
-                {store.address ? (
-                  <div className="flex items-start gap-3 text-sm text-muted-foreground">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                    <span>{store.address}</span>
-                  </div>
-                ) : null}
-                {store.phone ? (
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <Phone className="h-4 w-4 shrink-0 text-primary" />
-                    <span>{store.phone}</span>
-                  </div>
-                ) : null}
-                {store.email ? (
-                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                    <Mail className="h-4 w-4 shrink-0 text-primary" />
-                    <span>{store.email}</span>
-                  </div>
-                ) : null}
-                {store.website ? (
-                  <a
-                    href={store.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-3 text-sm text-primary transition-colors hover:text-primary/80"
-                  >
-                    <Globe className="h-4 w-4 shrink-0" />
-                    Visit website
-                  </a>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </section>
+                {contactItems.length > 0 && (
+                  <div className="mt-5 space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                      Contact
+                    </p>
+                    <div className="space-y-2">
+                      {contactItems.map((item) => {
+                        const content = (
+                          <>
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600/10 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
+                              <item.icon className="h-4 w-4" />
+                            </span>
+                            <span className="min-w-0 flex-1 truncate text-sm text-slate-700 dark:text-slate-200">
+                              {item.label}
+                            </span>
+                          </>
+                        );
 
-        <section className="mt-8 grid gap-4 sm:grid-cols-3">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-[1.5rem] border border-border/70 bg-card p-5 shadow-sm"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
-                    {stat.value}
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-                  <stat.icon className="h-5 w-5" />
-                </div>
+                        return item.href ? (
+                          <a
+                            key={item.label}
+                            href={item.href}
+                            target={
+                              item.href.startsWith("http")
+                                ? "_blank"
+                                : undefined
+                            }
+                            rel="noreferrer"
+                            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/60 dark:border-slate-800 dark:bg-slate-950/70 dark:hover:border-blue-900/60 dark:hover:bg-blue-950/20"
+                          >
+                            {content}
+                          </a>
+                        ) : (
+                          <div
+                            key={item.label}
+                            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950/70"
+                          >
+                            {content}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          ))}
-        </section>
-
-        <section className="mt-8 rounded-[1.75rem] border border-border/70 bg-card p-5 shadow-sm md:p-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight text-foreground">
-                Store products
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Browse what this merchant currently sells.
-              </p>
-            </div>
-            <Badge variant="secondary" className="rounded-full px-3 py-1">
-              {products.length} items
-            </Badge>
-          </div>
-
-          {products.length > 0 ? (
-            <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          ) : (
-            <div className="mt-8 flex flex-col items-center justify-center rounded-[1.5rem] border border-dashed border-border/70 px-6 py-16 text-center text-muted-foreground">
-              <Package className="h-10 w-10 text-muted-foreground" />
-              <p className="mt-3 text-base font-medium text-foreground">
-                No active products yet
-              </p>
-              <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                This store is live, but it does not have any active products to
-                display right now.
-              </p>
-              <Button
-                className="mt-6 rounded-2xl"
-                onClick={() => navigate("/merchants")}
-              >
-                Explore other merchants
-              </Button>
-            </div>
-          )}
-        </section>
+          </aside>
+        </div>
       </main>
     </div>
   );

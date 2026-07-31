@@ -334,7 +334,7 @@ const Header = () => {
                 asChild
                 className="h-10 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 text-sm font-semibold shadow-lg shadow-indigo-500/25 transition-all hover:shadow-indigo-500/40"
               >
-                <Link to="/login">Sign In</Link>
+                <Link to="/signin">Sign In</Link>
               </Button>
             )}
 
